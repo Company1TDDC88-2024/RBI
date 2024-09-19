@@ -1,8 +1,11 @@
 from flask import Flask
-from test import test_bp
+from src.example.examples_routes import example_bp
+
 
 app = Flask(__name__)
-app.register_blueprint(test_bp, url_prefix='/test')
+
+app.debug = True
+app.register_blueprint(example_bp, url_prefix='/example')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
