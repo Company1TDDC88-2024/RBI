@@ -1,9 +1,8 @@
-import os
 import subprocess
 
-command = ["poetry", "run", "flask", "--app", "server", "run", "--port=5555"]
+command = ["poetry", "run", "flask", "--app", "server", "run", "--port=5555", "--reload"]
 
 try:
     subprocess.run(command)
 except KeyboardInterrupt:
-    print("\nProcess interrupted. Exiting backend gracefully.")
+    print("\nExiting backend gracefully.")

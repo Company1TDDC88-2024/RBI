@@ -93,8 +93,6 @@ This command will install all the dependencies in the `pyproject.toml` file, jus
 
 To actually run the server, we use this command
 
-Alternatively you can use
-
 ```bash
 python3 start
 ```
@@ -108,10 +106,10 @@ python start
 If neither of the above work, you have to run the server command manually with
 
 ```bash
-poetry run flask --app server run --port=5555
+poetry run flask --app server run --port=5555 --reload
 ```
 
-All of these commands execute the last line, however the first two do that through a python script as
+All of these commands execute the last line, however the first two commands do that through a python script as
 the last line is rather long and difficult to remember.
 
-The server is run on port 5555 since the default port 5000 is already in use on some systems. If you do any changes in the backend, you will need to stop your server and start it again using this command, unlike the react project where HMR fixes that issue. Right now we don't have a fix for this on the backend.
+The server is run on port 5555 since the default port 5000 is already in use on some systems. If you do any changes in the backend and save, it should automatically restart the server thanks to the --reload flag.
