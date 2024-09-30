@@ -17,10 +17,10 @@ const Sidebar: React.FC = () => {
       <div className={`sidebar ${isOpen ? "open" : "closed"}`}>
         <nav>
           <ul>
-            <li><Link to="/" onClick={toggleSidebar}>Home</Link></li>
-            <li><Link to="#">Alt2</Link></li>
-            <li><Link to="#">Alt3</Link></li>
-            <li><Link to="#">Alt4</Link></li>
+            <li><Link to="/dashboard" onClick={toggleSidebar}>Dashboard</Link></li>
+            <li><Link to="/history" onClick={toggleSidebar}>Historical data</Link></li>
+            <li><Link to="/livefeed" onClick={toggleSidebar}>Live Feed</Link></li>
+            <li><Link to="#">Logout</Link></li>
           </ul>
         </nav>
       </div>
