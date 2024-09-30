@@ -7,6 +7,10 @@ const DashboardPage = () => {
     return (
         <div className="page-container">
             <h1>Implement Dashboard here</h1>
+            <p>
+                Click <Link to="/test">here</Link> to get a message from the
+                backend
+            </p>
         </div>
     );
 };
