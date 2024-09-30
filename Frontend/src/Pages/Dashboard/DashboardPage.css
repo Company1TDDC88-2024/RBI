@@ -1,0 +1,17 @@
+/*CSS specific for DashboardPage*/
+.dashboard-container {
+    padding: 24px;
+}
+  
+.dashboard-container h1 {
+    margin-bottom: 24px;
+}
+  
+.dashboard-container .ant-row {
+    margin-bottom: 24px;
+}
+
+.dashboard-container .ant-card {
+    background: #fff;
+    border-radius: 8px;
+}
