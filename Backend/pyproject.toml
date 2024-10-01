@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.10"
 Flask = "^3.0.3"
 flask-cors = "^5.0.0"
+pyodbc = "^5.1.0"
+azure-identity = "^1.18.0"
+msal = "^1.31.0"
 
 
 [build-system]
