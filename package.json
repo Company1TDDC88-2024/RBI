@@ -3,7 +3,8 @@
     "private": true,
     "version": "1.0.0",
     "scripts": {
-        "start": "concurrently \"cd Backend && poetry run flask --app server run --port=5555 --reload\" \"cd Frontend && npm start\""
+        "start": "concurrently \"cd Backend && poetry run flask --app server run --port=5555 --reload\" \"cd Frontend && npm start\"",
+        "install": "concurrently \"cd Backend && poetry install\" \"cd Frontend && npm install\""
     },
     "devDependencies": {
         "concurrently": "^9.0.1"
