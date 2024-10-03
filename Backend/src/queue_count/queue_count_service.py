@@ -19,7 +19,7 @@ def upload_data_to_db(data):
         # Lägger till data i QueueCount-tabellen
         cursor.execute("""
             INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?)
         """, (data['NumberOfCustomers'], data['Timestamp'], data['ROI']))
         conn.commit()
         return "Data uploaded successfully"
