@@ -31,9 +31,9 @@ def upload_data_to_db(data):
     try:
         # Lägger till data i CustomerCount-tabellen
         cursor.execute("""
-            INSERT INTO CustomerCount (NumberOfCustomers, Timestamp)
-            VALUES (?, ?)
-        """, (data['NumberOfCustomers'], data['Timestamp']))
+            INSERT INTO CustomerCount (NumberOfCustomers, Timestamp, Weekday)
+            VALUES (?, ?, ?)
+        """, (data['NumberOfCustomers'], data['Timestamp'], data['Weekday']))
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -51,14 +51,15 @@ def get_data_from_db():
 
     try:
         # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, Weekday FROM CustomerCount")
         rows = cursor.fetchall()
         data = []
         for row in rows:
             data.append({
                 'ID': row[0],
                 'NumberOfCustomers': row[1],
-                'Timestamp': row[2]
+                'Timestamp': row[2],
+                'Weekday': row[3]
             })
         return data
     except pyodbc.Error as e:
