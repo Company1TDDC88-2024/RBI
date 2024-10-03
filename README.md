@@ -5,11 +5,22 @@ This project uses `concurrently` to run both the frontend and backend simultaneo
 ## Prerequisites
 
 - Make sure Poetry is installed. Follow the installation instructions in /Backend/README.md.
-- Node and npm.
+- Run this in the /Backend directory
+
+```bash
+poetry install
+```
+
+- Make sure you have Node and npm installed on you system.
+- Run this in the /Frontend directory
+
+```bash
+npm install
+```
 
 ## Setup
 
-Install all dependencies in the project root, frontend and backend.
+Install the Concurrently dependency in the project root.
 
 ```bash
 npm install
