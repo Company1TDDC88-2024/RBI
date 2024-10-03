@@ -9,8 +9,8 @@ def upload_data():
     data = request.json
     
     # Kontrollera att nödvändig data finns
-    if 'NumberOfCustomers' not in data or 'Timestamp' not in data or 'Weekday' not in data:
-        return jsonify({'message': 'Missing NumberOfCustomers, Timestamp or Weekday'}), 400
+    if 'NumberOfCustomers' not in data or 'Timestamp' not in data:
+        return jsonify({'message': 'Missing NumberOfCustomers or Timestamp'}), 400
 
     result = upload_data_to_db(data)
     return jsonify({'message': result})

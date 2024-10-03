@@ -9,11 +9,18 @@ def upload_data_to_db(data):
     cursor = conn.cursor()
 
     try:
-        # Lägger till data i CustomerCount-tabellen
+        # Kontrollera om ROI existerar i Coordinates-tabellen
+        cursor.execute("SELECT COUNT(*) FROM Coordinates WHERE ID = ?", data['ROI'])
+        roi_exists = cursor.fetchone()[0]
+
+        if roi_exists == 0:
+            return f"Error: ROI with ID {data['ROI']} does not exist. Please choose a valid ROI."
+
+        # Lägger till data i QueueCount-tabellen
         cursor.execute("""
-            INSERT INTO CustomerCount (NumberOfCustomers, Timestamp)
-            VALUES (?, ?, ?)
-        """, (data['NumberOfCustomers'], data['Timestamp']))
+            INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
+            VALUES (?, ?, ?, ?)
+        """, (data['NumberOfCustomers'], data['Timestamp'], data['ROI']))
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -31,7 +38,7 @@ def get_data_from_db():
 
     try:
         # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount")
         rows = cursor.fetchall()
         data = []
         for row in rows:
@@ -39,6 +46,7 @@ def get_data_from_db():
                 'ID': row[0],
                 'NumberOfCustomers': row[1],
                 'Timestamp': row[2],
+                'ROI': row[4]
             })
         return data
     except pyodbc.Error as e:

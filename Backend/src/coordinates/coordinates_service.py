@@ -1,6 +1,7 @@
 import pyodbc
 from src.database_connect import get_db_connection
 
+
 def upload_data_to_db(data):
     conn = get_db_connection()
     if conn is None:
@@ -11,9 +12,9 @@ def upload_data_to_db(data):
     try:
         # Lägger till data i CustomerCount-tabellen
         cursor.execute("""
-            INSERT INTO CustomerCount (NumberOfCustomers, Timestamp)
-            VALUES (?, ?, ?)
-        """, (data['NumberOfCustomers'], data['Timestamp']))
+            INSERT INTO Coordinates (TopBound, BottomBound, LeftBound, RightBound)
+            VALUES (?, ?, ?, ?)
+        """, (data['TopBound'], data['BottomBound'], data['LeftBound'], data['RightBound']))
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -31,14 +32,16 @@ def get_data_from_db():
 
     try:
         # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        cursor.execute("SELECT ID, TopBound, BottomBound, LeftBound, RightBound FROM Coordinates")
         rows = cursor.fetchall()
         data = []
         for row in rows:
             data.append({
                 'ID': row[0],
-                'NumberOfCustomers': row[1],
-                'Timestamp': row[2],
+                'TopBound': row[1],
+                'BottomBound': row[2],
+                'LeftBound': row[3],
+                'RightBound': row[4]
             })
         return data
     except pyodbc.Error as e:
