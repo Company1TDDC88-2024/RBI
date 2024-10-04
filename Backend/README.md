@@ -9,6 +9,38 @@ In order to run the project, you will need to have Poetry installed. This instal
 
 ### Mac
 
+First make sure you have Homebrew installed. If you don't, run this command.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Install pipx using the following commands.
+
+```bash
+brew install pipx
+```
+
+```bash
+pipx ensurepath
+```
+
+Now you can install Poetry.
+
+```bash
+pipx install poetry
+```
+
+Restart the terminal and type this
+
+```bash
+poetry --version
+```
+
+If the version displays, the installation was successful. You will need to restart all terminals that were opened before Poetry was installed for it to work.
+
+#### Mac - Alternative installation guide for Poetry (only do this if you cannot use brew or pipx for some reason)
+
 First you will need to install Poetry by running this command
 
 ```bash
@@ -61,9 +93,9 @@ In case you get this error, it's likely because you have an installed python ver
 
 After Poetry is installed, you want to add the path to the Poetry script file into your environment variables. This path should be displayed in the terminal when you have installed Poetry. To do so
 
--   Open _Environment Variables_
+-   Open _Environment Variables_ by clicking the windows icon and search for "Environment variables" (Miljövariabler).
 -   You will then want to click on _Path_ in Environment variables for <user>
--   Click on _New_ and paste in the path
+-   Click on _New_ and paste in the path that was shown in the terminal when Poetry was installed.
 
 To insure everything is correct, try typing this command and see if it displays a version (you might need to close and reopen the terminal)
 
