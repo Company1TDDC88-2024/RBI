@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, Row, Col, Spin, Alert, Table, DatePicker } from "antd";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
 import styles from "./DashboardPage.module.css";
 
@@ -58,8 +59,17 @@ const DashboardPage = () => {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="Screen 2" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            Screen content
+          <Card title="Customer Count Over Time" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="Timestamp" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="NumberOfCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
