@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 
+void send_json_to_server(const char *json_str);
+
 typedef struct channel_identifier {
     char* topic;
     char* source;
@@ -53,7 +55,7 @@ static void on_connection_error(mdb_error_t* error, void* user_data) {
 void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/receive_data");
+        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/acap-data");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -76,6 +78,19 @@ static void on_message(const mdb_message_t* message, void* user_data) {
 
     channel_identifier_t* channel_identifier = (channel_identifier_t*)user_data;
 
+
+    //Calculate time since last send
+    static struct timespec last_sent_timestamp = {0,0};
+    //const long n_seconds = 1;
+    time_t sec_diff = timestamp->tv_sec -last_sent_timestamp.tv_sec;
+    long nsec_diff = timestamp->tv_nsec - last_sent_timestamp.tv_nsec;
+    if (nsec_diff < 0) {
+        sec_diff--;
+        nsec_diff += 1000000000L;
+    }
+
+
+    //if (sec_diff >= n_seconds) {
     // Create JSON object
     json_t *json_obj = json_object();
 
@@ -83,36 +98,31 @@ static void on_message(const mdb_message_t* message, void* user_data) {
     json_object_set_new(json_obj, "topic", json_string(channel_identifier->topic));
     json_object_set_new(json_obj, "source", json_string(channel_identifier->source));
 
-    // Add timestamp as a nested object
-    json_t *timestamp_obj = json_object();
-    json_object_set_new(timestamp_obj, "seconds", json_integer((long long)timestamp->tv_sec));
-    json_object_set_new(timestamp_obj, "nanoseconds", json_integer(timestamp->tv_nsec));
-    json_object_set_new(json_obj, "timestamp", timestamp_obj);
+    //Add timestamp as a nested object
+    // json_t *timestamp_obj = json_object();
+    // json_object_set_new(timestamp_obj, "seconds", json_integer((long long)timestamp->tv_sec));
+    // json_object_set_new(timestamp_obj, "nanoseconds", json_integer(timestamp->tv_nsec));
+    // json_object_set_new(json_obj, "timestamp", timestamp_obj);
 
     // Add payload data (assuming it's a string for now)
+
     json_object_set_new(json_obj, "data", json_stringn((char*)payload->data, payload->size));
+   // syslog(LOG_INFO, "%.*s", (int)payload->size, (char*)payload->data);
 
     // Convert JSON object to string
     char *json_str = json_dumps(json_obj, 0);
 
     // Send JSON to the server
+ 
     send_json_to_server(json_str);
+    //syslog(LOG_INFO, "Data sent");
 
-    syslog(LOG_INFO, "%s", json_str);
 
     // Free memory
     json_decref(json_obj);
     free(json_str);
-
-    // syslog(LOG_INFO,
-    //        "message received from topic: %s on source: %s: Monotonic time - "
-    //        "%lld.%.9ld. Data - %.*s",
-    //        channel_identifier->topic,
-    //        channel_identifier->source,
-    //        (long long)timestamp->tv_sec,
-    //        timestamp->tv_nsec,
-    //        (int)payload->size,
-    //        (char*)payload->data);
+    last_sent_timestamp = *timestamp;
+   // }
 }
 
 static void on_done_subscriber_create(const mdb_error_t* error, void* user_data) {
