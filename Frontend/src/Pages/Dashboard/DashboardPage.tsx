@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, Row, Col, Spin, Alert, Table, DatePicker } from "antd";
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
-import "./DashboardPage.css";
+import styles from "./DashboardPage.module.css";
 
 const { RangePicker } = DatePicker;
 
@@ -48,29 +48,29 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="dashboard-container">
+    <div className={styles.dashboardContainer}>
       <h1>Dashboard</h1>
       <RangePicker onChange={onDateChange} />
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Customer Count Data" bordered={false} className="dashboard-card">
+          <Card title="Customer Count Data" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <Table dataSource={data || []} columns={columns} rowKey="Timestamp" />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="Screen 2" bordered={false} className="dashboard-card">
+          <Card title="Screen 2" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             Screen content
           </Card>
         </Col>
       </Row>
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Screen 3" bordered={false} className="dashboard-card">
+          <Card title="Screen 3" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             Screen content
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="Screen 4" bordered={false} className="dashboard-card">
+          <Card title="Screen 4" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             Screen content
           </Card>
         </Col>
