@@ -1,5 +1,7 @@
 import pyodbc
 from src.database_connect import get_db_connection
+from datetime import datetime
+from typing import List, Dict, Union, Optional
 
 def upload_data_to_db(data):
     conn = get_db_connection()
@@ -22,7 +24,7 @@ def upload_data_to_db(data):
     finally:
         conn.close()
 
-def get_data_from_db():
+def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
     conn = get_db_connection()
     if conn is None:
         return "Failed to connect to database"
@@ -30,8 +32,21 @@ def get_data_from_db():
     cursor = conn.cursor()
 
     try:
-        # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        # Fecth all data from CustomerCount table, if no start_date or end_date is provided
+        query = ("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        params = []
+
+        if start_date and end_date:
+            query += " WHERE Timestamp BETWEEN ? AND ?"
+            params.extend([start_date, end_date])
+        elif start_date:
+            query += " WHERE Timestamp >= ?"
+            params.append(start_date)
+        elif end_date:
+            query += " WHERE Timestamp <= ?"
+            params.append(end_date)
+
+        cursor.execute(query, params)
         rows = cursor.fetchall()
         data = []
         for row in rows:

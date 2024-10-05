@@ -1,6 +1,6 @@
 import React from "react";
 import { Table, Card, Row, Col } from "antd";
-import "./HistoryPage.css";
+import styles from "./HistoryPage.module.css";
 import "../../global.css";
 
 //TODO: Connect to backend. Example data not connected to backend yet
@@ -40,11 +40,11 @@ const columns = [
 
 const HistoryPage = () => {
   return (
-    <div>
+    <div className={styles.historyPageContainer}>
       <h1>Historical Data</h1>
       <Row gutter={16}>
         <Col span={24}>
-          <Card title="Historical Events" bordered={false}>
+          <Card title="Historical Events" bordered={false} className={styles.historyCard}>
             <Table dataSource={dataSource} columns={columns} />
           </Card>
         </Col>
