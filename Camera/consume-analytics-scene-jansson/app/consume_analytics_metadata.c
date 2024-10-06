@@ -27,21 +27,19 @@
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#include <jansson.h>
+#include <curl/curl.h>
 
 #include <mdb/connection.h>
 #include <mdb/error.h>
 #include <mdb/subscriber.h>
 
-#include <jansson.h>
-#include <stdlib.h>
-#include <curl/curl.h>
-
-void send_json_to_server(const char *json_str);
-
 typedef struct channel_identifier {
     char* topic;
     char* source;
 } channel_identifier_t;
+
+void send_json_to_server(const char *json_str);
 
 static void on_connection_error(mdb_error_t* error, void* user_data) {
     (void)user_data;
@@ -54,7 +52,8 @@ static void on_connection_error(mdb_error_t* error, void* user_data) {
 
 void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
-    if(curl) {
+
+    if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/acap-data");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
@@ -63,8 +62,8 @@ void send_json_to_server(const char *json_str) {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         CURLcode res = curl_easy_perform(curl);
-        if(res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        if (res != CURLE_OK) {
+            syslog(LOG_INFO, "cURL error");
         }
 
         curl_easy_cleanup(curl);
@@ -72,58 +71,68 @@ void send_json_to_server(const char *json_str) {
     }
 }
 
-static void on_message(const mdb_message_t* message, void* user_data) {
-    const struct timespec* timestamp     = mdb_message_get_timestamp(message);
-    const mdb_message_payload_t* payload = mdb_message_get_payload(message);
+static void send_accumulated_detections(json_t *accumulated_detections) {
+    if (json_array_size(accumulated_detections) > 0) {
+        char *json_str = json_dumps(accumulated_detections, 0);
+        
+        send_json_to_server(json_str);
+        free(json_str);
+        json_array_clear(accumulated_detections);
+    }
+}
 
-    channel_identifier_t* channel_identifier = (channel_identifier_t*)user_data;
+static void process_human_detections(const char* payload_data, size_t size) {
+    json_t* root = json_loadb(payload_data, size, 0, NULL);
+    json_t* frame = json_object_get(root, "frame");
+    json_t* observations = json_object_get(frame, "observations");
 
+    json_t *accumulated_detections = json_array();
 
-    //Calculate time since last send
-    static struct timespec last_sent_timestamp = {0,0};
-    //const long n_seconds = 1;
-    time_t sec_diff = timestamp->tv_sec -last_sent_timestamp.tv_sec;
-    long nsec_diff = timestamp->tv_nsec - last_sent_timestamp.tv_nsec;
-    if (nsec_diff < 0) {
-        sec_diff--;
-        nsec_diff += 1000000000L;
+    size_t index;
+    json_t* detection;
+    json_array_foreach(observations, index, detection) {
+        json_t* class_obj = json_object_get(detection, "class");
+        const char* type = json_string_value(json_object_get(class_obj, "type"));
+
+        if (type && strcmp(type, "Human") == 0) {
+            json_t* bounding_box = json_object_get(detection, "bounding_box");            
+            double bottom = json_number_value(json_object_get(bounding_box, "bottom"));
+            double left   = json_number_value(json_object_get(bounding_box, "left"));            
+            double right  = json_number_value(json_object_get(bounding_box, "right"));
+            double top    = json_number_value(json_object_get(bounding_box, "top"));
+            double score = json_number_value(json_object_get(class_obj, "score"));
+            const char* track_id = json_string_value(json_object_get(detection, "track_id"));
+            const char* timestamp = json_string_value(json_object_get(detection, "timestamp"));
+
+            json_t* detection_obj = json_pack("{s:s, s:s, s:f, s:f, s:f, s:f, s:f}",
+                                              "track_id", track_id,
+                                              "timestamp", timestamp,
+                                              "bottom", bottom,
+                                              "left", left,
+                                              "right", right,
+                                              "top", top,
+                                              "score", score);
+            json_array_append_new(accumulated_detections, detection_obj);
+        }
     }
 
+    send_accumulated_detections(accumulated_detections);
 
-    //if (sec_diff >= n_seconds) {
-    // Create JSON object
-    json_t *json_obj = json_object();
-
-    // Add topic and source
-    json_object_set_new(json_obj, "topic", json_string(channel_identifier->topic));
-    json_object_set_new(json_obj, "source", json_string(channel_identifier->source));
-
-    //Add timestamp as a nested object
-    // json_t *timestamp_obj = json_object();
-    // json_object_set_new(timestamp_obj, "seconds", json_integer((long long)timestamp->tv_sec));
-    // json_object_set_new(timestamp_obj, "nanoseconds", json_integer(timestamp->tv_nsec));
-    // json_object_set_new(json_obj, "timestamp", timestamp_obj);
-
-    // Add payload data (assuming it's a string for now)
-
-    json_object_set_new(json_obj, "data", json_stringn((char*)payload->data, payload->size));
-   // syslog(LOG_INFO, "%.*s", (int)payload->size, (char*)payload->data);
-
-    // Convert JSON object to string
-    char *json_str = json_dumps(json_obj, 0);
-
-    // Send JSON to the server
- 
-    send_json_to_server(json_str);
-    //syslog(LOG_INFO, "Data sent");
-
-
-    // Free memory
-    json_decref(json_obj);
-    free(json_str);
-    last_sent_timestamp = *timestamp;
-   // }
+    json_decref(accumulated_detections);
+    json_decref(root); 
 }
+
+static void on_message(const mdb_message_t* message, void* user_data) {    
+    const mdb_message_payload_t* payload = mdb_message_get_payload(message);
+    channel_identifier_t* channel_identifier = (channel_identifier_t*)user_data;
+    syslog(LOG_INFO,
+           "Subscribed to %s (%s)...",
+           channel_identifier->topic,
+           channel_identifier->source);
+
+    process_human_detections((const char*)payload->data, payload->size);
+}
+
 
 static void on_done_subscriber_create(const mdb_error_t* error, void* user_data) {
     if (error != NULL) {
