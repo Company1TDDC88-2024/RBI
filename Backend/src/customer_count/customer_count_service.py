@@ -24,8 +24,8 @@ async def upload_data_to_db(data):
     finally:
         conn.close()
 
-def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
-    conn = get_db_connection()
+async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
@@ -63,8 +63,8 @@ def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[d
         conn.close()
 
 
-def get_number_of_customers(start_timestamp, end_timestamp):
-    conn = get_db_connection()
+async def get_number_of_customers(start_timestamp, end_timestamp):
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
