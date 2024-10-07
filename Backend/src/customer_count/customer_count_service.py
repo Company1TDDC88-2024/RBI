@@ -3,8 +3,8 @@ from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
 
-def upload_data_to_db(data):
-    conn = get_db_connection()
+async def upload_data_to_db(data):
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
