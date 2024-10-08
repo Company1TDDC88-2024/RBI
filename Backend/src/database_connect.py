@@ -1,7 +1,7 @@
 import pyodbc
 
 # Funktion för att ansluta till databasen
-def get_db_connection():
+async def get_db_connection():
 
     connection_string = (
         "Driver={ODBC Driver 18 for SQL Server};"
