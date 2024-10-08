@@ -2,8 +2,8 @@ import pyodbc
 from src.database_connect import get_db_connection
 
 
-def upload_data_to_db(data):
-    conn = get_db_connection()
+async def upload_data_to_db(data):
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
@@ -23,8 +23,8 @@ def upload_data_to_db(data):
     finally:
         conn.close()
 
-def get_data_from_db():
-    conn = get_db_connection()
+async def get_data_from_db():
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
