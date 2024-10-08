@@ -130,5 +130,33 @@ async def get_number_of_customers(start_timestamp, end_timestamp):
     finally:
         conn.close()
 
+async def get_daily_data_from_db(date: datetime) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+
+    cursor = conn.cursor()
+
+    try:
+        # Fetch all data from CustomerCount table where the date matches the provided date
+        query = ("SELECT ID, TotalCustomers, Timestamp, EnteringCustomers, ExitingCustomers FROM CustomerCount WHERE CAST(Timestamp AS DATE) = ?")
+        cursor.execute(query, (date,))
+        rows = cursor.fetchall()
+        data = []
+        for row in rows:
+            data.append({
+                'ID': row[0],
+                'TotalCustomers': row[1],
+                'Timestamp': row[2],
+                'EnteringCustomers': row[3],
+                'ExitingCustomers': row[4],
+            })
+        return data
+    except pyodbc.Error as e:
+        print(f"Error fetching data: {e}")
+        return "Error fetching data"
+    finally:
+        conn.close()
+
 
 
