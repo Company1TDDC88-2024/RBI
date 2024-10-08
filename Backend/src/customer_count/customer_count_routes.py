@@ -10,8 +10,8 @@ async def upload_data():
     data = request.json
     
     # Kontrollera att nödvändig data finns
-    if 'NumberOfCustomers' not in data or 'Timestamp' not in data:
-        return jsonify({'message': 'Missing NumberOfCustomers or Timestamp'}), 400
+    if 'EnteringCustomers' not in data or 'ExitingCustomers' not in data or 'Timestamp' not in data:
+        return jsonify({'message': 'Missing EnteringCustomers or ExitingCustomers number of customers or Timestamp'}), 400
 
     result = await upload_data_to_db(data)
     return jsonify({'message': result})
