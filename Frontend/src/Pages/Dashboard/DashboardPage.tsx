@@ -4,6 +4,8 @@ import { Card, Row, Col, Spin, Alert, Table, DatePicker } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
 import styles from "./DashboardPage.module.css";
+import DateTimeDisplay from './DateTimeDisplay'; // Adjust the path if necessary
+
 
 const { RangePicker } = DatePicker;
 
@@ -53,6 +55,7 @@ const DashboardPage = () => {
   return (
     <div className={styles.dashboardContainer}>
       <h1>Dashboard</h1>
+      <DateTimeDisplay />
       <RangePicker onChange={onDateChange} />
       <Row gutter={16}>
         <Col span={12}>
