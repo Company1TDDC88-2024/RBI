@@ -1,4 +1,4 @@
 export interface ICustomerCount {
-    NumberOfCustomers: number;
+    TotalCustomers: number;
     Timestamp: string;
 }
