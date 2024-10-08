@@ -9,11 +9,25 @@ customer_count_bp = Blueprint('customer_count', __name__)
 def upload_data():
     data = request.json
     
-    # Kontrollera att nödvändig data finns
-    if 'NumberOfCustomers' not in data or 'Timestamp' not in data:
-        return jsonify({'message': 'Missing NumberOfCustomers or Timestamp'}), 400
+    # Kontrollera att data är en lista
+    if not isinstance(data, list):
+        return jsonify({'message': 'Invalid data format, expected a list of objects'}), 400
 
-    result = upload_data_to_db(data)
+    # Kontrollera att nödvändig data finns
+    required_keys = ['track_id', 'timestamp', 'bottom', 'left', 'right', 'top', 'score']
+    if not all(key in data for key in required_keys):
+        return jsonify({'message': 'Missing one or more required fields: track_id, timestamp, bottom, left, right, top, score'}), 400
+
+    # Count the number of objects
+    object_count = len(data)
+
+    # Create new JSON object to upload
+    upload_data = {
+        "NumberOfCustomers": object_count,
+        "Timestamp": data[0]['timestamp']  # Use the timestamp from the first object
+    }
+
+    result = upload_data_to_db(upload_data)
     return jsonify({'message': result})
 
 @customer_count_bp.route('/get', methods=['GET'])
