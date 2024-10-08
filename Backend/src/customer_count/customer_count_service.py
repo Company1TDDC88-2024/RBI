@@ -1,21 +1,52 @@
 import pyodbc
+from datetime import datetime
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
 
-def upload_data_to_db(data):
-    conn = get_db_connection()
+async def upload_data_to_db(data):
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
     cursor = conn.cursor()
+    TimeInterval = 10
 
     try:
+        
+        cursor.execute("""
+            SELECT TOP 1 TotalCustomers, Timestamp FROM CustomerCount
+            ORDER BY Timestamp DESC
+        """)
+        
+        result = cursor.fetchone()  # Fetch the result of the query
+
+        if result:
+            # Unpack the query result
+            previous_total_customers, previous_timestamp = result
+        else:
+            # If no previous record, assume 0 customers
+            previous_total_customers = 0
+            previous_timestamp = None
+
+        # Extract the date from both the queried Timestamp and the incoming Timestamp
+        queried_date = previous_timestamp.date() if previous_timestamp else None
+        incoming_datetime = datetime.strptime(data['Timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
+        incoming_date = incoming_datetime.date()
+        formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
+
+
+        # Compare the dates and calculate TotalCustomers
+        if queried_date != incoming_date or not queried_date:
+            TotalCustomers = 0  # Reset TotalCustomers if the dates are different
+        else:
+            TotalCustomers = previous_total_customers + data['EnteringCustomers'] - data['ExitingCustomers']
+        
         # Lägger till data i CustomerCount-tabellen
         cursor.execute("""
-            INSERT INTO CustomerCount (NumberOfCustomers, Timestamp)
-            VALUES (?, ?)
-        """, (data['NumberOfCustomers'], data['Timestamp']))
+            INSERT INTO CustomerCount (Timestamp, TotalCustomers, EnteringCustomers, ExitingCustomers, TimeInterval)
+            VALUES (?, ?, ?, ?, ?)
+        """, (formatted_timestamp, TotalCustomers, data['EnteringCustomers'], data['ExitingCustomers'], TimeInterval))
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -24,8 +55,8 @@ def upload_data_to_db(data):
     finally:
         conn.close()
 
-def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
-    conn = get_db_connection()
+async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
@@ -63,8 +94,8 @@ def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[d
         conn.close()
 
 
-def get_number_of_customers(start_timestamp, end_timestamp):
-    conn = get_db_connection()
+async def get_number_of_customers(start_timestamp, end_timestamp):
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
@@ -73,7 +104,7 @@ def get_number_of_customers(start_timestamp, end_timestamp):
     try:
         # Hämta alla rader mellan start_timestamp och end_timestamp
         cursor.execute("""
-            SELECT NumberOfCustomers 
+            SELECT TotalCustomers 
             FROM CustomerCount 
             WHERE Timestamp >= ? AND Timestamp <= ?
         """, (start_timestamp, end_timestamp))
