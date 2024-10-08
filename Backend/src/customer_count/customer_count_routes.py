@@ -10,8 +10,8 @@ async def upload_data():
     data = request.json
     
     # Kontrollera att nödvändig data finns
-    if 'NumberOfCustomers' not in data or 'Timestamp' not in data:
-        return jsonify({'message': 'Missing NumberOfCustomers or Timestamp'}), 400
+    if 'EnteringCustomers' not in data or 'ExitingCustomers' not in data or 'Timestamp' not in data:
+        return jsonify({'message': 'Missing Entering or Exiting number of customers or Timestamp'}), 400
 
     result = await upload_data_to_db(data)
     return jsonify({'message': result})
@@ -27,7 +27,7 @@ async def get_data():
     if end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
-    data = await get_data_from_db(start_date, end_date)
+    data = await get_data_from_db(start_date, end_te)
     if isinstance(data, str):
         return jsonify({'message': data}), 500
     return jsonify(data)
