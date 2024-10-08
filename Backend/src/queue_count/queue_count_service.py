@@ -46,7 +46,7 @@ async def get_data_from_db():
                 'ID': row[0],
                 'NumberOfCustomers': row[1],
                 'Timestamp': row[2],
-                'ROI': row[4]
+                'ROI': row[3]
             })
         return data
     except pyodbc.Error as e:

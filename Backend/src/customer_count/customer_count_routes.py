@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from .customer_count_service import upload_data_to_db, get_data_from_db, get_number_of_customers
+from .customer_count_service import get_daily_data_from_db, upload_data_to_db, get_data_from_db, get_number_of_customers
 from datetime import datetime
 
 # Skapa en Blueprint
@@ -47,3 +47,19 @@ async def get_customers():
         return jsonify({'message': result}), 500
     
     return jsonify({'average_customers': result}), 200
+
+@customer_count_bp.route('/get_daily', methods=['GET'])
+async def get_daily_customers():
+    date = request.args.get('date')
+
+    # Convert date to datetime objects
+    if date:
+        date = datetime.strptime(date, '%Y-%m-%d')
+
+    data = await get_daily_data_from_db(date)
+    if isinstance(data, str):
+        return jsonify({'message': data}), 500
+    
+    # Sum up all EnteringCustomers from each entry resulting in daily customers
+    total_entering_customers = sum(entry['EnteringCustomers'] for entry in data)
+    return jsonify({'totalEnteringCustomers': total_entering_customers})
