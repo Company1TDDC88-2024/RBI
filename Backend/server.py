@@ -9,7 +9,7 @@ from src.example.date_routes import date_bp
 app = Flask(__name__)
 
 # Middleware
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 app.register_blueprint(example_bp, url_prefix='/example')
 app.register_blueprint(customer_count_bp, url_prefix='/customer_count')
@@ -18,4 +18,4 @@ app.register_blueprint(coordinates_bp, url_prefix='/coordinates')
 app.register_blueprint(date_bp, url_prefix='/date')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5555, debug=True)
+    app.run(debug=True)
