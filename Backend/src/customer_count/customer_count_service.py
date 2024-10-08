@@ -1,4 +1,5 @@
 import pyodbc
+from datetime import datetime
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
@@ -14,9 +15,8 @@ async def upload_data_to_db(data):
     try:
         
         cursor.execute("""
-            SELECT TotalCustomers, Timestamp FROM CustomerCount
+            SELECT TOP 1 TotalCustomers, Timestamp FROM CustomerCount
             ORDER BY Timestamp DESC
-            LIMIT 1
         """)
         
         result = cursor.fetchone()  # Fetch the result of the query
@@ -31,7 +31,10 @@ async def upload_data_to_db(data):
 
         # Extract the date from both the queried Timestamp and the incoming Timestamp
         queried_date = previous_timestamp.date() if previous_timestamp else None
-        incoming_date = data['Timestamp'].date()
+        incoming_datetime = datetime.strptime(data['Timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
+        incoming_date = incoming_datetime.date()
+        formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
+
 
         # Compare the dates and calculate TotalCustomers
         if queried_date != incoming_date or not queried_date:
@@ -43,7 +46,7 @@ async def upload_data_to_db(data):
         cursor.execute("""
             INSERT INTO CustomerCount (Timestamp, TotalCustomers, EnteringCustomers, ExitingCustomers, TimeInterval)
             VALUES (?, ?, ?, ?, ?)
-        """, (data['Timestamp'], TotalCustomers, data['EnteringCustomers'], data['ExitingCustomers'], TimeInterval))
+        """, (formatted_timestamp, TotalCustomers, data['EnteringCustomers'], data['ExitingCustomers'], TimeInterval))
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
