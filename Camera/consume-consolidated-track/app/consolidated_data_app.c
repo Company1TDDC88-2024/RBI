@@ -82,42 +82,46 @@ static void send_accumulated_detections(json_t *accumulated_detections) {
 
 static void process_human_detections(const char* payload_data, size_t size) {
     json_t* root = json_loadb(payload_data, size, 0, NULL);
-    json_t* frame = json_object_get(root, "frame");
-    json_t* observations = json_object_get(frame, "observations");
-
-    json_t *accumulated_detections = json_array();
+    json_t* classes = json_object_get(root, "classes");
+    json_t* observations = json_object_get(root, "observations");
+    const char* id = json_string_value(json_object_get(root, "id"));
+    const char* start_time = json_string_value(json_object_get(root, "start_time"));
+    const char* end_time = json_string_value(json_object_get(root, "end_time"));
+    
+    json_t* accumulated_detections = json_array();
 
     size_t index;
     json_t* detection;
     json_array_foreach(observations, index, detection) {
-        json_t* class_obj = json_object_get(detection, "class");
-        const char* type = json_string_value(json_object_get(class_obj, "type"));
+        const char* type = json_string_value(json_object_get(classes, "type"));
 
         if (type && strcmp(type, "Human") == 0) {
-            json_t* bounding_box = json_object_get(detection, "bounding_box");            
+            json_t* bounding_box = json_object_get(detection, "bounding_box");
             double bottom = json_number_value(json_object_get(bounding_box, "bottom"));
-            double left   = json_number_value(json_object_get(bounding_box, "left"));            
-            double right  = json_number_value(json_object_get(bounding_box, "right"));
-            double top    = json_number_value(json_object_get(bounding_box, "top"));
-            double score = json_number_value(json_object_get(class_obj, "score"));
-            const char* track_id = json_string_value(json_object_get(detection, "track_id"));
+            double left = json_number_value(json_object_get(bounding_box, "left"));
+            double right = json_number_value(json_object_get(bounding_box, "right"));
+            double top = json_number_value(json_object_get(bounding_box, "top"));
             const char* timestamp = json_string_value(json_object_get(detection, "timestamp"));
 
-            json_t* detection_obj = json_pack("{s:s, s:s, s:f, s:f, s:f, s:f, s:f}",
-                                              "track_id", track_id,
-                                              "timestamp", timestamp,
-                                              "bottom", bottom,
-                                              "left", left,
-                                              "right", right,
-                                              "top", top,
-                                              "score", score);
+            json_t* detection_obj = json_pack("{s:f, s:f, s:f, s:f, s:s}",
+                                               "bottom", bottom,
+                                               "left", left,
+                                               "right", right,
+                                               "top", top,
+                                               "timestamp", timestamp);
             json_array_append_new(accumulated_detections, detection_obj);
         }
     }
 
-    send_accumulated_detections(accumulated_detections);
+    json_t* time_frame_obj = json_pack("{s:s, s:s, s:s, s:o}", 
+                                        "id", id, 
+                                        "start_time", start_time, 
+                                        "end_time", end_time, 
+                                        "observations", accumulated_detections);
+    send_accumulated_detections(time_frame_obj);
 
     json_decref(accumulated_detections);
+    json_decref(time_frame_obj); 
     json_decref(root); 
 }
 
@@ -131,7 +135,6 @@ static void on_message(const mdb_message_t* message, void* user_data) {
 
     process_human_detections((const char*)payload->data, payload->size);
 }
-
 
 static void on_done_subscriber_create(const mdb_error_t* error, void* user_data) {
     if (error != NULL) {

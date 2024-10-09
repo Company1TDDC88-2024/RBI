@@ -49,12 +49,11 @@ static void on_connection_error(mdb_error_t* error, void* user_data) {
     abort();
 }
 
-
 void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/acap-data");
+        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -87,6 +86,7 @@ static void process_human_detections(const char* payload_data, size_t size) {
     json_t* observations = json_object_get(frame, "observations");
 
     json_t *accumulated_detections = json_array();
+    const char* timestamp = NULL;
 
     size_t index;
     json_t* detection;
@@ -100,25 +100,25 @@ static void process_human_detections(const char* payload_data, size_t size) {
             double left   = json_number_value(json_object_get(bounding_box, "left"));            
             double right  = json_number_value(json_object_get(bounding_box, "right"));
             double top    = json_number_value(json_object_get(bounding_box, "top"));
-            double score = json_number_value(json_object_get(class_obj, "score"));
             const char* track_id = json_string_value(json_object_get(detection, "track_id"));
-            const char* timestamp = json_string_value(json_object_get(detection, "timestamp"));
+            const char* current_timestamp = json_string_value(json_object_get(detection, "timestamp"));
 
-            json_t* detection_obj = json_pack("{s:s, s:s, s:f, s:f, s:f, s:f, s:f}",
+            timestamp = current_timestamp;
+            json_t* detection_obj = json_pack("{s:s, s:f, s:f, s:f, s:f}",
                                               "track_id", track_id,
-                                              "timestamp", timestamp,
                                               "bottom", bottom,
                                               "left", left,
                                               "right", right,
-                                              "top", top,
-                                              "score", score);
+                                              "top", top);
             json_array_append_new(accumulated_detections, detection_obj);
         }
     }
 
-    send_accumulated_detections(accumulated_detections);
+    json_t* time_frame_obj = json_pack("{s:s, s:o}", "timestamp", timestamp, "observations", accumulated_detections);
+    send_accumulated_detections(time_frame_obj);
 
     json_decref(accumulated_detections);
+    json_decref(time_frame_obj);
     json_decref(root); 
 }
 
@@ -132,7 +132,6 @@ static void on_message(const mdb_message_t* message, void* user_data) {
 
     process_human_detections((const char*)payload->data, payload->size);
 }
-
 
 static void on_done_subscriber_create(const mdb_error_t* error, void* user_data) {
     if (error != NULL) {
