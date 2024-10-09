@@ -1,5 +1,5 @@
 import pyodbc
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
@@ -35,11 +35,14 @@ async def upload_data_to_db(data):
         incoming_date = incoming_datetime.date()
         formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
 
-
+        print ("queried_date: ", queried_date)
+        print ("incoming_date: ", incoming_date)
         # Compare the dates and calculate TotalCustomers
         if queried_date != incoming_date or not queried_date:
+            print ("Resetting TotalCustomers")
             TotalCustomers = 0  # Reset TotalCustomers if the dates are different
         else:
+            print ("Calculating TotalCustomers")
             TotalCustomers = previous_total_customers + data['EnteringCustomers'] - data['ExitingCustomers']
         
         # Lägger till data i CustomerCount-tabellen
@@ -64,10 +67,13 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
 
     try:
         # Fecth all data from CustomerCount table, if no start_date or end_date is provided
-        query = ("SELECT ID, NumberOfCustomers, Timestamp FROM CustomerCount")
+        query = ("SELECT ID, TotalCustomers, Timestamp FROM CustomerCount")
         params = []
 
         if start_date and end_date:
+            # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
+            if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
+                end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
             params.extend([start_date, end_date])
         elif start_date:
@@ -83,7 +89,7 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
         for row in rows:
             data.append({
                 'ID': row[0],
-                'NumberOfCustomers': row[1],
+                'TotalCustomers': row[1],
                 'Timestamp': row[2],
             })
         return data
@@ -118,6 +124,34 @@ async def get_number_of_customers(start_timestamp, end_timestamp):
         average_customers = total_customers / len(rows)
         
         return int(average_customers)  # Returnera ett heltal
+    except pyodbc.Error as e:
+        print(f"Error fetching data: {e}")
+        return "Error fetching data"
+    finally:
+        conn.close()
+
+async def get_daily_data_from_db(date: datetime) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+
+    cursor = conn.cursor()
+
+    try:
+        # Fetch all data from CustomerCount table where the date matches the provided date
+        query = ("SELECT ID, TotalCustomers, Timestamp, EnteringCustomers, ExitingCustomers FROM CustomerCount WHERE CAST(Timestamp AS DATE) = ?")
+        cursor.execute(query, (date,))
+        rows = cursor.fetchall()
+        data = []
+        for row in rows:
+            data.append({
+                'ID': row[0],
+                'TotalCustomers': row[1],
+                'Timestamp': row[2],
+                'EnteringCustomers': row[3],
+                'ExitingCustomers': row[4],
+            })
+        return data
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
         return "Error fetching data"

@@ -4,6 +4,8 @@ import { Card, Row, Col, Spin, Alert, Table, DatePicker } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
 import styles from "./DashboardPage.module.css";
+import DateTimeDisplay from './DateTimeDisplay'; // Adjust the path if necessary
+
 
 const { RangePicker } = DatePicker;
 
@@ -42,20 +44,23 @@ const DashboardPage = () => {
       key: 'timestamp',
     },
     {
-      title: 'Number of Customers',
-      dataIndex: 'NumberOfCustomers',
-      key: 'numberOfCustomers',
+      title: 'Total Customers',
+      dataIndex: 'TotalCustomers',
+      key: 'totalCustomers',
     },
   ];
+
+  console.log(data);
 
   return (
     <div className={styles.dashboardContainer}>
       <h1>Dashboard</h1>
+      <DateTimeDisplay />
       <RangePicker onChange={onDateChange} />
       <Row gutter={16}>
         <Col span={12}>
           <Card title="Customer Count Data" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <Table dataSource={data || []} columns={columns} rowKey="Timestamp" />
+            <Table dataSource={data || []} columns={columns} rowKey="Timestamp" pagination={{ pageSize: 5 }}/>
           </Card>
         </Col>
         <Col span={12}>
@@ -67,7 +72,7 @@ const DashboardPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="NumberOfCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="TotalCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
           </Card>
