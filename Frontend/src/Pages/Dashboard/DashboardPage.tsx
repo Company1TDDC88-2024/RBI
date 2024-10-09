@@ -4,9 +4,11 @@ import { Card, Row, Col, Spin, Alert, Table, DatePicker, Button } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "./Hooks/useGetQueueCount"; // Import the Queue Count hook
+import { useGetDailyCustomers } from './Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
 import styles from "./DashboardPage.module.css";
 import DateTimeDisplay from './DateTimeDisplay'; 
 import moment from 'moment';
+
 
 const { RangePicker } = DatePicker;
 
@@ -23,26 +25,32 @@ const DashboardPage = () => {
   const [frequency, setFrequency] = useState<'10min' | '1hour' | '1day'>('10min'); 
   const [processedData, setProcessedData] = useState<any[]>([]); 
 
-  // Fetch customer count data
+  const currentDate = new Date().toISOString().split("T")[0]; // Get current date
+
+  // Set the default date range to the last 7 days
   useEffect(() => {
-    const endDate = new Date();
+    const endDate = currentDate; // Use the current date
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 7);
+    startDate.setDate(new Date().getDate() - 7);
 
     const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-    setDates([formatDate(startDate), formatDate(endDate)]);
-  }, []);
+    setDates([formatDate(startDate), endDate]);
+  }, [currentDate]); // Dependency on currentDate
 
-  const { data, error, loading } = useGetCustomerCount(dates[0], dates[1]);
+  // Fetch customer count data
+  const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
+  
+  // Fetch daily customers data
+  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
 
   const onDateChange = (dates: any, dateStrings: [string, string]) => {
     setDates(dateStrings);
   };
 
-  const processData = (data: any[], frequency: '10min' | '1hour' | '1day') => {
+  const processData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
     const result: any = {};
-    data.forEach(item => {
+    customerCountData.forEach(item => {
       const timestamp = new Date(item.Timestamp);
       let key: string;
 
@@ -63,19 +71,20 @@ const DashboardPage = () => {
   };
 
   useEffect(() => {
-    if (data) {
-      setProcessedData(processData(data, frequency));
+    if (customerCountData) {
+      setProcessedData(processData(customerCountData, frequency));
     }
-  }, [data, frequency]);
+  }, [customerCountData, frequency]);
 
   // Fetch queue count data
   const { data: queueData, loading: queueLoading, error: queueError } = useGetQueueCount(); // Fetch queue data
 
-  if (loading || queueLoading) {
+  if (queueLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
   }
 
-  if (error || queueError) {
+  const error = customerCountError || queueError || dailyCustomerError;
+  if (error) {
     return <Alert message="Error" description={error?.message || queueError?.message} type="error" showIcon />;
   }
 
@@ -152,30 +161,17 @@ const DashboardPage = () => {
       </Row>
       
       <Row gutter={16}>
-  <Col span={12}>
-    <Card title="Queue Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-      <h2>Current Number of Customers in Queue: {queueData?.NumberOfCustomers || 0}</h2>
-    </Card>
-  </Col>
-</Row>
-
-
-      <Row gutter={16}>
         <Col span={12}>
-          <Card title="Screen 3" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            Screen content
+          <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <h3>Number of customers today: {dailyCustomerData?.totalEnteringCustomers}</h3>
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="Screen 4" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            Screen content
+          <Card title="Queue Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            <h3>Current Number of Customers in Queue: {queueData?.NumberOfCustomers || 0}</h3>
           </Card>
         </Col>
       </Row>
-
-      <p>
-        Click <Link to="/test">here</Link> to get a message from the backend
-      </p>
     </div>
   );
 };
