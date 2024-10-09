@@ -29,7 +29,7 @@ async def upload_data():
     # Create new JSON object to upload
     
 
-    result = await upload_data_to_db(upload_data)
+    result = await upload_data_to_db(data)
     return jsonify({'message': result}), 200
 
 
