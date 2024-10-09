@@ -12,7 +12,6 @@ const { RangePicker } = DatePicker;
 const DashboardPage = () => {
   const [dates, setDates] = useState<[string, string]>(["", ""]);
 
-  // Get the current date once
   const currentDate = new Date().toISOString().split("T")[0]; // Get current date
 
   // Set the default date range to the last 7 days
