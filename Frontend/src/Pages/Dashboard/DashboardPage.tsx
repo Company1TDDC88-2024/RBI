@@ -23,7 +23,8 @@ const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day
 const DashboardPage = () => {
   const [dates, setDates] = useState<[string, string]>(["", ""]);
   const [frequency, setFrequency] = useState<'10min' | '1hour' | '1day'>('10min'); 
-  const [processedData, setProcessedData] = useState<any[]>([]); 
+  const [processedData, setProcessedData] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>('Never');
 
   const currentDate = new Date().toISOString().split("T")[0]; // Get current date
 
@@ -40,9 +41,15 @@ const DashboardPage = () => {
 
   // Fetch customer count data
   const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
-  
   // Fetch daily customers data
   const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
+
+  // Update the last updated time when the data changes
+  useEffect(() => {
+    if (customerCountData || dailyCustomerData) {
+      setLastUpdated(moment().format('HH:mm:ss'));
+    }
+  }, [customerCountData, dailyCustomerData]);
 
   const onDateChange = (dates: any, dateStrings: [string, string]) => {
     setDates(dateStrings);
@@ -104,7 +111,7 @@ const DashboardPage = () => {
   return (
     <div className={styles.dashboardContainer}>
       <h1>Dashboard</h1>
-      <DateTimeDisplay />
+      <DateTimeDisplay lastUpdated={lastUpdated} />
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>
           <RangePicker onChange={onDateChange} />
