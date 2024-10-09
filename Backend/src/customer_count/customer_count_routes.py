@@ -9,12 +9,13 @@ customer_count_bp = Blueprint('customer_count', __name__)
 async def upload_data():
     data = request.json
     
-    # Kontrollera att nödvändig data finns
-    if 'EnteringCustomers' not in data or 'ExitingCustomers' not in data or 'Timestamp' not in data:
-        return jsonify({'message': 'Missing Entering or Exiting number of customers or Timestamp'}), 400
+    
+    # # Kontrollera att nödvändig data finns
+    # if 'EnteringCustomers' not in data or 'ExitingCustomers' not in data or 'Timestamp' not in data:
+    #     return jsonify({'message': 'Missing Entering or Exiting number of customers or Timestamp'}), 400
 
-    result = await upload_data_to_db(data)
-    return jsonify({'message': result})
+    # result = await upload_data_to_db(data)
+    # return jsonify({'message': result}) 
 
 @customer_count_bp.route('/get', methods=['GET'])
 async def get_data():
