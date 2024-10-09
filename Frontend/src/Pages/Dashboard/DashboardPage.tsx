@@ -3,36 +3,45 @@ import { Link } from "react-router-dom";
 import { Card, Row, Col, Spin, Alert, Table, DatePicker } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
+import { useGetDailyCustomers } from './Hooks/useGetDailyCustomers';
 import styles from "./DashboardPage.module.css";
 import DateTimeDisplay from './DateTimeDisplay'; // Adjust the path if necessary
-
 
 const { RangePicker } = DatePicker;
 
 const DashboardPage = () => {
   const [dates, setDates] = useState<[string, string]>(["", ""]);
 
-  // set the default date range to the last 7 days
+  // Get the current date once
+  const currentDate = new Date().toISOString().split("T")[0]; // Get current date
+
+  // Set the default date range to the last 7 days
   useEffect(() => {
-    const endDate = new Date();
+    const endDate = currentDate; // Use the current date
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 7);
+    startDate.setDate(new Date().getDate() - 7);
 
     const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-    setDates([formatDate(startDate), formatDate(endDate)]);
-  }, []);
+    setDates([formatDate(startDate), endDate]);
+  }, [currentDate]); // Dependency on currentDate
 
-  const { data, error, loading } = useGetCustomerCount(dates[0], dates[1]);
+  // Fetch customer count data
+  const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
+  
+  // Fetch daily customers data
+  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
 
   const onDateChange = (dates: any, dateStrings: [string, string]) => {
     setDates(dateStrings);
   };
 
-  if (loading) {
+  // Handle loading and error states
+  if (customerCountLoading || dailyCustomerLoading) {
     return <Spin tip="Loading..." />;
   }
 
+  const error = customerCountError || dailyCustomerError; // Check for any errors
   if (error) {
     return <Alert message="Error" description={error.message} type="error" showIcon />;
   }
@@ -50,7 +59,7 @@ const DashboardPage = () => {
     },
   ];
 
-  console.log(data);
+  console.log(customerCountData, dailyCustomerData); // Log both datasets
 
   return (
     <div className={styles.dashboardContainer}>
@@ -60,13 +69,13 @@ const DashboardPage = () => {
       <Row gutter={16}>
         <Col span={12}>
           <Card title="Customer Count Data" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <Table dataSource={data || []} columns={columns} rowKey="Timestamp" pagination={{ pageSize: 5 }}/>
+            <Table dataSource={customerCountData || []} columns={columns} rowKey="Timestamp" pagination={{ pageSize: 5 }}/>
           </Card>
         </Col>
         <Col span={12}>
           <Card title="Customer Count Over Time" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data || []}>
+              <LineChart data={customerCountData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="Timestamp" />
                 <YAxis />
@@ -80,8 +89,8 @@ const DashboardPage = () => {
       </Row>
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Screen 3" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            Screen content
+          <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            {dailyCustomerData?.totalEnteringCustomers}
           </Card>
         </Col>
         <Col span={12}>
