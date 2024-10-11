@@ -51,12 +51,33 @@ static void on_connection_error(mdb_error_t *error, void *user_data)
     abort();
 }
 
+void send_json_to_server(const char *json_str) {
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
+
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            syslog(LOG_INFO, "cURL error");
+        }
+
+        curl_easy_cleanup(curl);
+        curl_slist_free_all(headers);
+    }
+}
+
 static void process_human_detections(const char *payload_data, size_t size)
 {
     json_t *root = json_loadb(payload_data, size, 0, NULL);
 
     json_t *classes = json_object_get(root, "classes");
-    const char *type = json_string_value(json_object_get(classes, "type"));
+    const char *type = json_string_value(json_object_get(json_array_get(classes, 0), "type"));
     const char *id = json_string_value(json_object_get(root, "id"));
     json_t *observations = json_object_get(root, "observations");
 
@@ -70,10 +91,13 @@ static void process_human_detections(const char *payload_data, size_t size)
         json_t *observation;
         json_array_foreach(observations, index, observation)
         {
-            json_t *bounding_box = json_object_get(observation, "bounding_box");
-            const char *timestamp = json_string_value(json_object_get(observation, "timestamp"));
+            json_t *filtered_observation = json_object();
 
-            json_t *filtered_observation = json_pack("{s:o, s:s}", "bounding_box", json_deep_copy(bounding_box), "timestamp", timestamp);
+            json_t *bounding_box = json_object_get(observation, "bounding_box");
+            json_object_set_new(filtered_observation, "bounding_box", json_deep_copy(bounding_box));
+
+            const char *timestamp = json_string_value(json_object_get(observation, "timestamp"));
+            json_object_set_new(filtered_observation, "timestamp", json_string(timestamp));
 
             json_array_append_new(filtered_observations, filtered_observation);
         }
@@ -85,7 +109,7 @@ static void process_human_detections(const char *payload_data, size_t size)
 
     if (json_array_size(filtered_observations) > 0)
     {
-        syslog(LOG_INFO, "Restructured JSON output: %s", json_str);
+        send_json_to_server(json_str);
     }
 
     free(json_str);
@@ -96,11 +120,7 @@ static void process_human_detections(const char *payload_data, size_t size)
 static void on_message(const mdb_message_t *message, void *user_data)
 {
     const mdb_message_payload_t *payload = mdb_message_get_payload(message);
-    channel_identifier_t *channel_identifier = (channel_identifier_t *)user_data;
-    syslog(LOG_INFO,
-           "Subscribed to %s (%s)...",
-           channel_identifier->topic,
-           channel_identifier->source);
+    (void)user_data;
 
     process_human_detections((const char *)payload->data, payload->size);
 }

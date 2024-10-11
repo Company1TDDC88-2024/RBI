@@ -27,6 +27,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <jansson.h>
+#include <curl/curl.h>
 
 #include <mdb/connection.h>
 #include <mdb/error.h>
@@ -38,11 +39,34 @@ typedef struct channel_identifier
     char *source;
 } channel_identifier_t;
 
+void send_json_to_server(const char *json_str);
+
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {
     (void)user_data;
     syslog(LOG_ERR, "Got connection error: %s, Aborting...", error->message);
     abort();
+}
+
+void send_json_to_server(const char *json_str) {
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
+
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            syslog(LOG_INFO, "cURL error");
+        }
+
+        curl_easy_cleanup(curl);
+        curl_slist_free_all(headers);
+    }
 }
 
 static void process_human_detections(const char *payload_data, size_t size)
@@ -85,7 +109,7 @@ static void process_human_detections(const char *payload_data, size_t size)
 
     if (json_array_size(filtered_observations) > 0)
     {
-        syslog(LOG_INFO, "Restructured JSON output: %s", json_str);
+        send_json_to_server(json_str);
     }
     
     free(json_str);
