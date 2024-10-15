@@ -1,6 +1,7 @@
 ---
 stages:
   - deploy
+  #- test
 
 variables:
   LIU_COURSE_CODE: tddc88
@@ -8,6 +9,12 @@ variables:
   LIU_GROUP_NAME: company1
   LIU_PROJECT_HOST: ${LIU_COURSE_CODE}-${LIU_GROUP_NAME}-${LIU_COURSE_TERM}.kubernetes-public.it.liu.se
   POD_NAMESPACE: tddc88-ht24-company1
+
+#test:
+    #stage: test
+    #script:
+        #- Execute tests depending on what tool we are using and path to file with all the tests 
+
 
 retrieve kubeconfig:
   stage: deploy

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite --force",
+    "start": "concurrently \"vite --force\" \"cd ../Backend && poetry run flask --app server run --port=5555 --reload\"",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
