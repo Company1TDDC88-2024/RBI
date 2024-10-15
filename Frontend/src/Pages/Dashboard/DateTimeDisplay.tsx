@@ -4,23 +4,22 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 
-const DateTimeDisplay: React.FC = () => {
-    const [currentTime, setCurrentTime] = useState<string>(moment().format('LTS'));
+interface DateTimeDisplayProps {
+    lastUpdated: string;
+  }
+
+const DateTimeDisplay: React.FC<DateTimeDisplayProps> = ({ lastUpdated }) => {
+    const [currentTime, setCurrentTime] = useState<string>(moment().format('HH:mm:ss'));
     const [currentDate, setCurrentDate] = useState<string>(moment().format('LL'));
-    const [lastUpdated, setLastUpdated] = useState<string>('');
 
     useEffect(() => {
         const timerId = setInterval(() => {
-            setCurrentTime(moment().format('LTS'));
+            setCurrentTime(moment().format('HH:mm:ss'));
             setCurrentDate(moment().format('LL'));
         }, 1000);
 
         return () => clearInterval(timerId);
     }, []);
-
-    const updateLastUpdated = () => {
-        setLastUpdated(moment().format('LTS'));
-    };
 
     return (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1em 0' }}>
@@ -29,9 +28,6 @@ const DateTimeDisplay: React.FC = () => {
             </div>
             <div>
                 Last Updated: {lastUpdated || 'Never'}
-                <button onClick={updateLastUpdated} style={{ marginLeft: '1em' }}>
-                    Update Time
-                </button>
             </div>
         </div>
     );

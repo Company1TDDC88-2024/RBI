@@ -34,14 +34,16 @@
 #include <mdb/error.h>
 #include <mdb/subscriber.h>
 
-typedef struct channel_identifier {
-    char* topic;
-    char* source;
+typedef struct channel_identifier
+{
+    char *topic;
+    char *source;
 } channel_identifier_t;
 
 void send_json_to_server(const char *json_str);
 
-static void on_connection_error(mdb_error_t* error, void* user_data) {
+static void on_connection_error(mdb_error_t *error, void *user_data)
+{
     (void)user_data;
 
     syslog(LOG_ERR, "Got connection error: %s, Aborting...", error->message);
@@ -53,7 +55,7 @@ void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/acap-data");
+        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -70,78 +72,67 @@ void send_json_to_server(const char *json_str) {
     }
 }
 
-static void send_accumulated_detections(json_t *accumulated_detections) {
-    if (json_array_size(accumulated_detections) > 0) {
-        char *json_str = json_dumps(accumulated_detections, 0);
-        
-        send_json_to_server(json_str);
-        free(json_str);
-        json_array_clear(accumulated_detections);
-    }
-}
+static void process_human_detections(const char *payload_data, size_t size)
+{
+    json_t *root = json_loadb(payload_data, size, 0, NULL);
 
-static void process_human_detections(const char* payload_data, size_t size) {
-    json_t* root = json_loadb(payload_data, size, 0, NULL);
-    json_t* classes = json_object_get(root, "classes");
-    json_t* observations = json_object_get(root, "observations");
-    const char* id = json_string_value(json_object_get(root, "id"));
-    const char* start_time = json_string_value(json_object_get(root, "start_time"));
-    const char* end_time = json_string_value(json_object_get(root, "end_time"));
-    
-    json_t* accumulated_detections = json_array();
+    json_t *classes = json_object_get(root, "classes");
+    const char *type = json_string_value(json_object_get(json_array_get(classes, 0), "type"));
+    const char *id = json_string_value(json_object_get(root, "id"));
+    json_t *observations = json_object_get(root, "observations");
 
-    size_t index;
-    json_t* detection;
-    json_array_foreach(observations, index, detection) {
-        const char* type = json_string_value(json_object_get(classes, "type"));
+    json_t *output_json = json_object();
+    json_object_set_new(output_json, "id", json_string(id));
+    json_t *filtered_observations = json_array();
 
-        if (type && strcmp(type, "Human") == 0) {
-            json_t* bounding_box = json_object_get(detection, "bounding_box");
-            double bottom = json_number_value(json_object_get(bounding_box, "bottom"));
-            double left = json_number_value(json_object_get(bounding_box, "left"));
-            double right = json_number_value(json_object_get(bounding_box, "right"));
-            double top = json_number_value(json_object_get(bounding_box, "top"));
-            const char* timestamp = json_string_value(json_object_get(detection, "timestamp"));
+    if (type && strcmp(type, "Human") == 0)
+    {
+        size_t index;
+        json_t *observation;
+        json_array_foreach(observations, index, observation)
+        {
+            json_t *filtered_observation = json_object();
 
-            json_t* detection_obj = json_pack("{s:f, s:f, s:f, s:f, s:s}",
-                                               "bottom", bottom,
-                                               "left", left,
-                                               "right", right,
-                                               "top", top,
-                                               "timestamp", timestamp);
-            json_array_append_new(accumulated_detections, detection_obj);
+            json_t *bounding_box = json_object_get(observation, "bounding_box");
+            json_object_set_new(filtered_observation, "bounding_box", json_deep_copy(bounding_box));
+
+            const char *timestamp = json_string_value(json_object_get(observation, "timestamp"));
+            json_object_set_new(filtered_observation, "timestamp", json_string(timestamp));
+
+            json_array_append_new(filtered_observations, filtered_observation);
         }
     }
 
-    json_t* time_frame_obj = json_pack("{s:s, s:s, s:s, s:o}", 
-                                        "id", id, 
-                                        "start_time", start_time, 
-                                        "end_time", end_time, 
-                                        "observations", accumulated_detections);
-    send_accumulated_detections(time_frame_obj);
+    json_object_set_new(output_json, "observations", filtered_observations);
 
-    json_decref(accumulated_detections);
-    json_decref(time_frame_obj); 
-    json_decref(root); 
+    char *json_str = json_dumps(output_json, 0);
+
+    if (json_array_size(filtered_observations) > 0)
+    {
+        send_json_to_server(json_str);
+    }
+
+    free(json_str);
+    json_decref(output_json);
+    json_decref(root);
 }
 
-static void on_message(const mdb_message_t* message, void* user_data) {    
-    const mdb_message_payload_t* payload = mdb_message_get_payload(message);
-    channel_identifier_t* channel_identifier = (channel_identifier_t*)user_data;
-    syslog(LOG_INFO,
-           "Subscribed to %s (%s)...",
-           channel_identifier->topic,
-           channel_identifier->source);
+static void on_message(const mdb_message_t *message, void *user_data)
+{
+    const mdb_message_payload_t *payload = mdb_message_get_payload(message);
+    (void)user_data;
 
-    process_human_detections((const char*)payload->data, payload->size);
+    process_human_detections((const char *)payload->data, payload->size);
 }
 
-static void on_done_subscriber_create(const mdb_error_t* error, void* user_data) {
-    if (error != NULL) {
+static void on_done_subscriber_create(const mdb_error_t *error, void *user_data)
+{
+    if (error != NULL)
+    {
         syslog(LOG_ERR, "Got subscription error: %s, Aborting...", error->message);
         abort();
     }
-    channel_identifier_t* channel_identifier = (channel_identifier_t*)user_data;
+    channel_identifier_t *channel_identifier = (channel_identifier_t *)user_data;
 
     syslog(LOG_INFO,
            "Subscribed to %s (%s)...",
@@ -149,27 +140,30 @@ static void on_done_subscriber_create(const mdb_error_t* error, void* user_data)
            channel_identifier->source);
 }
 
-static void sig_handler(int signum) {
+static void sig_handler(int signum)
+{
     (void)signum;
     // Do nothing, just let pause in main return.
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     (void)argc;
     (void)argv;
     syslog(LOG_INFO, "Subscriber started...");
 
     // For com.axis.analytics_scene_description.v0.beta source corresponds to the
     // video channel number.
-    channel_identifier_t channel_identifier    = {.topic =
-                                                      "com.axis.consolidated_track.v1.beta",
-                                                  .source = "1"};
-    mdb_error_t* error                         = NULL;
-    mdb_subscriber_config_t* subscriber_config = NULL;
-    mdb_subscriber_t* subscriber               = NULL;
+    channel_identifier_t channel_identifier = {.topic =
+                                                   "com.axis.consolidated_track.v1.beta",
+                                               .source = "1"};
+    mdb_error_t *error = NULL;
+    mdb_subscriber_config_t *subscriber_config = NULL;
+    mdb_subscriber_t *subscriber = NULL;
 
-    mdb_connection_t* connection = mdb_connection_create(on_connection_error, NULL, &error);
-    if (error != NULL) {
+    mdb_connection_t *connection = mdb_connection_create(on_connection_error, NULL, &error);
+    if (error != NULL)
+    {
         goto end;
     }
 
@@ -178,7 +172,8 @@ int main(int argc, char** argv) {
                                                      on_message,
                                                      &channel_identifier,
                                                      &error);
-    if (error != NULL) {
+    if (error != NULL)
+    {
         goto end;
     }
 
@@ -187,7 +182,8 @@ int main(int argc, char** argv) {
                                              on_done_subscriber_create,
                                              &channel_identifier,
                                              &error);
-    if (error != NULL) {
+    if (error != NULL)
+    {
         goto end;
     }
 
@@ -197,7 +193,8 @@ int main(int argc, char** argv) {
     pause();
 
 end:
-    if (error != NULL) {
+    if (error != NULL)
+    {
         syslog(LOG_ERR, "%s", error->message);
     }
 
