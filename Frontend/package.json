@@ -6,7 +6,7 @@
   "scripts": {
     "start": "concurrently \"vite --force\" \"cd ../Backend && poetry run flask --app server run --port=5555 --reload\"",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
