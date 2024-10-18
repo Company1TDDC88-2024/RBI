@@ -102,6 +102,7 @@ deploy:
     - kubectl delete deployment backend-deployment --ignore-not-found
     - kubectl delete service frontend-service --ignore-not-found
     - kubectl delete service backend-service --ignore-not-found
+    - kubectl delete ingress app-ingress -n tddc88-ht24-company1 --ignore-not-found
 
     # Wait for frontend deployment to be deleted
     - kubectl wait --for=delete deployment/frontend-deployment --timeout=60s || echo "Frontend deployment already deleted or timed out"
@@ -114,6 +115,9 @@ deploy:
 
     # Wait for backend service to be deleted
     - kubectl wait --for=delete service/backend-service --timeout=60s || echo "Backend service already deleted or timed out"
+
+    # Wait for ingress to be deleted
+    - kubectl wait --for=delete ingress app-ingress -n tddc88-ht24-company1 --timeout=60s || echo "Ingress already deleted or timed out"
 
     - echo "Deploying backend to Kubernetes..."
     - kubectl apply -f k8s/BE-deployment.yml

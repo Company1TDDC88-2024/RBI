@@ -19,6 +19,9 @@ RUN npm run build --noEmitOnError false
 # Step 2: Serve the application
 FROM docker.io/nginx:alpine
 
+# Remove the default Nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
+
 # Copy the built application from the previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
