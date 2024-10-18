@@ -133,7 +133,9 @@ deploy:
     - kubectl wait --for=condition=ready pod/$POD_NAME --timeout=300s
 
     # Wait for backend to be ready
+    - kubectl get pods
     - kubectl rollout status deployment/backend-deployment --timeout=600s
+    - kubectl get pods
 
     #- kubectl apply -f k8s/resource-quota.yml
     - echo "Deploying frontend to Kubernetes..."
