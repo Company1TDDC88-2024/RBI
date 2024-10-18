@@ -53,7 +53,7 @@ COPY --from=build /app /app
 ENV FLASK_APP=server.py
 
 # Expose the port your application runs on
-EXPOSE 5555
+EXPOSE 80
 
 # Command to run the application using poetry
-CMD ["poetry", "run", "flask", "--app", "server", "run", "--host=0.0.0.0", "--port=5555"]
+CMD ["poetry", "run", "flask", "--app", "server", "run", "--host=0.0.0.0", "--port=80"]
