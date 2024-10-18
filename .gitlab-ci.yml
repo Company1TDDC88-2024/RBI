@@ -156,8 +156,6 @@ deploy:
     - kubectl apply -f k8s/ingress.yml
     - sleep 15
     - kubectl get svc -n tddc88-ht24-company1
-    - kubectl logs -l app.kubernetes.io/name=ingress-nginx -n ingress-nginx
-
     - POD_NAME=$(kubectl get pods -l app=backend -o jsonpath='{.items[0].metadata.name}')
     - POD_NAME_FE=$(kubectl get pods -l app=frontend -o jsonpath='{.items[0].metadata.name}')
     - kubectl describe ingress app-ingress -n tddc88-ht24-company1
