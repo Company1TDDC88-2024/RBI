@@ -119,11 +119,6 @@ deploy:
     # Wait for ingress to be deleted
     - kubectl wait --for=delete ingress app-ingress -n tddc88-ht24-company1 --timeout=60s || echo "Ingress already deleted or timed out"
 
-    # Wait for backend to be ready
-    - kubectl get pods
-    - kubectl rollout status deployment/backend-deployment --timeout=600s
-    - kubectl get pods
-
     #- kubectl apply -f k8s/resource-quota.yml
     - echo "Deploying frontend to Kubernetes..."
     - kubectl apply -f k8s/FE-deployment.yml
@@ -153,9 +148,14 @@ deploy:
     - kubectl get events --sort-by='.metadata.creationTimestamp'
     - kubectl wait --for=condition=ready pod/$POD_NAME --timeout=300s
 
+    # Wait for backend to be ready
+    - kubectl get pods
+    - kubectl rollout status deployment/backend-deployment --timeout=600s
+    - kubectl get pods
+
     # Wait for frontend to be ready
     - kubectl rollout status deployment/frontend-deployment --timeout=240s
-
+    - kubectl get pods
     # Re-deploy backend
 
     # Apply ingress rules
