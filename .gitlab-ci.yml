@@ -119,19 +119,6 @@ deploy:
     # Wait for ingress to be deleted
     - kubectl wait --for=delete ingress app-ingress -n tddc88-ht24-company1 --timeout=60s || echo "Ingress already deleted or timed out"
 
-    - echo "Deploying backend to Kubernetes..."
-    - kubectl apply -f k8s/BE-deployment.yml
-    - kubectl apply -f k8s/BE-service.yml
-    - kubectl get pods
-    - kubectl get deployment backend-deployment
-    - sleep 10
-    - POD_NAME=$(kubectl get pods -l app=backend -o jsonpath='{.items[0].metadata.name}')
-    - echo "Waiting for pod $POD_NAME to be ready..."
-    - echo $POD_NAME
-    - kubectl describe pod $POD_NAME
-    - kubectl get events --sort-by='.metadata.creationTimestamp'
-    - kubectl wait --for=condition=ready pod/$POD_NAME --timeout=300s
-
     # Wait for backend to be ready
     - kubectl get pods
     - kubectl rollout status deployment/backend-deployment --timeout=600s
@@ -147,6 +134,19 @@ deploy:
     - kubectl describe deployment frontend-deployment
     - kubectl get events --sort-by='.metadata.creationTimestamp'
     - POD_NAME=$(kubectl get pods -l app=frontend -o jsonpath='{.items[0].metadata.name}')
+    - echo "Waiting for pod $POD_NAME to be ready..."
+    - echo $POD_NAME
+    - kubectl describe pod $POD_NAME
+    - kubectl get events --sort-by='.metadata.creationTimestamp'
+    - kubectl wait --for=condition=ready pod/$POD_NAME --timeout=300s
+
+    - echo "Deploying backend to Kubernetes..."
+    - kubectl apply -f k8s/BE-deployment.yml
+    - kubectl apply -f k8s/BE-service.yml
+    - kubectl get pods
+    - kubectl get deployment backend-deployment
+    - sleep 10
+    - POD_NAME=$(kubectl get pods -l app=backend -o jsonpath='{.items[0].metadata.name}')
     - echo "Waiting for pod $POD_NAME to be ready..."
     - echo $POD_NAME
     - kubectl describe pod $POD_NAME
