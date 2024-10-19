@@ -14,7 +14,7 @@ async def get_db_connection():
         "Uid=company1admin;"  # SQL Server admin account
         "Pwd=Baljan123;"  # Password for the SQL Server admin account
         "Encrypt=yes;" 
-        "TrustServerCertificate=no;" 
+        "TrustServerCertificate=yes;" 
         "Connection Timeout=30;"
     )
     try:
