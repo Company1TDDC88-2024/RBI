@@ -16,7 +16,7 @@ app.secret_key = secrets.token_hex(16)
 
 
 # Middleware
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 print("Server is running")
 app.register_blueprint(example_bp, url_prefix='/example')
