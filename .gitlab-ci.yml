@@ -176,6 +176,7 @@ deploy:
     - kubectl get events -n $POD_NAMESPACE --sort-by='.metadata.creationTimestamp'
     - echo "Checking endpoint availability..."
     - kubectl get endpoints -n $POD_NAMESPACE
+    - kubectl get pods -n tddc88-ht24-company1 --show-labels
     - kubectl describe ingress app-ingress -n tddc88-ht24-company1
     - kubectl logs $POD_NAME_FE -n tddc88-ht24-company1
     #- kubectl exec -it $POD_NAME_FE -n tddc88-ht24-company1 -- cat /etc/nginx/conf.d/default.conf
