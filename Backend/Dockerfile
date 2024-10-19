@@ -9,11 +9,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bullseye/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends msodbcsql18 \
+    && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg
+
+# Download and install the ODBC driver manually
+RUN curl -O https://packages.microsoft.com/debian/11/prod/pool/main/m/msodbcsql18/msodbcsql18_18.2.2.1-1_amd64.deb \
+    && apt-get install -y ./msodbcsql18_18.2.2.1-1_amd64.deb \
+    && rm msodbcsql18_18.2.2.1-1_amd64.deb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -58,10 +59,9 @@ COPY --from=build /root/.cache/pypoetry /root/.cache/pypoetry
 # Install system dependencies and ODBC driver
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc curl apt-transport-https gnupg \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bullseye/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends msodbcsql18 \
+    && curl -O https://packages.microsoft.com/debian/11/prod/pool/main/m/msodbcsql18/msodbcsql18_18.2.2.1-1_amd64.deb \
+    && apt-get install -y ./msodbcsql18_18.2.2.1-1_amd64.deb \
+    && rm msodbcsql18_18.2.2.1-1_amd64.deb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
