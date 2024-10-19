@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bookworm/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bullseye/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
@@ -59,7 +59,7 @@ COPY --from=build /root/.cache/pypoetry /root/.cache/pypoetry
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc curl apt-transport-https gnupg \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bookworm/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/bullseye/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
