@@ -20,13 +20,10 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 print("Server is running")
 app.register_blueprint(example_bp, url_prefix='/api/example')
-app.register_blueprint(customer_count_bp, url_prefix='/customer_count')
-app.register_blueprint(queue_count_bp, url_prefix='/queue_count')
-app.register_blueprint(coordinates_bp, url_prefix='/coordinates')
-app.register_blueprint(date_bp, url_prefix='/date')
-app.register_blueprint(login_bp, url_prefix='/login')
-
-logging.basicConfig(level=logging.INFO)
+app.register_blueprint(customer_count_bp, url_prefix='/api/customer_count')
+app.register_blueprint(queue_count_bp, url_prefix='/api/queue_count')
+app.register_blueprint(coordinates_bp, url_prefix='/api/coordinates')
+app.register_blueprint(date_bp, url_prefix='/api/date')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
