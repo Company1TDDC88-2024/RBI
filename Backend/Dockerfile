@@ -2,16 +2,16 @@
 FROM python:3.10-slim AS build
 
 # Set environment variables
-ENV POETRY_VERSION=1.6.1 
+ENV POETRY_VERSION=1.6.1
 
 # Install system dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
+    && apt-get install -y --no-install-recommends gcc unixodbc-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN pip install --no-cache-dir poetry==$POETRY_VERSION
+RUN pip install --no-cache-dir "poetry==1.6.1"
 
 # Ensure Poetry is in the PATH
 ENV PATH="/root/.local/bin:$PATH"
@@ -19,36 +19,44 @@ ENV PATH="/root/.local/bin:$PATH"
 # Set the working directory
 WORKDIR /app
 
+# Create the global virtualenvs directory and configure Poetry to use it
+RUN mkdir -p /root/.cache/pypoetry/virtualenvs \
+    && poetry config virtualenvs.path /root/.cache/pypoetry/virtualenvs
+
 # Copy the dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Disable virtualenv creation and install dependencies globally
-RUN poetry config virtualenvs.create false \
+# Enable virtualenv creation and install dependencies
+RUN poetry config virtualenvs.create true \
     && poetry install --no-dev --no-interaction --no-ansi
 
 # Copy the rest of the application code
 COPY . .
 
-# Step 2: Final image
+# Step 2: Run the application
 FROM python:3.10-slim
 
 # Set environment variables
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Set the working directory
 WORKDIR /app
 
-# Copy the installed dependencies and application code from the build stage
+# Copy only the installed dependencies and application from the build stage
 COPY --from=build /app /app
+COPY --from=build /root/.cache/pypoetry /root/.cache/pypoetry
 
-# Expose the port your application will run on
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc unixodbc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variable for Flask
+ENV FLASK_APP=server.py
+
+# Expose the port your application runs on
 EXPOSE 80
 
-# Command to run the application using Gunicorn
-CMD ["poetry", "run", "gunicorn", "-w", "4", "-b", "0.0.0.0:80", "server:app"]
+# Command to run the application using poetry
+CMD ["/root/.cache/pypoetry/virtualenvs/backend-9TtSrW0h-py3.10/bin/python", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]

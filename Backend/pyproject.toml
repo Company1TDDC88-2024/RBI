@@ -3,10 +3,8 @@ name = "backend"
 version = "0.1.0"
 description = ""
 authors = ["Philip Hilding <philip.hilding@hotmail.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
-gunicorn = "^20.0"
 python = "^3.10"
 Flask = {extras = ["async"], version = "^3.0.3"}
 flask-cors = "^5.0.0"
