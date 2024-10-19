@@ -19,4 +19,4 @@ app.register_blueprint(coordinates_bp, url_prefix='/coordinates')
 app.register_blueprint(date_bp, url_prefix='/date')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
