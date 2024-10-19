@@ -9,7 +9,7 @@ from src.example.date_routes import date_bp
 app = Flask(__name__)
 
 # Middleware
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 print("Server is running")
 app.register_blueprint(example_bp, url_prefix='/example')
