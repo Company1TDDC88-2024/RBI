@@ -1,5 +1,4 @@
 import pyodbc
-import asyncio
 from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
@@ -123,15 +122,15 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
     if conn is None:
         return "Failed to connect to database"
 
+    cursor = conn.cursor()
+
     try:
-        cursor = conn.cursor()
-        
-        # Fetch all data from CustomerCount table if no start_date or end_date is provided
-        query = "SELECT ID, TotalCustomers, Timestamp FROM CustomerCount"
+        # Fecth all data from CustomerCount table, if no start_date or end_date is provided
+        query = ("SELECT ID, TotalCustomers, Timestamp FROM CustomerCount")
         params = []
 
         if start_date and end_date:
-            # Adjust end_date to the end of the day if it's the same day or one day apart
+            # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
             if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
                 end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
@@ -144,14 +143,15 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
             query += " WHERE Timestamp <= ?"
             params.append(end_date)
 
-        # Run the cursor.execute and fetchall calls asynchronously
-        await asyncio.to_thread(cursor.execute, query, params)
-        rows = await asyncio.to_thread(cursor.fetchall)
-        
-        data = [
-            {'ID': row[0], 'TotalCustomers': row[1], 'Timestamp': row[2]}
-            for row in rows
-        ]
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        data = []
+        for row in rows:
+            data.append({
+                'ID': row[0],
+                'TotalCustomers': row[1],
+                'Timestamp': row[2],
+            })
         return data
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
