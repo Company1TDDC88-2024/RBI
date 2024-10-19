@@ -3,6 +3,7 @@ FROM python:3.10 AS build
 
 # Set environment variables
 ENV POETRY_VERSION=1.6.1
+ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update \
@@ -54,6 +55,7 @@ RUN apt-get update \
 
 # Set environment variable for Flask
 ENV FLASK_APP=server.py
+ENV PYTHONUNBUFFERED=1
 
 # Expose the port your application runs on
 EXPOSE 80
