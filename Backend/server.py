@@ -19,7 +19,7 @@ app.secret_key = secrets.token_hex(16)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 print("Server is running")
-app.register_blueprint(example_bp, url_prefix='/example')
+app.register_blueprint(example_bp, url_prefix='api/example')
 app.register_blueprint(customer_count_bp, url_prefix='/customer_count')
 app.register_blueprint(queue_count_bp, url_prefix='/queue_count')
 app.register_blueprint(coordinates_bp, url_prefix='/coordinates')
