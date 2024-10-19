@@ -3,7 +3,9 @@ kind: NetworkPolicy
 metadata:
   name: allow-outbound-to-azure
 spec:
-  podSelector: {} # Applies to all pods in the namespace
+  podSelector:
+    matchLabels:
+      app: backend
   policyTypes:
     - Egress
   egress:
