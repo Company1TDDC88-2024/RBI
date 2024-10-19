@@ -4,10 +4,16 @@ FROM python:3.10 AS build
 # Set environment variables
 ENV POETRY_VERSION=1.6.1
 ENV PYTHONUNBUFFERED=1
+ENV ACCEPT_EULA=Y
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc unixodbc-dev \
+    && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/$(lsb_release -sr)/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,6 +45,8 @@ FROM python:3.10
 
 # Set environment variables
 ENV PATH="/root/.local/bin:$PATH"
+ENV ACCEPT_EULA=Y
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the working directory
 WORKDIR /app
@@ -47,9 +55,13 @@ WORKDIR /app
 COPY --from=build /app /app
 COPY --from=build /root/.cache/pypoetry /root/.cache/pypoetry
 
-# Install system dependencies
+# Install system dependencies and ODBC driver
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc unixodbc \
+    && apt-get install -y --no-install-recommends gcc unixodbc curl apt-transport-https gnupg \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/$(lsb_release -sr)/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
