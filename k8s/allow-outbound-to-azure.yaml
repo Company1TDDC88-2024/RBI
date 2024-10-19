@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-outbound-to-azure
-  namespace: back
+  namespace: backend_namespace
   podSelector: {} # Applies to all pods in the namespace
   policyTypes:
     - Egress
