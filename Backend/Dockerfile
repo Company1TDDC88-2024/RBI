@@ -1,5 +1,5 @@
 # Step 1: Build the application
-FROM python:3.10-slim AS build
+FROM python:3.10 AS build
 
 # Set environment variables
 ENV POETRY_VERSION=1.6.1
@@ -34,7 +34,7 @@ RUN poetry config virtualenvs.create true \
 COPY . .
 
 # Step 2: Run the application
-FROM python:3.10-slim
+FROM python:3.10
 
 # Set environment variables
 ENV PATH="/root/.local/bin:$PATH"
