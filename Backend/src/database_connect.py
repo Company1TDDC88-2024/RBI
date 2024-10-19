@@ -18,9 +18,9 @@ async def get_db_connection():
         "Connection Timeout=30;"
     )
     try:
-        conn = pyodbc.connect(connection_string)
-        # Run the pyodbc.connect call in a separate thread using asyncio.to_thread()
-        conn = await asyncio.to_thread(pyodbc.connect, connection_string)
+        conn = await asyncio.to_thread(pyodbc.connect(connection_string))
+        print("Connected to database")
+        print(conn)
         return conn
     except pyodbc.Error as e:
         print(f"Error connecting to database: {e}")
