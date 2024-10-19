@@ -29,31 +29,26 @@ RUN poetry config virtualenvs.create false \
 # Copy the rest of the application code
 COPY . .
 
-# Step 2: Run the application
+# Step 2: Final image
 FROM python:3.10-slim
 
 # Set environment variables
-ENV POETRY_VERSION=1.6.1 
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc \
-    && pip install --no-cache-dir poetry==$POETRY_VERSION \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app
 
-# Copy only the installed dependencies and application from the build stage
+# Copy the installed dependencies and application code from the build stage
 COPY --from=build /app /app
 
-# Set environment variable for Flask
-ENV FLASK_APP=server.py
-
-# Expose the port your application runs on
+# Expose the port your application will run on
 EXPOSE 80
 
-# Command to run the application using poetry
-CMD ["poetry", "run", "flask", "--app", "server", "run", "--host=0.0.0.0", "--port=80"]
+# Command to run the application using Gunicorn
+CMD ["poetry", "run", "gunicorn", "-w", "4", "-b", "0.0.0.0:80", "server:app"]

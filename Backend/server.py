@@ -29,5 +29,4 @@ app.register_blueprint(login_bp, url_prefix='/login')
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5555)
-
+    app.run(host='0.0.0.0', port=80, debug=True)
