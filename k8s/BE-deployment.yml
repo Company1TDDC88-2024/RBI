@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: backend-deployment
-    labels:
-        app: backend
+  name: backend-deployment
+  labels:
+    app: backend
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: backend
-    template:
-        metadata:
-            labels:
-                app: backend
-        spec:
-            containers:
-                - name: backend
-                  image: docker.io/companyonetddc/backend
-                  imagePullPolicy: Always
-                  ports:
-                      - containerPort: 5555
-                  resources:
-                      requests:
-                          cpu: "30m" # Adjusted to be lower than the quota
-                          memory: "8Mi" # Adjusted to fit within the quota
-                      limits:
-                          cpu: "800m" # This is the maximum allowed by your quota
-                          memory: "512Mi" # Maximum memory allowed by your quota
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: docker.io/companyonetddc/backend
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "30m" # Adjusted to be lower than the quota
+              memory: "8Mi" # Adjusted to fit within the quota
+            limits:
+              cpu: "800m" # This is the maximum allowed by your quota
+              memory: "512Mi" # Maximum memory allowed by your quota
