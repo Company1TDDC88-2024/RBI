@@ -3,7 +3,7 @@ stages:
   - cleanup
   - start_registry
   - build
-  #- test
+  - test
   - pre-deploy
   - deploy
 
@@ -58,6 +58,12 @@ build_backend:
 #stage: test
 #script:
 #- Execute tests depending on what tool we are using and path to file with all the tests
+
+test_database_connection:
+  stage: test
+  image: busybox
+  script:
+    - nslookup tddc88company1.database.windows.net
 
 retrieve kubeconfig:
   stage: pre-deploy
