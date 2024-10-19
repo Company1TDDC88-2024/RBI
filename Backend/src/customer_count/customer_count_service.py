@@ -1,4 +1,5 @@
 import pyodbc
+import asyncio
 from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
@@ -122,16 +123,17 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
     if conn is None:
         return "Failed to connect to database"
 
-    cursor = conn.cursor()
-
     try:
-        # Fetch all data from CustomerCount_temp table, if no start_date or end_date is provided
-        query = "SELECT ID, TotalCustomers_temp, Timestamp FROM CustomerCount_temp"
+        cursor = conn.cursor()
+        
+        # Fetch all data from CustomerCount table if no start_date or end_date is provided
+        query = "SELECT ID, TotalCustomers, Timestamp FROM CustomerCount"
         params = []
 
         if start_date and end_date:
-            # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
-            end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
+            # Adjust end_date to the end of the day if it's the same day or one day apart
+            if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
+                end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
             params.extend([start_date, end_date])
         elif start_date:
@@ -142,24 +144,14 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
             query += " WHERE Timestamp <= ?"
             params.append(end_date)
 
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        data = []
+        # Run the cursor.execute and fetchall calls asynchronously
+        await asyncio.to_thread(cursor.execute, query, params)
+        rows = await asyncio.to_thread(cursor.fetchall)
         
-        for row in rows:
-            # Decrypt TotalCustomers_temp for each row
-            try:
-                decrypted_total_customers = int(cipher_suite.decrypt(row[1]).decode()) if row[1] is not None else None
-            except Exception as e:
-                print(f"Decryption error for TotalCustomers_temp in row ID {row[0]}: {e}")
-                decrypted_total_customers = None  # Set to None if decryption fails
-
-            data.append({
-                'ID': row[0],
-                'TotalCustomers': decrypted_total_customers,
-                'Timestamp': row[2],
-            })
-        
+        data = [
+            {'ID': row[0], 'TotalCustomers': row[1], 'Timestamp': row[2]}
+            for row in rows
+        ]
         return data
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
