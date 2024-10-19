@@ -64,7 +64,6 @@ retrieve kubeconfig:
   image: bitnami/kubectl
   before_script:
     - kubectl config use-context tddc88-ht24/infrastructure:tddc88-ht24
-    - kubectl get networkpolicies --all-namespaces
   script:
     - TOKEN_DATA=$(kubectl get secret admin-user-token -o json)
     - CA=$(echo "$TOKEN_DATA" | jq '.data."ca.crt"' -r | base64 -d)
