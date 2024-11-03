@@ -11,6 +11,7 @@ async def get_db_connection():
     database = os.getenv('DB_NAME')
     username = os.getenv('DB_USER')
     password = os.getenv('DB_PASSWORD')
+    ssl_cert_path = '../DigiCertGlobalRootCA.crt.pem'
 
     connection_string = (
         f"Driver={{ODBC Driver 18 for SQL Server}};"
@@ -20,6 +21,7 @@ async def get_db_connection():
         f"Pwd={password};"
         "Encrypt=yes;"
         "TrustServerCertificate=no;"
+        f"SSLCA={ssl_cert_path};"
         "Connection Timeout=30;"
     )
     try:
