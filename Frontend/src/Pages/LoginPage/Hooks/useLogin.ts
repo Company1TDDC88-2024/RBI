@@ -29,9 +29,10 @@ export const useLogin = (): IUseLoginReturn => {
             );
 
             if (response.status === 200) {
-                alert(response.data.message || 'Login successful!');
+                // alert(response.data.message || 'Login successful!'); // Remove this line to prevent pop-up
                 return true; // Indicate successful login
             }
+            
         } catch (err) {
             setError(err as Error);
             return false; // Indicate failed login

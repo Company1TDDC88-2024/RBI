@@ -36,7 +36,7 @@ export const useSignUp = (): IUseSignUpReturn => {
 
             if (response.status === 200) {
                 setSuccess(true);
-                alert(response.data.message || 'Sign-up successful!');
+                //alert(response.data.message || 'Sign-up successful!');
             }
         } catch (err) {
             setError(err as Error);

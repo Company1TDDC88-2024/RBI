@@ -9,9 +9,11 @@ from src.login.login_routes import login_bp
 import secrets
 import logging
 
+
 app = Flask(__name__)
 
 app.secret_key = secrets.token_hex(16)
+
 
 # Middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)

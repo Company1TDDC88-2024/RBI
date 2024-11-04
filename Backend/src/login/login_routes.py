@@ -50,7 +50,7 @@ async def login_route():
 
         if isinstance(result, dict):
             session['user_id'] = result['user_id']
-            return jsonify({'message': 'Login successdivuevfiueful', 'session_id': session['user_id']})
+            return jsonify({'message': 'Login successful', 'session_id': session['user_id']})
 
         return jsonify({'message': result}), 401  # Return error message if login failed
     

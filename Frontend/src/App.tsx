@@ -20,12 +20,13 @@ function App() {
             <Router>
                 <Layout>
                     <Routes>
-                        <Route path="/" element={<LoginPage />} /> {/* Default route */}
-                        <Route path="/test" element={<Test />} />
+                        {/* Default route redirects to login if not logged in */}
+                        <Route path="/" element={<Navigate to="/login" replace />} /> 
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/test" element={<PrivateRoute element={<Test />} />} /> {/* Protected route */}
                         <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} /> {/* Protected route */}
                         <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} /> {/* Protected route */}
                         <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} /> {/* Protected route */}
-                        <Route path="/login" element={<LoginPage />} />
                     </Routes>
                 </Layout>
             </Router>
