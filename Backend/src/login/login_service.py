@@ -49,7 +49,7 @@ async def login_user(data) -> Union[str, dict]:
         
         user = cursor.fetchone()
         if user:
-            return {'user_id': user[0], 'email': user[1]}  # Returnera user_id för sessions-ID-skapande
+            return {'user_id': user.user_id} # Returnera user_id för sessions-ID-skapande
         else:
             return "Invalid email or password"
     except pyodbc.Error as e:

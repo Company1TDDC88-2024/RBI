@@ -1,74 +1,34 @@
 import React, { useState } from 'react';
+import { useSignUp } from "./Hooks/useSignUp";
+import { useLogin } from "./Hooks/useLogin";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from "../../AuthContext"; // Importera useAuth för att få tillgång till AuthContext
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>(''); // Change from username to email
+  const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [isSignUp, setIsSignUp] = useState<boolean>(false);
-
-  // New state variables for sign-up fields
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
+  const [isSignUp, setIsSignUp] = useState<boolean>(false);
+
+  const { signUp, error: signUpError, loading: signUpLoading, success } = useSignUp();
+  const { login, error: loginError, loading: loginLoading } = useLogin();
+  const navigate = useNavigate();
+  const { checkLoginStatus } = useAuth(); // Hämta checkLoginStatus från AuthContext
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (isSignUp) {
-      if (!firstName || !lastName || !email || !password) {
-        setError('Please fill in all fields');
-        return;
-      }
-
-      try {
-        // Send sign-up data to the backend
-        const response = await fetch('http://your-backend-url.com/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ firstName, lastName, email, password }),
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-          alert('Sign-up successful! Please log in.');
-          setIsSignUp(false); // Switch to login mode
-          setError(''); // Clear any error messages
-        } else {
-          setError(data.message || 'Sign-up failed. Please try again.');
-        }
-      } catch (error) {
-        setError('An error occurred. Please try again later.');
+      await signUp(firstName, lastName, email, password);
+      if (success) {
+        setIsSignUp(false); // Växla till inloggningsläge efter lyckad registrering
       }
     } else {
-      // Login logic here
-      if (!email || !password) {
-        setError('Please fill in all fields');
-        return;
-      }
-
-      try {
-        // Send login data to the backend
-        const response = await fetch('http://your-backend-url.com/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          alert('Login successful!');
-          // Here, store the token in sessionStorage if needed
-          // sessionStorage.setItem('authToken', data.token); // Assuming your backend sends back a token
-        } else {
-          setError(data.message || 'Login failed. Please try again.');
-        }
-      } catch (error) {
-        setError('An error occurred. Please try again later.');
+      const loginSuccess = await login(email, password); // Anropa inloggningsfunktionen
+      if (loginSuccess) {
+        await checkLoginStatus(); // Uppdatera den globala inloggningsstatusen efter lyckad inloggning
+        navigate("/dashboard"); // Omdirigera till dashboard
       }
     }
   };
@@ -77,7 +37,10 @@ const LoginPage: React.FC = () => {
     <div className="login-page">
       <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
       <form onSubmit={handleSubmit}>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {(signUpError || loginError) && (
+          <p style={{ color: 'red' }}>{signUpError?.message || loginError?.message}</p>
+        )}
+        {(signUpLoading || loginLoading) && <p>Loading...</p>}
 
         {isSignUp && (
           <>
@@ -89,6 +52,7 @@ const LoginPage: React.FC = () => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Enter your first name"
+                required
               />
             </div>
 
@@ -100,6 +64,7 @@ const LoginPage: React.FC = () => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Enter your last name"
+                required
               />
             </div>
           </>

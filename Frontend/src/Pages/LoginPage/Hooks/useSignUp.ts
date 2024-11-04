@@ -25,7 +25,7 @@ export const useSignUp = (): IUseSignUpReturn => {
         setSuccess(false);
 
         try {
-            const response = await axios.post<ISignUpResponse>('/create_account', {
+            const response = await axios.post<ISignUpResponse>('/login/create_account', {
                 first_name: firstName,
                 last_name: lastName,
                 email,
