@@ -9,7 +9,6 @@ import styles from "./DashboardPage.module.css";
 import DateTimeDisplay from './DateTimeDisplay'; 
 import moment from 'moment';
 
-
 const { RangePicker } = DatePicker;
 
 const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day') => {
@@ -21,27 +20,37 @@ const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day
 };
 
 const DashboardPage = () => {
-  const [dates, setDates] = useState<[string, string]>(["", ""]);
+  const currentDate = new Date().toISOString().split("T")[0];
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 7);
+  const formattedStartDate = startDate.toISOString().split("T")[0];
+
+  const [dates, setDates] = useState<[string, string]>(() => {
+    const savedDates = localStorage.getItem('dates');
+    return savedDates ? JSON.parse(savedDates) : [formattedStartDate, currentDate];
+  });
+
   const [frequency, setFrequency] = useState<'10min' | '1hour' | '1day'>('10min'); 
   const [processedData, setProcessedData] = useState<any[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string>('Never');
 
-  const currentDate = new Date().toISOString().split("T")[0]; // Get current date
 
-  // Set the default date range to the last 7 days
+  // Set the default date range to the last 7 days if not already set
   useEffect(() => {
-    const endDate = currentDate; // Use the current date
+    const endDate = new Date().toISOString().split("T")[0]; // Use the current date
     const startDate = new Date();
-    startDate.setDate(new Date().getDate() - 7);
-
+    startDate.setDate(startDate.getDate() - 7);
     const formatDate = (date: Date) => date.toISOString().split("T")[0];
-
     setDates([formatDate(startDate), endDate]);
-  }, [currentDate]); // Dependency on currentDate
+  }, [currentDate]); // Empty dependency array to run only on initial render
 
-  // Fetch customer count data
+  // Save dates to local storage whenever they change
+  useEffect(() => {
+    localStorage.setItem('dates', JSON.stringify(dates));
+  }, [dates]);
+
+  // Fetch customer count data and daily customers data
   const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
-  // Fetch daily customers data
   const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
 
   // Update the last updated time when the data changes
