@@ -7,7 +7,7 @@ const LivefeedPage: React.FC = () => {
   const [camera1Available, setCamera1Available] = useState<boolean>(true);   // State to track camera availability, not really working as expected
   const [camera2Available, setCamera2Available] = useState<boolean>(true);
 
-  return (    // Render the live feed page
+  return (    // Render the live feed page, the two cameras are hardcoded in the CameraFeed component. Not the best way to do it, but it works for this application
     <div className={styles.pageContainer}>
       <h1>Live feed from the store</h1>
       <Row gutter={16}>
