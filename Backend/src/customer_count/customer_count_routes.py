@@ -14,7 +14,7 @@ async def upload_data():
         return jsonify({'message': 'Missing EnteringCustomers or ExitingCustomers number of customers or Timestamp'}), 400
 
     result = await upload_data_to_db(data)
-    return jsonify({'message': result})
+    return jsonify({'message': result}) 
 
 @customer_count_bp.route('/get', methods=['GET'])
 async def get_data():
