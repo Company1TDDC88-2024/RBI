@@ -9,13 +9,8 @@ from src.example.date_routes import date_bp
 app = Flask(__name__)
 
 # Middleware
-<<<<<<< HEAD
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
-print("Server is running")
-=======
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
->>>>>>> 9fd02f05ae4c7192cd12db8777de42e04dcef841
 app.register_blueprint(example_bp, url_prefix='/example')
 app.register_blueprint(customer_count_bp, url_prefix='/customer_count')
 app.register_blueprint(queue_count_bp, url_prefix='/queue_count')
@@ -24,3 +19,4 @@ app.register_blueprint(date_bp, url_prefix='/date')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5555)
+
