@@ -1,39 +1,45 @@
-// AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
 interface AuthContextType {
   isLoggedIn: boolean;
-  loading: boolean; // Add loading to the context
+  loading: boolean;
   checkLoginStatus: () => void;
   setIsLoggedIn: (status: boolean) => void;
+  clearCookies: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
-  loading: true, // Set loading to true initially
+  loading: true,
   checkLoginStatus: () => {},
   setIsLoggedIn: () => {},
+  clearCookies: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true); // Initialize loading as true
+  const [loading, setLoading] = useState(true);
 
   const checkLoginStatus = async () => {
     try {
-      console.log("Checking login status...");
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
-      console.log("Login status response:", response.data);
       setIsLoggedIn(response.data.logged_in);
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
     } finally {
-      setLoading(false); // Set loading to false after the check
+      setLoading(false);
     }
+  };
+
+  const clearCookies = () => {
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+    });
+    setIsLoggedIn(false); // Optionally set login status to false
   };
 
   useEffect(() => {
@@ -41,7 +47,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, loading, checkLoginStatus, setIsLoggedIn }}>
+    <AuthContext.Provider value={{ isLoggedIn, loading, checkLoginStatus, setIsLoggedIn, clearCookies }}>
       {children}
     </AuthContext.Provider>
   );

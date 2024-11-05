@@ -4,13 +4,18 @@ from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import Union
 
-# Funktion för att skapa ett konto
 async def create_account(data) -> str:
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
     cursor = conn.cursor()
+
+    # Kontrollera om e-postadressen redan existerar
+    cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (data['email'],))
+    existing_user = cursor.fetchone()
+    if existing_user:
+        return "Account with this email already exists"  # Returnera meddelande om kontot redan finns
 
     # Hasha lösenordet för säker lagring
     password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
@@ -28,6 +33,7 @@ async def create_account(data) -> str:
         return "Error creating account"
     finally:
         conn.close()
+
 
 # Funktion för att logga in en användare
 async def login_user(data) -> Union[str, dict]:

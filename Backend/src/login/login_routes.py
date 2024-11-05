@@ -30,9 +30,14 @@ async def create_account_route():
             data['email'].endswith('@liu.se')):
         return jsonify({'message': 'Email must end with @student.liu.se, @axis.com, or @liu.se'}), 400
 
-
+    # Skapa konto
     result = await create_account(data)
-    return jsonify({'message': result})
+    if result == "Account with this email already exists":
+        # Returnera ett 400-svar om kontot redan finns
+        return jsonify({'message': result}), 400
+
+    # Returnera framgångsmeddelande
+    return jsonify({'message': result}), 200
 
 # Route för att logga in
 import logging

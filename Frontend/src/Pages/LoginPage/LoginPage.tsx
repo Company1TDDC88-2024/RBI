@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSignUp } from "./Hooks/useSignUp";
 import { useLogin } from "./Hooks/useLogin";
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from "../../AuthContext"; // Importera useAuth för att få tillgång till AuthContext
+import { useAuth } from "../../AuthContext";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -10,37 +10,78 @@ const LoginPage: React.FC = () => {
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const { signUp, error: signUpError, loading: signUpLoading, success } = useSignUp();
   const { login, error: loginError, loading: loginLoading } = useLogin();
   const navigate = useNavigate();
-  const { checkLoginStatus } = useAuth(); // Hämta checkLoginStatus från AuthContext
+  const { checkLoginStatus } = useAuth();
+
+  const validateEmail = (email: string): boolean => {
+    return email.endsWith('@student.liu.se') || email.endsWith('@axis.com') || email.endsWith('@liu.se');
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (isSignUp) {
-      await signUp(firstName, lastName, email, password);
-      if (success) {
-        setIsSignUp(false); // Växla till inloggningsläge efter lyckad registrering
-      }
+    if (!validateEmail(email)) {
+        setEmailError('Email must end with @student.liu.se, @axis.com, or @liu.se');
+        return;
     } else {
-      const loginSuccess = await login(email, password); // Anropa inloggningsfunktionen
-      if (loginSuccess) {
-        await checkLoginStatus(); // Uppdatera den globala inloggningsstatusen efter lyckad inloggning
-        navigate("/dashboard"); // Omdirigera till dashboard
-      }
+        setEmailError(null);
+    }
+
+    if (isSignUp) {
+        await signUp(firstName, lastName, email, password);
+
+        // Kontrollera om signUpError anger att kontot redan finns
+        if (signUpError === "Account with this email already exists") {
+            setEmailError(signUpError);  // Visa backend-felmeddelandet om kontot finns
+            return;
+        }
+    } else {
+        const loginSuccess = await login(email, password);
+        if (loginSuccess) {
+            await checkLoginStatus();
+            navigate("/dashboard");
+        }
     }
   };
+
+  useEffect(() => {
+    if (success && !signUpError) {  // Kontrollera att inga felmeddelanden finns
+        setSuccessMessage('Account created successfully!');
+        setIsSignUp(false);
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setPassword('');
+    }
+  }, [success, signUpError]);
 
   return (
     <div className="login-page">
       <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
       <form onSubmit={handleSubmit}>
+        {/* Visa backend-felmeddelandet i röd text om ett fel finns */}
         {(signUpError || loginError) && (
-          <p style={{ color: 'red' }}>{signUpError?.message || loginError?.message}</p>
+          <p style={{ color: 'red' }}>
+            {signUpError
+              ? typeof signUpError === 'string'
+                ? signUpError
+                : (signUpError as Error).message
+              : loginError
+              ? typeof loginError === 'string'
+                ? loginError
+                : (loginError as Error).message
+              : null}
+          </p>
         )}
         {(signUpLoading || loginLoading) && <p>Loading...</p>}
+
+        {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+        {emailError && <p style={{ color: 'red' }}>{emailError}</p>} {/* Visa rött felmeddelande */}
 
         {isSignUp && (
           <>
