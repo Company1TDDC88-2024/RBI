@@ -16,6 +16,7 @@ async def upload_data():
     result = await upload_data_to_db(data)
     return jsonify({'message': result}) 
 
+
 @customer_count_bp.route('/get', methods=['GET'])
 async def get_data():
     start_date = request.args.get('startDate')
@@ -32,6 +33,7 @@ async def get_data():
         return jsonify({'message': data}), 500
     return jsonify(data)
 
+# ENCRYPTION DONE
 # Route för att hämta genomsnittligt antal kunder mellan två tidsstämplar
 @customer_count_bp.route('/get_customers', methods=['POST'])
 async def get_customers():
@@ -48,6 +50,8 @@ async def get_customers():
     
     return jsonify({'average_customers': result}), 200
 
+
+#ENCRYPTION DONE
 @customer_count_bp.route('/get_daily', methods=['GET'])
 async def get_daily_customers():
     date = request.args.get('date')
