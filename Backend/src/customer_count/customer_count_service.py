@@ -3,6 +3,10 @@ from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
+from cryptography.fernet import Fernet
+
+key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
+cipher_suite = Fernet(key)
 
 async def upload_data_to_db(data):
     conn = await get_db_connection()
@@ -13,43 +17,46 @@ async def upload_data_to_db(data):
     TimeInterval = 10
 
     try:
-        
+        # Fetch the most recent TotalCustomers_temp and Timestamp for calculations
         cursor.execute("""
-            SELECT TOP 1 TotalCustomers, Timestamp FROM CustomerCount
+            SELECT TOP 1 TotalCustomers_temp, Timestamp FROM CustomerCount
             ORDER BY Timestamp DESC
         """)
         
-        result = cursor.fetchone()  # Fetch the result of the query
+        result = cursor.fetchone()
 
-        if result:
-            # Unpack the query result
-            previous_total_customers, previous_timestamp = result
+        # If a previous record exists, decrypt TotalCustomers_temp; otherwise, set to 0
+        if result and result[0] is not None:
+            encrypted_previous_total_customers, previous_timestamp = result
+            previous_total_customers = int(cipher_suite.decrypt(encrypted_previous_total_customers).decode())
         else:
-            # If no previous record, assume 0 customers
             previous_total_customers = 0
             previous_timestamp = None
 
-        # Extract the date from both the queried Timestamp and the incoming Timestamp
+        # Date handling and formatting
         queried_date = previous_timestamp.date() if previous_timestamp else None
         incoming_datetime = datetime.strptime(data['Timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
         incoming_date = incoming_datetime.date()
         formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
 
-        print ("queried_date: ", queried_date)
-        print ("incoming_date: ", incoming_date)
-        # Compare the dates and calculate TotalCustomers
+        # Calculate TotalCustomers based on dates
         if queried_date != incoming_date or not queried_date:
-            print ("Resetting TotalCustomers")
-            TotalCustomers = 0  # Reset TotalCustomers if the dates are different
+            TotalCustomers = 0
         else:
-            print ("Calculating TotalCustomers")
+            # Assuming data['EnteringCustomers'] and data['ExitingCustomers'] are integers
             TotalCustomers = previous_total_customers + data['EnteringCustomers'] - data['ExitingCustomers']
-        
-        # Lägger till data i CustomerCount-tabellen
+
+        # Encrypt the new TotalCustomers, EnteringCustomers, and ExitingCustomers
+        encrypted_total_customers = cipher_suite.encrypt(str(TotalCustomers).encode())
+        encrypted_entering_customers = cipher_suite.encrypt(str(data['EnteringCustomers']).encode())
+        encrypted_exiting_customers = cipher_suite.encrypt(str(data['ExitingCustomers']).encode())
+
+        # Insert encrypted values into CustomerCount table
         cursor.execute("""
-            INSERT INTO CustomerCount (Timestamp, TotalCustomers, EnteringCustomers, ExitingCustomers, TimeInterval)
+            INSERT INTO CustomerCount (Timestamp, TotalCustomers_temp, EnteringCustomers_temp, ExitingCustomers_temp, TimeInterval)
             VALUES (?, ?, ?, ?, ?)
-        """, (formatted_timestamp, TotalCustomers, data['EnteringCustomers'], data['ExitingCustomers'], TimeInterval))
+        """, (formatted_timestamp, encrypted_total_customers, encrypted_entering_customers, encrypted_exiting_customers, TimeInterval))
+        
         conn.commit()
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -58,6 +65,7 @@ async def upload_data_to_db(data):
     finally:
         conn.close()
 
+        
 async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
     conn = await get_db_connection()
     if conn is None:
