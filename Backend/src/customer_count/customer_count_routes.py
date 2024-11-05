@@ -7,7 +7,7 @@ customer_count_bp = Blueprint('customer_count', __name__)
 
 
 @customer_count_bp.route('/upload', methods=['POST'])
-async def process_observations():
+async def upload_data():
     data = request.json
 
     # Validate the required fields in the JSON
@@ -23,13 +23,21 @@ async def process_observations():
         return jsonify({'message': 'Invalid data structure in observations'}), 400
 
     # Determine whether the customer is entering or exiting based on bounding box positions
+    test = {
+        "EnteringCustomers": 0,
+        "ExitingCustomers": 0,
+        "Timestamp": last_timestamp
+    }
+
     if  bounding_boxes[-1]["left"] < 0.3:
         # Customer is exiting
-        result = {
+        test = {
             "EnteringCustomers": 0,
             "ExitingCustomers": 1,
             "Timestamp": last_timestamp
         }
+        
+        result = await upload_data_to_db(test)
     elif bounding_boxes[-1]["right"] > 0.7:
         # Customer is entering
         result = {
@@ -37,8 +45,10 @@ async def process_observations():
             "ExitingCustomers": 0,
             "Timestamp": last_timestamp
         }
+        result = await upload_data_to_db(test)
+    
     print(result)
-    result = await upload_data_to_db(data)
+    
     return jsonify(result), 200
 
 

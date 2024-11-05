@@ -17,16 +17,24 @@ async def upload_data():
     if not isinstance(data, list):
         return jsonify({'message': 'Invalid data format, expected a list of objects'}), 400
 
-    # Check that every object in the list contains the required keys
-    required_keys = ['track_id', 'timestamp', 'bottom', 'left', 'right', 'top', 'score']
-    for item in data:
+    # Check for the main required root-level key
+    if 'timestamp' not in data:
+        return jsonify({'message': 'Missing "timestamp" field in the root object'}), 400
+
+    # Check that each observation has 'track_id', 'bounding_box', and that 'bounding_box' contains the required keys
+    required_keys = ['track_id', 'bounding_box']
+    bounding_box_keys = ['bottom', 'left', 'right', 'top']
+
+    for item in data.get('observations', []):
+        # Check for the main required keys in each observation
         if not all(key in item for key in required_keys):
-            return jsonify({'message': 'Missing one or more required fields in one or more objects'}), 400
+            return jsonify({'message': 'Missing "track_id" or "bounding_box" in one or more observations'}), 400
+    
+        # Check that 'bounding_box' contains all the necessary keys
+        bounding_box = item['bounding_box']
+        if not all(key in bounding_box for key in bounding_box_keys):
+            return jsonify({'message': 'Missing one or more bounding box fields in one or more observations'}), 400
 
-    # Count the number of objects
-    # object_count = len(data)
-
-    # Create new JSON object to upload
     
 
     result = await upload_data_to_db(data)
