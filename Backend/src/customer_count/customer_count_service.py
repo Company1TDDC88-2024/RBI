@@ -72,14 +72,14 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
 
         if start_date and end_date:
             # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
-            if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
-                end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
+            end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
             params.extend([start_date, end_date])
         elif start_date:
             query += " WHERE Timestamp >= ?"
             params.append(start_date)
         elif end_date:
+            end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp <= ?"
             params.append(end_date)
 
