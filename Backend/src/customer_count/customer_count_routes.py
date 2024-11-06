@@ -80,7 +80,6 @@ async def get_daily_customers():
     
     # Get total customers as needed
     total_customers = data[0]['TotalCustomers'] if data else 0
-    print(data)
     # Return all totals in one JSON object
     return jsonify({
         'totalEnteringCustomers': total_entering_customers,

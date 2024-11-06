@@ -35,23 +35,16 @@ const LiveDataPage = () => {
             const { NumberOfCustomers, Timestamp } = queueCountsByROI[roi];
             
             // Convert the Timestamp string to a Date object and get its time in milliseconds
-            const timestampMs = new Date(Timestamp).getTime();
-            console.log('timestamps: ' + timestampMs)
-            
+            const timeStampInt = new Date(Timestamp).getTime();
             // Get the current time in milliseconds
-            const now = Date.now();
-            console.log('now: ' + now)
-            
+            const now = Date.now();            
             // Check if the timestamp is within the desired range
-            if (now - timestampMs <= 259200000) { // Large threshold, should include all queues
-                acc[roi] = { NumberOfCustomers, Timestamp: timestampMs };
+            if (now - timeStampInt<= 259200000) { // Large threshold, should include all queues
+                acc[roi] = { NumberOfCustomers, Timestamp: timeStampInt };
             }
             return acc;
         }, {} as Record<string, { NumberOfCustomers: number; Timestamp: number }>);
         
-
-    console.log("queueCountsByROI:", JSON.stringify(queueCountsByROI, null, 2));
-    console.log("filteredQueueCounts:", JSON.stringify(filteredQueueCounts, null, 2));
     
 
     const comparisonData = [
@@ -82,14 +75,14 @@ const LiveDataPage = () => {
                 
                 <Col span={6}>
                     <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
-                    <ResponsiveContainer>
+                        <ResponsiveContainer>
                         <p className={styles.customerCountText}>
-                            {loadingToday ? 'Loading...' : (todayData?.totalCustomers || 0)}
+                                {loadingToday ? 'Loading...' : (todayData?.totalEnteringCustomers - todayData?.totalExitingCustomers || 0)} 
+                                {/* This should be TotalCustomers */}
                         </p>
-                    </ResponsiveContainer>
+                        </ResponsiveContainer>
                     </Card>
                 </Col>
-
                 <Col span={6}>
                     <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
                         {loadingQueue ? (
