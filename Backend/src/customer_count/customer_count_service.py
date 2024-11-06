@@ -12,9 +12,38 @@ async def upload_data_to_db(data):
     if conn is None:
         return "Failed to connect to database"
 
-    cursor = conn.cursor()
     TimeInterval = 10  # Arbitrary TimeInterval value
 
+
+    observations = data['observations']
+    bounding_boxes = [obs["bounding_box"] for obs in observations]
+    last_timestamp = observations[-1]["timestamp"]  # Get the last timestamp
+
+    # Determine whether the customer is entering or exiting based on bounding box positions
+    placeholder = {
+        "EnteringCustomers": 0,
+        "ExitingCustomers": 0,
+        "Timestamp": last_timestamp
+    }
+
+    if bounding_boxes[-1]["left"] < 0.3:
+        # Customer is exiting
+        placeholder = {
+            "EnteringCustomers": 0,
+            "ExitingCustomers": 1,
+            "Timestamp": last_timestamp
+        }
+    elif bounding_boxes[-1]["right"] > 0.7:
+        # Customer is entering
+        placeholder = {
+            "EnteringCustomers": 1,
+            "ExitingCustomers": 0,
+            "Timestamp": last_timestamp
+        }
+
+    
+
+    cursor = conn.cursor()
     try:
         # Fetch the most recent TotalCustomers and Timestamp
         cursor.execute("""
@@ -33,7 +62,7 @@ async def upload_data_to_db(data):
             previous_timestamp = None
 
         # Convert incoming Timestamp from string to datetime
-        incoming_datetime = datetime.strptime(data['Timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        incoming_datetime = datetime.strptime(placeholder['Timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
         formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
 
         # Extract dates for comparison
@@ -44,13 +73,13 @@ async def upload_data_to_db(data):
         if queried_date != incoming_date or not queried_date:
             TotalCustomers = 0  # Reset TotalCustomers if the dates are different
         else:
-            TotalCustomers = previous_total_customers + data['EnteringCustomers'] - data['ExitingCustomers']
+            TotalCustomers = previous_total_customers + placeholder['EnteringCustomers'] - placeholder['ExitingCustomers']
                 
         # Insert the data into the CustomerCount table
         cursor.execute("""
             INSERT INTO CustomerCount (Timestamp, TotalCustomers, EnteringCustomers, ExitingCustomers, TimeInterval)
             VALUES (?, ?, ?, ?, ?)
-        """, (formatted_timestamp, TotalCustomers, data['EnteringCustomers'], data['ExitingCustomers'], TimeInterval))
+        """, (formatted_timestamp, TotalCustomers, placeholder['EnteringCustomers'], placeholder['ExitingCustomers'], TimeInterval))
 
         conn.commit()
         return "Data uploaded successfully"

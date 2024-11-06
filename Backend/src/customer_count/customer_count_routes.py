@@ -16,36 +16,14 @@ async def upload_data():
     
     # Validate the structure of each observation
     try:
-        observations = data['observations']
-        bounding_boxes = [obs["bounding_box"] for obs in observations]
-        last_timestamp = observations[-1]["timestamp"]  # Get the last timestamp
+        for observation in data['observations']:
+            if 'bounding_box' not in observation or 'timestamp' not in observation:
+                raise KeyError
+
     except KeyError:
-        return jsonify({'message': 'Invalid data structure in observations'}), 400
+        return jsonify({'message': 'Invalid data structure'}), 400
 
-    # Determine whether the customer is entering or exiting based on bounding box positions
-    test = {
-        "EnteringCustomers": 0,
-        "ExitingCustomers": 0,
-        "Timestamp": last_timestamp
-    }
-
-    if  bounding_boxes[-1]["left"] < 0.3:
-        # Customer is exiting
-        test = {
-            "EnteringCustomers": 0,
-            "ExitingCustomers": 1,
-            "Timestamp": last_timestamp
-        }
-        
-        result = await upload_data_to_db(test)
-    elif bounding_boxes[-1]["right"] > 0.7:
-        # Customer is entering
-        result = {
-            "EnteringCustomers": 1,
-            "ExitingCustomers": 0,
-            "Timestamp": last_timestamp
-        }
-        result = await upload_data_to_db(test)
+    result = await upload_data_to_db(data)
     
     print(result)
     
