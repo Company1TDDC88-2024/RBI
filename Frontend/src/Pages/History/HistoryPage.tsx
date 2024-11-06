@@ -1,133 +1,98 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card, Row, Col, Spin, Alert, DatePicker } from "antd";
+import { Button, Card, Row, Col, Spin, Alert, DatePicker, Select } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useGetCustomerCount } from "../Hooks/useGetCustomerCount"; // Hook to fetch customer count data
-import { useGetQueueCount } from "../Hooks/useGetQueueCount"; // Hook to fetch queue count data
-import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers'; // Hook to fetch daily customers data
-import styles from "./HistoryPage.module.css"; // Importing styles
-import DateTimeDisplay from '../DateTimeDisplay'; // Component to display the last updated time
-import moment from 'moment'; // Library for date formatting
+import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
+import { useGetQueueCount } from "../Hooks/useGetQueueCount";
+import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
+import styles from "./HistoryPage.module.css";
+import DateTimeDisplay from '../DateTimeDisplay';
+import moment from 'moment';
 
-const { RangePicker } = DatePicker; // DatePicker component from antd
-
-// Function to format timestamp based on the given frequency
-const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day') => {
-  if (frequency === '1day') {
-    return moment(timestamp).format('YYYY-MM-DD'); // Display only the date for daily frequency
-  } else {
-    return moment(timestamp).format('HH:mm'); // Display hours and minutes for 10min and hourly frequency
-  }
-};
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const HistoryPage = () => {
-  const currentDate = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+  const currentDate = new Date().toISOString().split("T")[0];
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7); // Start date set to 7 days before the current date
-  const formattedStartDate = startDate.toISOString().split("T")[0]; // Start date in YYYY-MM-DD format
+  startDate.setDate(startDate.getDate() - 7);
+  const formattedStartDate = startDate.toISOString().split("T")[0];
 
-  // State to manage the selected date range
-  const [dates, setDates] = useState<[string, string]>(() => {
+  const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
     return savedDates ? JSON.parse(savedDates) : [formattedStartDate, currentDate];
   });
 
-  // State to manage the frequency of data aggregation
-  const [frequency, setFrequency] = useState<'10min' | '1hour' | '1day'>('10min'); 
-  const [processedData, setProcessedData] = useState<any[]>([]); // State to store processed data for the chart
-  const [lastUpdated, setLastUpdated] = useState<string>('Never'); // State to track the last updated time
+  const [frequency, setFrequency] = useState('1day');
+  const [processedData, setProcessedData] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState('Never');
+  const [numberOfMonths, setNumberOfMonths] = useState(3);
 
-  // Set the default date range to the last 7 days if not already set
   useEffect(() => {
-    const endDate = new Date().toISOString().split("T")[0]; // Current date
+    const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7); // 7 days before the current date
-    const formatDate = (date: Date) => date.toISOString().split("T")[0]; // Function to format date
-    setDates([formatDate(startDate), endDate]);
-  }, [currentDate]); // Empty dependency array to run only on initial render
+    startDate.setDate(startDate.getDate() - 7);
+    setDates([startDate.toISOString().split("T")[0], endDate]);
+  }, [currentDate]);
 
-  // Save dates to local storage whenever they change
   useEffect(() => {
     localStorage.setItem('dates', JSON.stringify(dates));
   }, [dates]);
 
-  // Fetch customer count data and daily customers data
   const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
   const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
   const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading } = useGetQueueCount();
 
-  // Update the last updated time when the data changes
   useEffect(() => {
     if (customerCountData || dailyCustomerData || cameraQueueData) {
       setLastUpdated(moment().format('HH:mm:ss'));
     }
   }, [customerCountData, dailyCustomerData, cameraQueueData]);
 
-  // Handle date range change
-  const onDateChange = (dates: any, dateStrings: [string, string]) => {
+  const onDateChange = (dates, dateStrings) => {
     setDates(dateStrings);
   };
 
-  // Process customer count data based on the frequency
-  const processData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
-    const result: any = {};
+  // Modify processData to aggregate based on the frequency and number of months
+  const processData = (customerCountData, frequency, numberOfMonths) => {
+    const result = {};
+
     customerCountData.forEach(item => {
       const timestamp = new Date(item.Timestamp);
-      let key: string;
+      let key;
 
-      // Round down the timestamp to the nearest interval based on the frequency
-      if (frequency === '10min') {
-        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
-      } else if (frequency === '1hour') {
-        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
+      if (frequency === '1hour') {
+        key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
+      } else if (frequency === '1day') {
+        key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
       } else {
-        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format date as YYYY-MM-DD
+        key = moment(timestamp).format('YYYY-MM'); // Group by month
       }
 
       if (!result[key]) {
-        result[key] = { Timestamp: key, TotalCustomers: 0 }; // Initialize the result object if it doesn't exist
+        result[key] = { Timestamp: key, TotalCustomers: 0 };
       }
-      result[key].TotalCustomers += item.TotalCustomers; // Increment the total customers count
+      result[key].TotalCustomers += item.TotalCustomers;
     });
-    return Object.values(result); // Return the processed data as an array
+
+    const groupedData = Object.values(result);
+
+    // If monthly, limit to the last `numberOfMonths`
+    return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
   };
 
-  // Process customer count data based on the frequency
-  const processQueueData = (cameraQueueData: any[], frequency: '10min' | '1hour' | '1day') => {
-    const result: any = {};
-    cameraQueueData.forEach(item => {
-      const timestamp = new Date(item.Timestamp);
-      let key: string;
-
-      // Round down the timestamp to the nearest interval based on the frequency
-      if (frequency === '10min') {
-        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
-      } else if (frequency === '1hour') {
-        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
-      } else {
-        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format date as YYYY-MM-DD
-      }
-
-      if (!result[key]) {
-        result[key] = { Timestamp: key, NumberOfCustomers: 0 }; // Initialize the result object if it doesn't exist
-      }
-      result[key].NumberOfCustomers += item.NumberOfCustomers; // Increment the total customers count
-    });
-    return Object.values(result); // Return the processed data as an array
-  };
-
-  // Process the customer count data whenever it or the frequency changes
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency));
+      setProcessedData(processData(customerCountData, frequency, numberOfMonths));
     }
   }, [customerCountData, frequency]);
 
   // Display loading spinner if any of the data is still loading
+  }, [customerCountData, frequency, numberOfMonths]);
+
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
   }
 
-  // Display error message if there is an error in fetching any data
   const error = customerCountError || cameraQueueDataError || dailyCustomerError;
   if (error) {
     return <Alert message="Error" description={error.message} type="error" showIcon />;
@@ -137,6 +102,9 @@ const HistoryPage = () => {
     <div className={styles.HistoryPage}>
       <h1>Historical Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} /> {/* Display the last updated time */}
+    <div className={styles.dashboardContainer}>
+      <h1>Dashboard</h1>
+      <DateTimeDisplay lastUpdated={lastUpdated} />
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>
@@ -145,22 +113,38 @@ const HistoryPage = () => {
             type={frequency === '1hour' ? 'primary' : 'default'}
             style={{ marginRight: '10px' }}
           >
-            Every Hour
+            Per Hour
           </Button>
           <Button 
             onClick={() => setFrequency('1day')} 
             type={frequency === '1day' ? 'primary' : 'default'}
+            style={{ marginRight: '10px' }}
           >
             Per Day
           </Button>
+          <Button 
+            onClick={() => setFrequency('1month')} 
+            type={frequency === '1month' ? 'primary' : 'default'}
+          >
+            Per Month
+          </Button>
         </Col>
-      </Row>
-      <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>
-          <RangePicker onChange={onDateChange} /> {/* Date range picker for selecting date range */}
+          <Select
+            defaultValue={3}
+            onChange={value => setNumberOfMonths(value)}
+            style={{ width: 120 }}
+            disabled={frequency !== '1month'} // Enable only for monthly frequency
+          >
+            {[...Array(12)].map((_, i) => (
+              <Option key={i + 1} value={i + 1}>
+                Last {i + 1} {i + 1 === 1 ? "Month" : "Months"}
+              </Option>
+            ))}
+          </Select>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
       <Col span={12}>
           <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
@@ -168,12 +152,18 @@ const HistoryPage = () => {
           </Card>
         </Col>
         <Col span={12}>
-        
           <Card title="Customer" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedData || []}> {/* Line chart for displaying customer data */}
+              <LineChart data={processedData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="Timestamp" tickFormatter={(timestamp) => formatTimestamp(timestamp, frequency)} />
+                <XAxis 
+                  dataKey="Timestamp" 
+                  tickFormatter={timestamp => {
+                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                    return moment(timestamp).format('MMM YYYY'); // Monthly format
+                  }}
+                />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -186,9 +176,16 @@ const HistoryPage = () => {
         <Col span={12}>
           <Card title="Queue Alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={[]}> {/* Line chart for displaying queue data */}
+              <LineChart data={[]}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="Timestamp" tickFormatter={(timestamp) => formatTimestamp(timestamp, frequency)} />
+                <XAxis 
+                  dataKey="Timestamp" 
+                  tickFormatter={timestamp => {
+                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                    return moment(timestamp).format('MMM YYYY');
+                  }}
+                />
                 <YAxis />
                 <Tooltip />
                 <Legend />
