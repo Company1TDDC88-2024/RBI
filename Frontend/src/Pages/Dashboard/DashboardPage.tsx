@@ -64,6 +64,28 @@ const DashboardPage = () => {
     setDates(dateStrings);
   };
 
+  const processQueuData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
+    const result: any = {};
+    customerCountData.forEach(item => {
+      const timestamp = new Date(item.Timestamp);
+      let key: string;
+
+      if (frequency === '10min') {
+        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
+      } else if (frequency === '1hour') {
+        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
+      } else {
+        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`;
+      }
+
+      if (!result[key]) {
+        result[key] = { Timestamp: key, TotalCustomers: 0 };
+      }
+      result[key].TotalCustomers += item.TotalCustomers;
+    });
+    return Object.values(result);
+  };
+
   const processData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
     const result: any = {};
     customerCountData.forEach(item => {

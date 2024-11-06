@@ -91,33 +91,29 @@ const HistoryPage = () => {
     return Object.values(result); // Return the processed data as an array
   };
 
+  // Process customer count data based on the frequency
+  const processQueueData = (cameraQueueData: any[], frequency: '10min' | '1hour' | '1day') => {
+    const result: any = {};
+    cameraQueueData.forEach(item => {
+      const timestamp = new Date(item.Timestamp);
+      let key: string;
 
+      // Round down the timestamp to the nearest interval based on the frequency
+      if (frequency === '10min') {
+        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
+      } else if (frequency === '1hour') {
+        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
+      } else {
+        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format date as YYYY-MM-DD
+      }
 
-// Process queue count data and return an array of processed data
-const processQueueData = (queueData: any[], frequency: '10min' | '1hour' | '1day') => {
-  const result: any = {};
-
-  queueData.forEach(item => {
-    const timestamp = new Date(item.Timestamp); // Assume Timestamp exists in the item
-    let key: string;
-
-    // Round down the timestamp to the nearest interval based on the frequency
-    if (frequency === '10min') {
-      key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
-    } else if (frequency === '1hour') {
-      key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
-    } else {
-      key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`; // Format date as YYYY-MM-DD
-    }
-
-    if (!result[key]) {
-      result[key] = { Timestamp: key, TotalCustomers: 0 }; // Initialize the result object if it doesn't exist
-    }
-    result[key].TotalCustomers += item.NumberOfCustomers; // Increment the total customers count
-  });
-
-  return Object.values(result); // Return the processed data as an array of objects
-};
+      if (!result[key]) {
+        result[key] = { Timestamp: key, NumberOfCustomers: 0 }; // Initialize the result object if it doesn't exist
+      }
+      result[key].NumberOfCustomers += item.NumberOfCustomers; // Increment the total customers count
+    });
+    return Object.values(result); // Return the processed data as an array
+  };
 
   // Process the customer count data whenever it or the frequency changes
   useEffect(() => {
@@ -125,13 +121,6 @@ const processQueueData = (queueData: any[], frequency: '10min' | '1hour' | '1day
       setProcessedData(processData(customerCountData, frequency));
     }
   }, [customerCountData, frequency]);
-
-  useEffect(() => {
-    if (cameraQueueData) {
-      console.log(processQueueData);
-      setProcessedData(processQueueData(cameraQueueData, frequency));
-    }
-  }, [cameraQueueData, frequency]);
 
   // Display loading spinner if any of the data is still loading
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
@@ -145,14 +134,11 @@ const processQueueData = (queueData: any[], frequency: '10min' | '1hour' | '1day
   }
 
   return (
-    <div className={styles.dashboardContainer}>
-      <h1>Dashboard</h1>
+    <div className={styles.HistoryPage}>
+      <h1>Historical Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} /> {/* Display the last updated time */}
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
-        <Col>
-          <RangePicker onChange={onDateChange} />
-        </Col>
         <Col>
           <Button 
             onClick={() => setFrequency('1hour')} 
@@ -176,6 +162,11 @@ const processQueueData = (queueData: any[], frequency: '10min' | '1hour' | '1day
       </Row>
       
       <Row gutter={16}>
+      <Col span={12}>
+          <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <h3>Number of customers today: {cameraQueueData[0]?.Timestamp}</h3>
+          </Card>
+        </Col>
         <Col span={12}>
         
           <Card title="Customer" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
