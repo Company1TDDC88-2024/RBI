@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 // Define the type for the daily customer count data
 interface IDailyCustomerCount {
     totalEnteringCustomers: number;
+    totalExitingCustomers: number;
+    totalCustomers: number;
 }
 
 interface IUseGetDailyCustomersReturn {
@@ -40,4 +42,5 @@ export const useGetDailyCustomers = (date: String): IUseGetDailyCustomersReturn 
     }, [date]);
 
     return { data, error, loading };
+
 };

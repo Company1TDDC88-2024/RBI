@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 interface IQueueCount {
     ID: number;
     NumberOfCustomers: number;
+    ROI: number;
+    TimeStamp: Date;
 }
 
 interface IUseGetQueueCountReturn {
