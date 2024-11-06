@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card, Row, Col, Spin, Alert, DatePicker, Select } from "antd";
+import { Button, Card, Row, Col, Spin, Alert, DatePicker } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
@@ -9,7 +9,6 @@ import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 const HistoryPage = () => {
   const currentDate = new Date().toISOString().split("T")[0];
@@ -25,7 +24,6 @@ const HistoryPage = () => {
   const [frequency, setFrequency] = useState('1day');
   const [processedData, setProcessedData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
-  const [numberOfMonths, setNumberOfMonths] = useState(3);
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
@@ -52,39 +50,56 @@ const HistoryPage = () => {
     setDates(dateStrings);
   };
 
-  // Modify processData to aggregate based on the frequency and number of months
-  const processData = (customerCountData, frequency, numberOfMonths) => {
+  // Process data to aggregate based on frequency within the selected date range
+  const processData = (customerCountData, frequency) => {
     const result = {};
-
+    const startDate = new Date(dates[0]);
+    const endDate = new Date(dates[1]);
+    
+    // Set endDate to 23:59:59 to include the entire end date, before it would be 00:00:00 and not show up
+    endDate.setHours(23, 59, 59, 999);
+  
     customerCountData.forEach(item => {
       const timestamp = new Date(item.Timestamp);
-      let key;
-
-      if (frequency === '1hour') {
-        key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
-      } else if (frequency === '1day') {
-        key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
-      } else {
-        key = moment(timestamp).format('YYYY-MM'); // Group by month
+  
+      // Filter data within the selected date range, including the full end date
+      if (timestamp >= startDate && timestamp <= endDate) {
+        let key;
+  
+        if (frequency === '1hour') {
+          // Only include data from startDate if frequency is hourly
+          if (timestamp.toISOString().split("T")[0] === dates[0]) {
+            key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour for startDate only
+            if (!result[key]) {
+              result[key] = { Timestamp: key, TotalCustomers: 0 };
+            }
+            result[key].TotalCustomers += item.TotalCustomers;
+          }
+        } else if (frequency === '1day') {
+          key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+          if (!result[key]) {
+            result[key] = { Timestamp: key, TotalCustomers: 0 };
+          }
+          result[key].TotalCustomers += item.TotalCustomers;
+        } else {
+          key = moment(timestamp).format('YYYY-MM'); // Group by month
+          if (!result[key]) {
+            result[key] = { Timestamp: key, TotalCustomers: 0 };
+          }
+          result[key].TotalCustomers += item.TotalCustomers;
+        }
       }
-
-      if (!result[key]) {
-        result[key] = { Timestamp: key, TotalCustomers: 0 };
-      }
-      result[key].TotalCustomers += item.TotalCustomers;
     });
-
-    const groupedData = Object.values(result);
-
-    // If monthly, limit to the last `numberOfMonths`
-    return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
+  
+    return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
   };
-
+  
+  
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency, numberOfMonths));
+      setProcessedData(processData(customerCountData, frequency));
     }
-  }, [customerCountData, frequency, numberOfMonths]);
+  }, [customerCountData, frequency, dates]);
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
@@ -97,7 +112,7 @@ const HistoryPage = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <h1>Dashboard</h1>
+      <h1>Historic Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
@@ -126,20 +141,6 @@ const HistoryPage = () => {
             Per Month
           </Button>
         </Col>
-        <Col>
-          <Select
-            defaultValue={3}
-            onChange={value => setNumberOfMonths(value)}
-            style={{ width: 120 }}
-            disabled={frequency !== '1month'} // Enable only for monthly frequency
-          >
-            {[...Array(12)].map((_, i) => (
-              <Option key={i + 1} value={i + 1}>
-                Last {i + 1} {i + 1 === 1 ? "Month" : "Months"}
-              </Option>
-            ))}
-          </Select>
-        </Col>
       </Row>
 
       <Row gutter={16}>
@@ -153,7 +154,7 @@ const HistoryPage = () => {
                   tickFormatter={timestamp => {
                     if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
                     if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY'); // Monthly format
+                    return moment(timestamp).format('MMM YYYY');
                   }}
                 />
                 <YAxis />
