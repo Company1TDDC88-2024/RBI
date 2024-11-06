@@ -35,12 +35,16 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
     }
   };
 
-  const clearCookies = () => {
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
-    });
-    setIsLoggedIn(false); // Optionally set login status to false
+  const clearCookies = async () => {
+    try {
+      await axios.post("/login/logout", {}, { withCredentials: true });
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error("Error clearing session cookie:", error);
+    }
   };
+  
+  
 
   useEffect(() => {
     checkLoginStatus();

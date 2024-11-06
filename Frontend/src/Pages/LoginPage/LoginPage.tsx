@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (success && !signUpError) {  // Kontrollera att inga felmeddelanden finns
-        setSuccessMessage('Account created successfully!');
+        setSuccessMessage('An email has been sent to ' + email + '. Click on the link to verify your account');
         setIsSignUp(false);
         setFirstName('');
         setLastName('');
