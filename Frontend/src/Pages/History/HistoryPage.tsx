@@ -24,6 +24,7 @@ const HistoryPage = () => {
 
   const [frequency, setFrequency] = useState('1day');
   const [processedData, setProcessedData] = useState([]);
+  const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
   const [numberOfMonths, setNumberOfMonths] = useState(3);
 
@@ -80,13 +81,48 @@ const HistoryPage = () => {
     return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
   };
 
+  const processQueueData = (cameraQueueData, frequency, numberOfMonths, threshold = 3) => {
+    const result = {};
+  
+    cameraQueueData.forEach(item => {
+      const timestamp = new Date(item.Timestamp);
+      let key;
+  
+      // Format the timestamp based on the frequency
+      if (frequency === '1hour') {
+        key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
+      } else if (frequency === '1day') {
+        key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+      } else {
+        key = moment(timestamp).format('YYYY-MM'); // Group by month
+      }
+  
+      // Only process if the NumberOfCustomers is greater than or equal to the threshold
+      if (item.NumberOfCustomers >= threshold) {
+        if (!result[key]) {
+          result[key] = { Timestamp: key, NumberOfCustomers: 0 };
+        }
+        result[key].NumberOfCustomers += 1;
+      }
+    });
+  
+    const groupedData = Object.values(result);
+  
+    // If monthly, limit to the last `numberOfMonths`
+    return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
+  };
+  
+
   useEffect(() => {
     if (customerCountData) {
       setProcessedData(processData(customerCountData, frequency, numberOfMonths));
     }
-  }, [customerCountData, frequency]);
+  }, [customerCountData, frequency, numberOfMonths]);
 
-  // Display loading spinner if any of the data is still loading
+  useEffect(() => {
+    if (cameraQueueData) {
+      setProcessedQueueData(processQueueData(cameraQueueData, frequency, numberOfMonths));
+    }
   }, [customerCountData, frequency, numberOfMonths]);
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
@@ -99,14 +135,14 @@ const HistoryPage = () => {
   }
 
   return (
-    <div className={styles.HistoryPage}>
-      <h1>Historical Data</h1>
-      <DateTimeDisplay lastUpdated={lastUpdated} /> {/* Display the last updated time */}
     <div className={styles.dashboardContainer}>
       <h1>Dashboard</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
+        <Col>
+          <RangePicker onChange={onDateChange} />
+        </Col>
         <Col>
           <Button 
             onClick={() => setFrequency('1hour')} 
@@ -146,37 +182,10 @@ const HistoryPage = () => {
       </Row>
 
       <Row gutter={16}>
-      <Col span={12}>
-          <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <h3>Number of customers today: {cameraQueueData[0]?.Timestamp}</h3>
-          </Card>
-        </Col>
         <Col span={12}>
-          <Card title="Customer" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <ResponsiveContainer width="100%" height={300}>
+          <Card title="Customer Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="Timestamp" 
-                  tickFormatter={timestamp => {
-                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY'); // Monthly format
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="TotalCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        
-        <Col span={12}>
-          <Card title="Queue Alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={[]}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="Timestamp" 
@@ -189,7 +198,41 @@ const HistoryPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="TotalCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
+                <Line 
+                  type="monotone" 
+                  dataKey="TotalCustomers" 
+                  stroke="#8884d8" 
+                  activeDot={{ r: 8 }} 
+                  name="Total number of customers" 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+        
+        <Col span={12}>
+          <Card title="Queue Alerts from Area1 & Area2" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={processedQueueData || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="Timestamp" 
+                  tickFormatter={timestamp => {
+                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                    return moment(timestamp).format('MMM YYYY');
+                  }}
+                />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="NumberOfCustomers" 
+                  stroke="#8884d8" 
+                  activeDot={{ r: 8 }} 
+                  name="Number of alerts" 
+                />
               </LineChart>
             </ResponsiveContainer>
           </Card>
