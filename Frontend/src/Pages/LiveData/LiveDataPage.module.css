@@ -1,0 +1,52 @@
+/* LiveDataPageStyles.module.css */
+
+.LiveDataPageContainer {
+    padding: 24px;
+    background-color: #f0f0f0; /* Light background color for the container */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.liveDataCard {
+    background-color: #ffffff; /* White background for the card */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px; /* Space between cards */
+}
+
+.bar-chart-container {
+    margin-top: 16px; /* Space above the chart */
+}
+
+.liveCustomerCountCard {
+    background-color: #ffffff; /* White background for the card */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center; /* Center align content */
+    width: 100%;
+    
+}
+
+.liveQueueCountCard{
+    background-color: #ffffff; /* White background for the card */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center; /* Center align content */
+    width: 100%
+}
+
+/* LiveDataPage.module.css */
+
+.customerCountText {
+    font-size: 48px; /* Increase font size */
+    font-weight: bold; /* Keep it bold */
+    color: #1890ff; /* Blue text color (using your existing accent color) */
+    margin: 20px 0; /* Space above and below */
+}
+.queueCountText {
+    font-size: 20px; /* Increase font size */
+    color: #000000; /* Blue text color (using your existing accent color) */
+    margin: 20px 0; /* Space above and below */
+    text-align: left;
+}
+
