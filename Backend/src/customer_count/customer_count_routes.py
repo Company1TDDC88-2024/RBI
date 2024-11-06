@@ -6,8 +6,9 @@ from datetime import datetime
 customer_count_bp = Blueprint('customer_count', __name__)
 
 
+
 @customer_count_bp.route('/upload', methods=['POST'])
-async def upload_data():
+async def process_observations():
     data = request.json
 
     # Validate the required fields in the JSON
@@ -24,9 +25,6 @@ async def upload_data():
         return jsonify({'message': 'Invalid data structure'}), 400
 
     result = await upload_data_to_db(data)
-    
-    print(result)
-    
     return jsonify(result), 200
 
 
@@ -34,13 +32,14 @@ async def upload_data():
 @customer_count_bp.route('/get', methods=['GET'])
 async def get_data():
     start_date = request.args.get('startDate')
-    end_date = request.args.get('endDate')
+    end_date = request.args.get('endDate')  
 
     # Convert start_date and end_date to datetime objects if they are provided
     if start_date:
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
     if end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
 
     data = await get_data_from_db(start_date, end_date)
     if isinstance(data, str):
@@ -75,6 +74,16 @@ async def get_daily_customers():
     if isinstance(data, str):
         return jsonify({'message': data}), 500
     
-    # Sum up all EnteringCustomers from each entry resulting in daily customers
-    total_entering_customers = sum(entry['EnteringCustomers'] for entry in data)
-    return jsonify({'totalEnteringCustomers': total_entering_customers})
+    # Calculate total entering and exiting customers for the day
+    total_entering_customers = sum(entry.get('EnteringCustomers', 0) or 0 for entry in data)
+    total_exiting_customers = sum(entry.get('ExitingCustomers', 0) or 0 for entry in data)
+    
+    # Get total customers as needed
+    total_customers = data[0]['TotalCustomers'] if data else 0
+    print(data)
+    # Return all totals in one JSON object
+    return jsonify({
+        'totalEnteringCustomers': total_entering_customers,
+        'totalExitingCustomers': total_exiting_customers,
+        'totalCustomers': total_customers
+    })

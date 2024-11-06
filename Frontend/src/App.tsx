@@ -4,6 +4,7 @@ import Layout from "./Components/Layout/Layout";
 import DashboardPage from "./Pages/Dashboard/DashboardPage";
 import HistoryPage from "./Pages/History/HistoryPage";
 import LivefeedPage from "./Pages/Livefeed/LivefeedPage";
+import LiveDataPage from "./Pages/LiveData/LiveDataPage";
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/livefeed" element={<LivefeedPage />} />
+                    <Route path="/livedata"element={<LiveDataPage />} />
                 </Routes>
             </Layout>
         </Router>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Badge } from "antd";
 import { Link } from "react-router-dom";
 import {
   DashboardOutlined,
@@ -7,6 +7,7 @@ import {
   VideoCameraOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
+import { Dot } from "recharts";
 
 const { Sider } = Layout;
 
@@ -23,6 +24,9 @@ const SiderMenu: React.FC = () => {
         </Menu.Item>
         <Menu.Item key="3" icon={<VideoCameraOutlined />}>
           <Link to="/livefeed">Live Feed</Link>
+        </Menu.Item>
+        <Menu.Item key="5" icon={<Badge color="red" dot />}>
+          <Link to="/livedata">Live Data</Link>
         </Menu.Item>
         <Menu.Item key="4" icon={<LogoutOutlined />}>
           <Link to="#">Logout</Link>
