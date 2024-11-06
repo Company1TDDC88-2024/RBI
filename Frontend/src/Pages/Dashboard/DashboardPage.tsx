@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, Row, Col, Spin, Alert, Table, DatePicker, Button } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
-import { useGetQueueCount } from "./Hooks/useGetQueueCount"; // Import the Queue Count hook
-import { useGetDailyCustomers } from './Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
+import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
+import { useGetQueueCount } from "../Hooks/useGetQueueCount"; // Import the Queue Count hook
+import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
 import styles from "./DashboardPage.module.css";
-import DateTimeDisplay from './DateTimeDisplay'; 
+import DateTimeDisplay from '../DateTimeDisplay'; 
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;

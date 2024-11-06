@@ -51,7 +51,7 @@ async def get_data_from_db():
 
     try:
         # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount")
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI, CameraID FROM QueueCount")
         rows = cursor.fetchall()
         data = []
         for row in rows:
@@ -59,7 +59,8 @@ async def get_data_from_db():
                 'ID': row[0],
                 'NumberOfCustomers': row[1],
                 'Timestamp': row[2],
-                'ROI': row[3]
+                'ROI': row[3],
+                'CameraID': row[4],
             })
         return data
     except pyodbc.Error as e:

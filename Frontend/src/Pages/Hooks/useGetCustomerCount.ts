@@ -1,25 +1,26 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { ICustomerCount } from "./../../Types/Customer-data-types";
 
-// Define the type for the queue count data
-interface IQueueCount {
-    ID: number;
-    NumberOfCustomers: number;
-}
+// Define the type for the customer count data
 
-interface IUseGetQueueCountReturn {
-    data: IQueueCount | null;
+interface IUseGetCustomerCountReturn {
+    data: ICustomerCount[] | null;
     error: Error | null;
     loading: boolean;
 }
 
-export const useGetQueueCount = (): IUseGetQueueCountReturn => {
-    const [data, setData] = useState<IQueueCount | null>(null);
+export const useGetCustomerCount = (startDate: string, endDate: string): IUseGetCustomerCountReturn => {
+    const [data, setData] = useState<ICustomerCount[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        axios.get("/queue_count/get", {
+        axios.get("/customer_count/get", {
+            params: {
+                startDate,
+                endDate
+            },
             withCredentials: true
         })
             .then((response) => {
@@ -33,7 +34,7 @@ export const useGetQueueCount = (): IUseGetQueueCountReturn => {
             .finally(() => {
                 setLoading(false);
             });
-    }, []);
+    }, [startDate, endDate]);
 
     return { data, error, loading };
 };
