@@ -14,15 +14,7 @@ async def get_db_connection():
     ssl_cert_path = '../DigiCertGlobalRootCA.crt.pem'
 
     connection_string = (
-        f"Driver={{ODBC Driver 18 for SQL Server}};"
-        f"Server={server};"
-        f"Database={database};"
-        f"Uid={username};"
-        f"Pwd={password};"
-        "Encrypt=yes;"
-        "TrustServerCertificate=no;"
-        f"SSLCA={ssl_cert_path};"
-        "Connection Timeout=30;"
+        "Driver={ODBC Driver 18 for SQL Server};Server=tcp:tddc88company1.database.windows.net,1433;Database=company1;Uid=company1admin;Pwd=Baljan123;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
     )
     try:
         conn = pyodbc.connect(connection_string)

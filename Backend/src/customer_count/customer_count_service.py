@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
+
+from datetime import datetime
+import pyodbc
 from cryptography.fernet import Fernet
 
 key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
@@ -14,11 +17,41 @@ async def upload_data_to_db(data):
     if conn is None:
         return "Failed to connect to database"
 
-    cursor = conn.cursor()
-    TimeInterval = 10
+    TimeInterval = 10  # Arbitrary TimeInterval value
 
+
+    observations = data['observations']
+    bounding_boxes = [obs["bounding_box"] for obs in observations]
+    last_timestamp = observations[-1]["timestamp"]  # Get the last timestamp
+
+    # Determine whether the customer is entering or exiting based on bounding box positions
+    placeholder = {
+        "EnteringCustomers": 0,
+        "ExitingCustomers": 0,
+        "Timestamp": last_timestamp
+    }
+
+    if bounding_boxes[-1]["left"] < 0.3:
+        # Customer is exiting
+        placeholder = {
+            "EnteringCustomers": 0,
+            "ExitingCustomers": 1,
+            "Timestamp": last_timestamp
+        }
+    elif bounding_boxes[-1]["right"] > 0.7:
+        # Customer is entering
+        placeholder = {
+            "EnteringCustomers": 1,
+            "ExitingCustomers": 0,
+            "Timestamp": last_timestamp
+        }
+
+    
+
+    cursor = conn.cursor()
     try:
         # Fetch the most recent TotalCustomers_temp and Timestamp for calculations
+        # Fetch the most recent TotalCustomers and Timestamp
         cursor.execute("""
             SELECT TOP 1 TotalCustomers_temp, Timestamp FROM CustomerCount_temp
             ORDER BY Timestamp DESC
@@ -46,23 +79,28 @@ async def upload_data_to_db(data):
             previous_total_customers = 0
             previous_timestamp = None
 
-        # Date handling and formatting
-        queried_date = previous_timestamp.date() if previous_timestamp else None
-        incoming_datetime = datetime.strptime(data['Timestamp'], "%Y-%m-%dT%H:%M:%S.%f")
-        incoming_date = incoming_datetime.date()
+        # Convert incoming Timestamp from string to datetime
+        incoming_datetime = datetime.strptime(placeholder['Timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
         formatted_timestamp = incoming_datetime.strftime("%Y-%m-%dT%H:%M:%S")  # Format for SQL Server
 
-        # Calculate TotalCustomers based on dates
+        # Extract dates for comparison
+        queried_date = previous_timestamp.date() if previous_timestamp else None
+        incoming_date = incoming_datetime.date()
+
+        # Calculate TotalCustomers based on the date comparison
         if queried_date != incoming_date or not queried_date:
-            TotalCustomers = data['EnteringCustomers'] - data['ExitingCustomers']
+            TotalCustomers = placeholder['EnteringCustomers'] - placeholder['ExitingCustomers']
         else:
+            TotalCustomers = previous_total_customers + placeholder['EnteringCustomers'] - placeholder['ExitingCustomers']
+                
+        # Insert the data into the CustomerCount table
             # Assuming data['EnteringCustomers'] and data['ExitingCustomers'] are integers
-            TotalCustomers = previous_total_customers + data['EnteringCustomers'] - data['ExitingCustomers']
+            TotalCustomers = previous_total_customers + placeholder['EnteringCustomers'] - placeholder['ExitingCustomers']
 
         # Encrypt the new TotalCustomers, EnteringCustomers, and ExitingCustomers
         encrypted_total_customers = cipher_suite.encrypt(str(TotalCustomers).encode())
-        encrypted_entering_customers = cipher_suite.encrypt(str(data['EnteringCustomers']).encode())
-        encrypted_exiting_customers = cipher_suite.encrypt(str(data['ExitingCustomers']).encode())
+        encrypted_entering_customers = cipher_suite.encrypt(str(placeholder['EnteringCustomers']).encode())
+        encrypted_exiting_customers = cipher_suite.encrypt(str(placeholder['ExitingCustomers']).encode())
 
         # Insert encrypted values into CustomerCount table
         cursor.execute("""
