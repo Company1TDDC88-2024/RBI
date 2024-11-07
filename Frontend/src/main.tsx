@@ -3,7 +3,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import axios from "axios";
 
-axios.defaults.baseURL = "http://tddc88-company1-ht24.kubernetes-public.it.liu.se/api";
+axios.defaults.baseURL =
+    "https://tddc88-company1-ht24.kubernetes-public.it.liu.se/api";
 axios.defaults.withCredentials = true;
 
 createRoot(document.getElementById("root")!).render(
