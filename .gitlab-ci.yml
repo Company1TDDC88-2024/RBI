@@ -176,7 +176,7 @@ deploy:
     - echo "Waiting for ingress $INGRESS_NAME to be ready..."
     #- kubectl exec $POD_NAME_FE -n tddc88-ht24-company1 -- curl http://backend-service:5555/api
     #- kubectl wait --for=condition=ready ingress/$INGRESS_NAME -n tddc88-ht24-company1 --timeout=600s
-    - sleep 100
+    - sleep 40
     - kubectl apply -f k8s/allow-outbound-to-azure.yaml
     - kubectl describe ingress app-ingress -n $POD_NAMESPACE
     - kubectl get ingress -n $POD_NAMESPACE

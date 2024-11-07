@@ -48,6 +48,7 @@ FROM python:3.10
 ENV PATH="/root/.local/bin:$PATH"
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DEPLOYMENT=True
 
 # Set the working directory
 WORKDIR /app
