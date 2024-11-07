@@ -5,12 +5,25 @@ from src.customer_count.customer_count_routes import customer_count_bp
 from src.queue_count.queue_count_routes import queue_count_bp
 from src.coordinates.coordinates_routes import coordinates_bp
 from src.example.date_routes import date_bp
+from src.login.login_routes import login_bp
+import secrets
+import logging
+
 
 app = Flask(__name__)
+
+<<<<<<< HEAD
+# Middleware
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
+
+=======
+app.secret_key = secrets.token_hex(16)
+
 
 # Middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
+>>>>>>> 2a09a50f49875fa31189ee2fc2a6ca15a5fb22eb
 print("Server is running")
 app.register_blueprint(example_bp, url_prefix='/api/example')
 app.register_blueprint(customer_count_bp, url_prefix='/api/customer_count')
