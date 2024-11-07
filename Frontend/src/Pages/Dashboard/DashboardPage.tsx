@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, Row, Col, Spin, Alert, Table, DatePicker, Button } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useGetCustomerCount } from "./Hooks/useGetCustomerCount";
-import { useGetQueueCount } from "./Hooks/useGetQueueCount"; // Import the Queue Count hook
-import { useGetDailyCustomers } from './Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
+import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
+import { useGetQueueCount } from "../Hooks/useGetQueueCount"; // Import the Queue Count hook
+import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
 import styles from "./DashboardPage.module.css";
-import DateTimeDisplay from './DateTimeDisplay'; 
+import DateTimeDisplay from '../DateTimeDisplay'; 
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;
@@ -62,6 +62,28 @@ const DashboardPage = () => {
 
   const onDateChange = (dates: any, dateStrings: [string, string]) => {
     setDates(dateStrings);
+  };
+
+  const processQueuData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
+    const result: any = {};
+    customerCountData.forEach(item => {
+      const timestamp = new Date(item.Timestamp);
+      let key: string;
+
+      if (frequency === '10min') {
+        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
+      } else if (frequency === '1hour') {
+        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
+      } else {
+        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`;
+      }
+
+      if (!result[key]) {
+        result[key] = { Timestamp: key, TotalCustomers: 0 };
+      }
+      result[key].TotalCustomers += item.TotalCustomers;
+    });
+    return Object.values(result);
   };
 
   const processData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {

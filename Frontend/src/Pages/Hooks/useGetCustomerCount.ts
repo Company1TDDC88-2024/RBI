@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { ICustomerCount } from "../../../Types/Customer-data-types";
+import { ICustomerCount } from "./../../Types/Customer-data-types";
 
 // Define the type for the customer count data
 
