@@ -1,6 +1,6 @@
 // SiderMenu.tsx
 import React from "react";
-import { Layout, Menu, message } from "antd";
+import { Layout, Menu, message, Badge } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DashboardOutlined,
@@ -10,6 +10,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import { useAuth } from "../../AuthContext"; // Importera useAuth från AuthContext
+import { Dot } from "recharts";
 
 const { Sider } = Layout;
 
@@ -42,6 +43,9 @@ const SiderMenu: React.FC = () => {
         </Menu.Item>
         <Menu.Item key="3" icon={<VideoCameraOutlined />}>
           <Link to="/livefeed">Live Feed</Link>
+        </Menu.Item>
+        <Menu.Item key="5" icon={<Badge color="red" dot />}>
+          <Link to="/livedata">Live Data</Link>
         </Menu.Item>
         <Menu.Item
           key="4"

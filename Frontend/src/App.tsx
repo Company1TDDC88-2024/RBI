@@ -5,6 +5,7 @@ import DashboardPage from "./Pages/Dashboard/DashboardPage";
 import HistoryPage from "./Pages/History/HistoryPage";
 import LivefeedPage from "./Pages/Livefeed/LivefeedPage";
 import LoginPage from "./Pages/LoginPage/LoginPage";
+import LiveDataPage from "./Pages/LiveData/LiveDataPage";
 import { AuthProvider, useAuth } from "./AuthContext"; 
 import useInactivityTimeout from "./Hooks/useIdleTimer"; 
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
             <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} />
             <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} />
+            <Route path="/livedata"element={<LiveDataPage />} />
           </Routes>
         </Layout>
       </Router>
