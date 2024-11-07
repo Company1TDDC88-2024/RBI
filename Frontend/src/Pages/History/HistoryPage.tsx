@@ -5,6 +5,7 @@ import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
 import styles from "./HistoryPage.module.css";
+import ExpectedCustomerCount from "./ExpectedCustomerCount";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
 
@@ -25,6 +26,21 @@ const HistoryPage = () => {
   const [processedData, setProcessedData] = useState([]);
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
+interface CustomerData {
+  date: string;
+  count: number;
+}
+
+const HistoryPage: React.FC = () => {
+  const [monthlyData, setMonthlyData] = useState<CustomerData[]>([]);
+  const [weeklyData, setWeeklyData] = useState<CustomerData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const currentDate = new Date();  // Get today's date
+  console.log("date from history:",currentDate);
+  currentDate.setFullYear(currentDate.getFullYear() - 1); 
+  console.log("Adjusted current date to last year:", currentDate); // Adjust the year to last year
+  const selectedDate = currentDate.toISOString().split("T")[0];
+  console.log("Formatted selected date:", selectedDate); 
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
