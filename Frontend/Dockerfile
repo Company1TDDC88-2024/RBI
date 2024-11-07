@@ -13,6 +13,8 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+ENV VITE_API_URL=https://tddc88-company1-ht24.kubernetes-public.it.liu.se/api
+
 # Build the application for production (ignore TypeScript errors)
 RUN npm run build --noEmitOnError false
 
