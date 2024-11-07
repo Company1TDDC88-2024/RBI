@@ -127,20 +127,17 @@ const HistoryPage = () => {
   };
   
 
-  
-  
   useEffect(() => {
     if (customerCountData) {
       setProcessedData(processData(customerCountData, frequency));
     }
   }, [customerCountData, frequency, dates]);
-  }, [customerCountData, frequency, numberOfMonths]);
 
   useEffect(() => {
     if (cameraQueueData) {
-      setProcessedQueueData(processQueueData(cameraQueueData, frequency, numberOfMonths));
+      setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates));
     }
-  }, [customerCountData, frequency, numberOfMonths]);
+  }, [cameraQueueData, frequency, dates]);
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
@@ -153,7 +150,7 @@ const HistoryPage = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <h1>Historic Data</h1>
+      <h1>Historical Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
@@ -186,7 +183,7 @@ const HistoryPage = () => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Customer Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title="Number of customers" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -215,7 +212,7 @@ const HistoryPage = () => {
         </Col>
         
         <Col span={12}>
-          <Card title="Queue Alerts from Area1 & Area2" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title="Number of queue alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedQueueData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -235,7 +232,7 @@ const HistoryPage = () => {
                   dataKey="NumberOfCustomers" 
                   stroke="#8884d8" 
                   activeDot={{ r: 8 }} 
-                  name="Number of alerts" 
+                  name="Number of alerts over" 
                 />
               </LineChart>
             </ResponsiveContainer>
