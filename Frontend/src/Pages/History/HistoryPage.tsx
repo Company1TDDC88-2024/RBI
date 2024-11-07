@@ -7,6 +7,7 @@ import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
+import ExpectedCustomerCount from "./ExpectedCustomerCount";
 
 const { RangePicker } = DatePicker;
 
@@ -15,6 +16,13 @@ const HistoryPage = () => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
+  const todaysDate = new Date();  // Get today's date
+  console.log("date from history:",todaysDate);
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
+  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
+  const selectedDate = todaysDate.toISOString().split("T")[0];
+  console.log("Formatted selected date:", selectedDate); 
+
 
   const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
@@ -239,6 +247,7 @@ const HistoryPage = () => {
           </Card>
         </Col>
       </Row>
+      <ExpectedCustomerCount date={selectedDate} />
     </div>
   );
 };
