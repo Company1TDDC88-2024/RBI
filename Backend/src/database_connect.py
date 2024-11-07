@@ -19,8 +19,6 @@ async def get_db_connection():
     )
     try:
         conn = await asyncio.to_thread(pyodbc.connect, connection_string)
-        print("Connected to database")
-        print(conn)
         return conn
     except pyodbc.Error as e:
         print(f"Error connecting to database: {e}")
