@@ -77,7 +77,7 @@ const LiveDataPage = () => {
                     <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
                         <ResponsiveContainer>
                         <p className={styles.customerCountText}>
-                                {loadingToday ? 'Loading...' : (todayData?.totalEnteringCustomers - todayData?.totalExitingCustomers || 0)} 
+                                {loadingToday ? 'Loading...' : (todayData?.totalEnteringCustomers ?? 0) - (todayData?.totalExitingCustomers ?? 0)}
                                 {/* This should be TotalCustomers */}
                         </p>
                         </ResponsiveContainer>
