@@ -23,7 +23,7 @@ const InactivityHandler = () => {
     navigate("/login"); // Redirect to login when timeout occurs
   };
 
-  useInactivityTimeout(60000, handleTimeout); // Call inactivity timeout with 1 minute
+  useInactivityTimeout(600000, handleTimeout); // Call inactivity timeout with 1 minute
 
   return null; // This component does not render anything
 };
@@ -41,7 +41,7 @@ function App() {
             <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
             <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} />
             <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} />
-            <Route path="/livedata"element={<LiveDataPage />} />
+            <Route path="/livedata"element={<PrivateRoute element={<LiveDataPage />} />} />
           </Routes>
         </Layout>
       </Router>
