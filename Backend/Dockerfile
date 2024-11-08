@@ -49,7 +49,7 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEPLOYMENT=True
-ENV BACKEND_URL=https://tddc88-company1-ht24.kubernetes-public.it.liu.se/api
+ENV BACKEND_URL="https://tddc88-company1-ht24.kubernetes-public.it.liu.se/api"
 
 # Set the working directory
 WORKDIR /app
