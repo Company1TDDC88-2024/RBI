@@ -19,9 +19,21 @@ const LiveDataPage = () => {
     const prevYearDate = setDay(setWeek(prevYear, currentWeek), currentDay).toISOString().split('T')[0];
 
     // Get data for today and last year
-    const { data: todayData, loading: loadingToday } = useGetDailyCustomers(todayDate);
-    const { data: lastYearData} = useGetDailyCustomers(prevYearDate);
-    const { data: queueData, loading: loadingQueue } = useGetQueueCount();
+    const { data: todayData, loading: loadingToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
+    const { data: lastYearData, refetch: refetchLastYear } = useGetDailyCustomers(prevYearDate);
+    const { data: queueData, loading: loadingQueue, refetch: refetchQueue } = useGetQueueCount();
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            refetchToday(todayDate);
+            refetchLastYear(prevYearDate);
+            refetchQueue();
+            setLastUpdated(moment().format('HH:mm:ss'));
+            console.log('Data refetched');
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(interval); // Cleanup interval on component unmount
+    }, [refetchToday, refetchLastYear, refetchQueue, todayDate, prevYearDate]);
 
     // Update the last updated time when the data changes
     useEffect(() => {
@@ -54,8 +66,6 @@ const LiveDataPage = () => {
             }
             return acc;
         }, {} as Record<string, { NumberOfCustomers: number; Timestamp: number }>);
-        
-    
 
     const comparisonData = [
         { label: prevYearDate, total: lastYearData?.totalEnteringCustomers || 0 }, // Comparing data, last year with the same week and weekday
