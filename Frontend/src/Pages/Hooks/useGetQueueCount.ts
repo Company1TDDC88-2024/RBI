@@ -7,10 +7,8 @@ interface IQueueCount {
     ID: number;
     NumberOfCustomers: number; // Number of customers as a number
     ROI: number; // Return on investment or similar metric as a number
-    Timestamp: string; // Timestamp as a string
-    NumberOfCustomers: number;
-    ROI: number;
-    TimeStamp: Date;
+    Timestamp: Date; // Timestamp as a string
+
 }
 
 interface IUseGetQueueCountReturn {
