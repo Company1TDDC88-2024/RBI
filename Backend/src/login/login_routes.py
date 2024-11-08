@@ -21,9 +21,11 @@ def send_verification(email_receiver, token):
     # Email configuration
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
+    url = os.getenv('BACKEND_URL')
+
 
     # Create the verification link
-    verification_link = f"/login/verify/{token}"
+    verification_link = f"{url}/login/verify/{token}"
 
     # Create the email content
     subject = "Email Verification"
