@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Row, Col } from 'antd';
 import CameraFeed from '../../Components/CameraFeed/CameraFeed';
 import styles from './LivefeedPage.module.css';
+import DateTimeDisplay from '../DateTimeDisplay';
+import moment from 'moment';
 
 const LivefeedPage: React.FC = () => {  
   const [camera1Available, setCamera1Available] = useState<boolean>(true);   // State to track camera availability, not really working as expected
   const [camera2Available, setCamera2Available] = useState<boolean>(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('Never');
+
+  // Update the last updated time when the data changes
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (camera1Available || camera2Available) {
+        interval = setInterval(() => {
+            setLastUpdated(moment().format('HH:mm:ss'));
+        }, 1000); // Update every second
+    } else {
+        setLastUpdated('Offline');
+    }
+
+    return () => {
+        if (interval) {
+            clearInterval(interval);
+        }
+    };
+}, [camera1Available, camera2Available]);
 
   return (    // Render the live feed page, the two cameras are hardcoded in the CameraFeed component. Not the best way to do it, but it works for this application
     <div className={styles.pageContainer}>
       <h1>Live feed from the store</h1>
+      <DateTimeDisplay lastUpdated={lastUpdated} />
       <Row gutter={16}>
         {/* First camera */}
         <Col span={12}>
