@@ -14,7 +14,7 @@ interface IUseGetDailyCustomersReturn {
     loading: boolean;
 }
 
-export const useGetDailyCustomers = (date: String): IUseGetDailyCustomersReturn => {
+export const useGetDailyCustomers = (date: string): IUseGetDailyCustomersReturn => {
     const [data, setData] = useState<IDailyCustomerCount | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
