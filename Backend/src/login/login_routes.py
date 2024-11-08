@@ -23,7 +23,7 @@ def send_verification(email_receiver, token):
     email_password = "rpmu qrel qczc jmhd"
 
     # Create the verification link
-    verification_link = f"http://127.0.0.1:5555/login/verify/{token}"
+    verification_link = f"/login/verify/{token}"
 
     # Create the email content
     subject = "Email Verification"
