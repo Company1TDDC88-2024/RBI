@@ -15,6 +15,7 @@ interface IUseGetQueueCountReturn {
     data: IQueueCount[] | null; // Now returning an array of IQueueCount
     error: Error | null;
     loading: boolean;
+    refetch: () => void;
 }
 
 export const useGetQueueCount = (): IUseGetQueueCountReturn => {
@@ -22,7 +23,7 @@ export const useGetQueueCount = (): IUseGetQueueCountReturn => {
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
-    useEffect(() => {
+    const fetchData = () => {
         axios.get("/queue_count/get", {
             withCredentials: true
         })
@@ -37,7 +38,11 @@ export const useGetQueueCount = (): IUseGetQueueCountReturn => {
             .finally(() => {
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
-    return { data, error, loading };
+    return { data, error, loading, refetch: fetchData };
 };
