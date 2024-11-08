@@ -206,7 +206,7 @@ const DashboardPage = () => {
         </Col>
         <Col span={12}>
           <Card title="Queue Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <h3>Current Number of Customers in Queue: {queueData?.NumberOfCustomers || 0}</h3>
+            <h3>Current Number of Customers in Queue: {queueData?.[0]?.NumberOfCustomers || 0}</h3>
           </Card>
         </Col>
       </Row>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Row, Col, Spin } from "antd";
 import styles from "./LiveDataPage.module.css";
 import "../../global.css";
@@ -6,8 +6,11 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers.ts"; 
 import { useGetQueueCount } from "../Hooks/useGetQueueCount.ts";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
+import DateTimeDisplay from "../DateTimeDisplay.tsx";
+import moment from "moment";
 
 const LiveDataPage = () => {
+    const [lastUpdated, setLastUpdated] = useState<string>('Never');
     // Gets today's date and finds corresponding date (same week and weekday) from previous year.
     const todayDate = new Date().toISOString().split('T')[0]; // transforms Date into string
     const currentWeek = getWeek(todayDate);
@@ -19,6 +22,13 @@ const LiveDataPage = () => {
     const { data: todayData, loading: loadingToday } = useGetDailyCustomers(todayDate);
     const { data: lastYearData} = useGetDailyCustomers(prevYearDate);
     const { data: queueData, loading: loadingQueue } = useGetQueueCount();
+
+    // Update the last updated time when the data changes
+    useEffect(() => {
+        if (todayData || lastYearData || queueData) {
+        setLastUpdated(moment().format('HH:mm:ss'));
+        }
+    }, [todayData, lastYearData, queueData]);
 
     const queueCountsByROI = queueData && Array.isArray(queueData) 
         ? queueData.reduce((acc, item) => {
@@ -55,6 +65,7 @@ const LiveDataPage = () => {
     return (
         <div className={styles.LiveDataPageContainer}>
             <h1>Live Data</h1>
+            <DateTimeDisplay lastUpdated={lastUpdated} />
             <Row gutter={16} style={{ marginTop: '16px' }}>
                 <Col span={12}>
                     <Card title="Total Customers graph, today and last year" bordered={false} className={styles.liveDataCard}>
