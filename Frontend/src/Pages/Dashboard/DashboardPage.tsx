@@ -50,8 +50,19 @@ const DashboardPage = () => {
   }, [dates]);
 
   // Fetch customer count data and daily customers data
-  const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
-  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
+  const { data: customerCountData, error: customerCountError, loading: customerCountLoading, refetch: refetchCustomerCount} = useGetCustomerCount(dates[0], dates[1]);
+  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading, refetch: refetchDailyCustomer } = useGetDailyCustomers(currentDate);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        refetchCustomerCount(dates[0], dates[1]);
+        refetchDailyCustomer(currentDate);
+        setLastUpdated(moment().format('HH:mm:ss'));
+        console.log('Data refetched');
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+}, [refetchCustomerCount, refetchDailyCustomer, dates, currentDate]);
 
   // Update the last updated time when the data changes
   useEffect(() => {
