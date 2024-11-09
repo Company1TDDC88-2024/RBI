@@ -5,6 +5,8 @@ import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers.ts"; 
 import { useGetQueueCount } from "../Hooks/useGetQueueCount.ts";
+import { ExclamationCircleFilled } from "@ant-design/icons";
+import { useQueueThreshold } from "../Settings/QueueThresholdContext";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 import DateTimeDisplay from "../DateTimeDisplay.tsx";
 import moment from "moment";
@@ -17,6 +19,7 @@ const LiveDataPage = () => {
     const currentDay = getDay(todayDate);
     const prevYear = addYears(todayDate, -1);
     const prevYearDate = setDay(setWeek(prevYear, currentWeek), currentDay).toISOString().split('T')[0];
+    const { queueThreshold } = useQueueThreshold(); // Get the threshold value
 
     // Get data for today and last year
     const { data: todayData, loading: loadingToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
@@ -72,6 +75,7 @@ const LiveDataPage = () => {
         { label: todayDate , total: todayData?.totalEnteringCustomers || 0 } // Today's data
     ];
 
+
     return (
         <div className={styles.LiveDataPageContainer}>
             <h1>Live Data</h1>
@@ -106,18 +110,22 @@ const LiveDataPage = () => {
                 </Col>
                 <Col span={6}>
                     <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
-                        {loadingQueue ? (
-                            <Spin tip="Loading..."/>
+                        {loadingQueue ? (<Spin tip="Loading..." />) : (Object.keys(filteredQueueCounts).length > 0 ? (
+                            Object.keys(filteredQueueCounts).map(roi => (
+                                <div key={roi} className={styles.queueCountText} style={{ display: "flex", alignItems: "center" }}>
+                                    <p> Queue {roi}: {filteredQueueCounts[roi].NumberOfCustomers} customers
+                                        <div style={{ fontWeight: "bold", fontSize: "0.9em", marginTop: "4px" }}>
+                                            Threshold: {queueThreshold}
+                                        </div>
+                                    </p>
+                                {filteredQueueCounts[roi].NumberOfCustomers >= queueThreshold && (
+                                <ExclamationCircleFilled style={{ color: "red", marginLeft: 8, fontSize: 24 }} />
+                                )}
+                                </div>
+                            ))
                         ) : (
-                            Object.keys(filteredQueueCounts).length > 0 ? (
-                                Object.keys(filteredQueueCounts).map(roi => (
-                                    <div key={roi} className={styles.queueCountText}>
-                                        <p>Queue {roi}: {filteredQueueCounts[roi].NumberOfCustomers} customers</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className={styles.queueCountText}>No queues in store</p>
-                            )
+                            <p className={styles.queueCountText}>No queues in store</p>
+                        )
                         )}
                     </Card>
                 </Col>

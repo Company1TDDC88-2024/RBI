@@ -7,6 +7,7 @@ import {
   HistoryOutlined,
   VideoCameraOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import { useAuth } from "../../AuthContext"; // Importera useAuth från AuthContext
@@ -46,6 +47,9 @@ const SiderMenu: React.FC = () => {
         </Menu.Item>
         <Menu.Item key="5" icon={<Badge color="red" dot />}>
           <Link to="/livedata">Live Data</Link>
+        </Menu.Item>
+        <Menu.Item key="6" icon={<SettingOutlined />}>
+          <Link to="/settings">Settings</Link>
         </Menu.Item>
         <Menu.Item
           key="4"
