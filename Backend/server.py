@@ -1,5 +1,8 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from redis import Redis
 from src.example.examples_routes import example_bp
 from src.customer_count.customer_count_routes import customer_count_bp
 from src.queue_count.queue_count_routes import queue_count_bp
@@ -19,6 +22,17 @@ else:
     port = 5555
 
 app.secret_key = secrets.token_hex(16)
+
+# Redis client, used for storing session data for the limiter
+redis_client = Redis(host='0.0.0.0', port=6379)
+
+# Limiter for requests to prevent DDOS attacks
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    storage_uri="redis://localhost:6379",
+    default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
+)
 
 # Middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
