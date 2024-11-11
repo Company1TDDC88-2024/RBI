@@ -3,8 +3,8 @@ import { Card, Row, Col } from "antd";
 import styles from "./LiveDataPage.module.css";
 import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { useGetDailyCustomers } from "../Dashboard/Hooks/useGetDailyCustomers"; 
-import { useGetQueueCount } from "../Dashboard/Hooks/useGetQueueCount";
+import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers"; 
+import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 
 const LiveDataPage = () => {

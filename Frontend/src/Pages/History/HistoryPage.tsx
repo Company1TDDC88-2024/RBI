@@ -8,6 +8,7 @@ import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
 import ExpectedCustomerCount from "./ExpectedCustomerCount";
+import MonthlyAverageCustomerCount from "./Averagecustomercount";
 
 const { RangePicker } = DatePicker;
 
@@ -248,6 +249,7 @@ const HistoryPage = () => {
         </Col>
       </Row>
       <ExpectedCustomerCount date={selectedDate} />
+      <MonthlyAverageCustomerCount months={6} />
     </div>
   );
 };
