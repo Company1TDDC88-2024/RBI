@@ -18,14 +18,16 @@ def count_points_in_zones(points, zones):
 
 #Function that calculates the bottom middle coord of an input object.
 def to_coord(b,l,r):
-    return [(l+r)/2, b]
+    #returns 1-b since the camera starts 0,0 top left instead of bot left
+    return [(l+r)/2, 1-b]
+
 
 
 async def upload_function(i, counts, incoming_datetime, RoIs):
     #this could easily be any value with another row in coordinate table
     QUEUE_THRESHOLD = 1
     if (counts[i] > QUEUE_THRESHOLD): #Check if there are more people than "allowed"
-            
+
         conn = await get_db_connection()
         if conn is None:
             return "Failed to connect to database"
@@ -58,6 +60,8 @@ async def upload_data_to_db(data):
     ]
 
     #Get RoI data from coordinates table in DB
+    #RoI[i]  = id : top : bot : left : right
+    #so in coordinates of a rectangle, TR_y, BL_y, BL_x, TR_x
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
@@ -70,7 +74,7 @@ async def upload_data_to_db(data):
         return "Error getting RoI data"
     finally:
         conn.close()
-
+    
     #counts represent the amount of people in each ROI
     counts = count_points_in_zones(points, RoIs)
 
@@ -88,7 +92,7 @@ async def get_data_from_db():
 
     try:
         # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount")
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI, CameraID FROM QueueCount")
         rows = cursor.fetchall()
         data = []
         for row in rows:
@@ -96,7 +100,8 @@ async def get_data_from_db():
                 'ID': row[0],
                 'NumberOfCustomers': row[1],
                 'Timestamp': row[2],
-                'ROI': row[3]
+                'ROI': row[3],
+                'CameraID': row[4],
             })
         return data
     except pyodbc.Error as e:

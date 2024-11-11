@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { ICustomerCount } from "../../../Types/Customer-data-types";
+import { ICustomerCount } from "./../../Types/Customer-data-types";
 
 // Define the type for the customer count data
 
@@ -8,6 +8,7 @@ interface IUseGetCustomerCountReturn {
     data: ICustomerCount[] | null;
     error: Error | null;
     loading: boolean;
+    refetch: (startDate: string, endDate: string) => void;
 }
 
 export const useGetCustomerCount = (startDate: string, endDate: string): IUseGetCustomerCountReturn => {
@@ -15,7 +16,7 @@ export const useGetCustomerCount = (startDate: string, endDate: string): IUseGet
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
-    useEffect(() => {
+    const fetchData = (startDate: string, endDate: string) => {
         axios.get("/customer_count/get", {
             params: {
                 startDate,
@@ -34,7 +35,11 @@ export const useGetCustomerCount = (startDate: string, endDate: string): IUseGet
             .finally(() => {
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchData(startDate, endDate);
     }, [startDate, endDate]);
 
-    return { data, error, loading };
+    return { data, error, loading, refetch: fetchData };
 };
