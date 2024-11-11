@@ -23,16 +23,16 @@ else:
 
 app.secret_key = secrets.token_hex(16)
 
-# Redis client, used for storing session data for the limiter
-redis_client = Redis(host='0.0.0.0', port=6379)
+# # Redis client, used for storing session data for the limiter
+# redis_client = Redis(host='0.0.0.0', port=6379)
 
-# Limiter for requests to prevent DDOS attacks
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    storage_uri="redis://localhost:6379",
-    default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
-)
+# # Limiter for requests to prevent DDOS attacks
+# limiter = Limiter(
+#     get_remote_address,
+#     app=app,
+#     storage_uri="redis://localhost:6379",
+#     default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
+# )
 
 # Middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
