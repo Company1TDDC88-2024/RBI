@@ -19,8 +19,8 @@ spec:
                 name: backend-service
                 port:
                   number: 80
-          - path: /*
-            pathType: Prefix
+          - path: /
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend-service
