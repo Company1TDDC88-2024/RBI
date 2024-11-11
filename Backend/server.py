@@ -8,29 +8,42 @@ from src.customer_count.customer_count_routes import customer_count_bp
 from src.queue_count.queue_count_routes import queue_count_bp
 from src.coordinates.coordinates_routes import coordinates_bp
 from src.example.date_routes import date_bp
+from src.login.login_routes import login_bp
+import secrets
+import logging
+import os
+from dotenv import load_dotenv
+
 
 app = Flask(__name__)
+if(os.getenv('Deployment') == 'True'):
+    port = 80
+else:
+    port = 5555
 
-# Redis client
-redis_client = Redis(host='localhost', port=6379)
+app.secret_key = secrets.token_hex(16)
+
+# Redis client, used for storing session data for the limiter
+redis_client = Redis(host='0.0.0.0', port=6379)
 
 # Limiter for requests to prevent DDOS attacks
 limiter = Limiter(
     get_remote_address,
     app=app,
     storage_uri="redis://localhost:6379",
-    default_limits=["5000 per hour"]
+    default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
 )
 
 # Middleware
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# Register Blueprints
-app.register_blueprint(example_bp, url_prefix='/example')
-app.register_blueprint(customer_count_bp, url_prefix='/customer_count')
-app.register_blueprint(queue_count_bp, url_prefix='/queue_count')
-app.register_blueprint(coordinates_bp, url_prefix='/coordinates')
-app.register_blueprint(date_bp, url_prefix='/date')
+print("Server is running")
+app.register_blueprint(example_bp, url_prefix='/api/example')
+app.register_blueprint(customer_count_bp, url_prefix='/api/customer_count')
+app.register_blueprint(queue_count_bp, url_prefix='/api/queue_count')
+app.register_blueprint(coordinates_bp, url_prefix='/api/coordinates')
+app.register_blueprint(date_bp, url_prefix='/api/date')
+app.register_blueprint(login_bp, url_prefix='/api/login')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)

@@ -25,6 +25,7 @@ dist-ssr
 # Ignore virtual environment directories
 venv/
 .env/
+.venv/
 
 # Ignore Python cache files
 __pycache__/
@@ -32,3 +33,6 @@ __pycache__/
 
 # Ignore IDE/editor files
 .vscode/
+
+# Ignore package-lock.json
+package-lock.json

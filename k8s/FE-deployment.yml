@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: frontend-deployment
+    labels:
+        app: frontend
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: frontend
+    template:
+        metadata:
+            labels:
+                app: frontend
+        spec:
+            containers:
+                - name: frontend
+                  image: docker.io/companyonetddc/frontend
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 3000
+                  resources:
+                      requests:
+                          cpu: "30m" # Adjusted to be lower than the quota
+                          memory: "8Mi" # Adjusted to fit within the quota
+                      limits:
+                          cpu: "800m" # This is the maximum allowed by your quota
+                          memory: "512Mi" # Maximum memory allowed by your quota
