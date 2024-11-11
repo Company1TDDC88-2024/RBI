@@ -24,8 +24,8 @@ async def create_account(data, token) -> str:
     try:
         # Infoga den nya användaren i databasen
         cursor.execute("""
-            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified)
-            VALUES (?, ?, ?, 0, ?, ?, 0)
+            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
+            VALUES (?, ?, ?, 0, ?, ?, 0, 0)
         """, (data['first_name'], data['last_name'], data['email'], password_hash, token))
         conn.commit()
         return "Account created successfully"
@@ -48,22 +48,39 @@ async def login_user(data) -> Union[str, dict]:
     password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
 
     try:
-        # Kontrollera om användaren finns och lösenordet stämmer
+        # Kontrollera om användaren finns, lösenordet stämmer och att felräkningen är under gränsen
         cursor.execute("""
-            SELECT user_id, email FROM "User" 
-            WHERE email = ? AND password_hash = ? AND verified = 1
+            SELECT user_id, email, verified, wrong_password_count FROM "User" 
+            WHERE email = ? AND password_hash = ? 
         """, (data['email'], password_hash))
         
         user = cursor.fetchone()
         if user:
-            return {'user_id': user.user_id} # Returnera user_id för sessions-ID-skapande
+            if user.wrong_password_count < 3:
+                if user.verified == 0:
+                    return "Account not verified"
+                # Reset wrong_password_count on successful login
+                cursor.execute("""
+                    UPDATE "User" SET wrong_password_count = 0 WHERE user_id = ?
+                """, (user.user_id,))
+                conn.commit()
+                return {'user_id': user.user_id} # Returnera user_id för sessions-ID-skapande
+            else:
+                return "Too many failed login attempts"
         else:
+            # Increment wrong_password_count for failed login attempt
+            cursor.execute("""
+                UPDATE "User" SET wrong_password_count = wrong_password_count + 1 WHERE email = ?
+            """, (data['email'],))
+            conn.commit()
             return "Invalid email or password"
     except pyodbc.Error as e:
         print(f"Error logging in: {e}")
         return "Error logging in"
     finally:
         conn.close()
+
+
 
 async def verify_user(token: str) -> str:
 
