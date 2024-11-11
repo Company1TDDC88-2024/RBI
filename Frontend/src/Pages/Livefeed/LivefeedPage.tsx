@@ -40,7 +40,11 @@ const LivefeedPage: React.FC = () => {
             {camera1Available ? (
               <CameraFeed
                 //cameraUrl="http://192.168.1.162/axis-cgi/mjpg/video.cgi"
+<<<<<<< HEAD
                 cameraUrl='http://213.113.46.250:4000/camera_feed_1'
+=======
+                cameraUrl='http://100.65.177.175:4000/camera_feed_1'
+>>>>>>> 92242b5666c45070db11840d15073c2ea76067fd
                 width="100%"
                 height="auto"
                 onCameraError={() => setCamera1Available(false)}  // Set camera unavailable on error
@@ -58,7 +62,11 @@ const LivefeedPage: React.FC = () => {
             {camera2Available ? (
               <CameraFeed
                 //cameraUrl="http://192.168.1.156/axis-cgi/mjpg/video.cgi"
+<<<<<<< HEAD
                 cameraUrl='http://213.113.46.250:4000/camera_feed_2'
+=======
+                cameraUrl='http://100.65.177.175:4000/camera_feed_2'
+>>>>>>> 92242b5666c45070db11840d15073c2ea76067fd
                 width="100%"
                 height="auto"
                 onCameraError={() => setCamera2Available(false)}  // Set camera unavailable on error

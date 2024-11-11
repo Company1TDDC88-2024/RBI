@@ -36,6 +36,8 @@ spec:
             cidr: 51.12.232.32/29
         - ipBlock:
             cidr: 51.12.233.0/27
+        - ipBlock:
+            cidr: 100.65.177.175/0
       ports:
         - protocol: TCP
           port: 1433 # Port for Azure SQL
