@@ -9,6 +9,9 @@ const MonthlyAverageCustomerCount: React.FC<MonthlyAverageCustomerCountProps> = 
   const [monthlyAverage, setMonthlyAverage] = useState<number | null>(null);
 
   useEffect(() => {
+    fetch('/api/endpoint')
+    .then(response => response.json())
+    .then(data => console.log("Fetched Data:", data));
     const fetchDailyData = async () => {
       const startDate = getStartDate(months * 30);  // Roughly the start date for the past X months
       const endDate = getCurrentDate();
