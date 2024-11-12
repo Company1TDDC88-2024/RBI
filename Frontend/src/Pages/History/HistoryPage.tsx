@@ -29,10 +29,11 @@ const HistoryPage = () => {
     if (savedDates) {
       return JSON.parse(savedDates);
     } else {
-      // Default to the last 12 months if no dates are selected
+      // Default to the current month for both start and end dates
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 12); // 12 months ago
+      startDate.setMonth(startDate.getMonth()); // Set to last month
+    
       return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
     }
   });
@@ -42,7 +43,7 @@ const HistoryPage = () => {
     if (!localStorage.getItem('frequency')) {
       return '1month'; // Automatically set frequency to '1month' when dates are for 12 months
     } else {
-      return localStorage.getItem('frequency') || '1day'; // Fallback to '1day' if not set
+      return localStorage.getItem('frequency') || '1month'; // Fallback to '1day' if not set
     }
   });
 
@@ -128,7 +129,7 @@ const HistoryPage = () => {
     return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
 };
 
-  const processQueueData = (cameraQueueData, frequency, dates, threshold = 3) => {
+  const processQueueData = (cameraQueueData, frequency, dates, threshold = 1) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
@@ -256,7 +257,7 @@ const HistoryPage = () => {
         </Col>
         
         <Col span={12}>
-          <Card title="Number of queue alerts per" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title="Number of queue alerts per ROI" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={processedQueueData || []}>
               <CartesianGrid strokeDasharray="3 3" />
