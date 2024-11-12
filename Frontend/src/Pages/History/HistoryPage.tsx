@@ -60,86 +60,91 @@ const HistoryPage = () => {
   };
 
   // Process data to aggregate based on frequency within the selected date range
-  const processData = (customerCountData, frequency) => {
+  const processData = (customerCountData, frequency, dates) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
-    
+
+    // Set endDate to 23:59:59 to include the entire end date
+    endDate.setHours(23, 59, 59, 999);
+
+    // Filter data based on the selected date range
+    const filteredData = customerCountData.filter(item => {
+        const timestamp = new Date(item.Timestamp);
+        return timestamp >= startDate && timestamp <= endDate;
+    });
+
+    filteredData.forEach(item => {
+        const timestamp = new Date(item.Timestamp);
+        let key;
+
+        // Group data based on selected frequency
+        if (frequency === '1hour') {
+            key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
+        } else if (frequency === '1day') {
+            key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        } else if (frequency === '1month') {
+            key = moment(timestamp).format('YYYY-MM'); // Group by month
+        }
+
+        // Aggregate TotalCustomers by the formatted key
+        if (!result[key]) {
+            result[key] = { Timestamp: key, TotalCustomers: 0 };
+        }
+
+        result[key].TotalCustomers += item.TotalCustomers;
+    });
+
+    // Return the results sorted by timestamp
+    return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+};
+
+  const processQueueData = (cameraQueueData, frequency, dates, threshold = 3) => {
+    const result = {};
+    const startDate = new Date(dates[0]);
+    const endDate = new Date(dates[1]);
+  
     // Set endDate to 23:59:59 to include the entire end date, before it would be 00:00:00 and not show up
     endDate.setHours(23, 59, 59, 999);
   
-    customerCountData.forEach(item => {
+    cameraQueueData.forEach(item => {
       const timestamp = new Date(item.Timestamp);
   
-      // Filter data within the selected date range, including the full end date
+      // Filter data within the selected date range
       if (timestamp >= startDate && timestamp <= endDate) {
+        // Skip items that do not meet the ROI criteria or have customers below the threshold
+        if (![1, 4, 5, 6].includes(item.ROI) || item.NumberOfCustomers < threshold) return;
+  
         let key;
   
+        // Format the timestamp based on the frequency
         if (frequency === '1hour') {
-          // Only include data from startDate if frequency is hourly
-          if (timestamp.toISOString().split("T")[0] === dates[0]) {
-            key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour for startDate only
-            if (!result[key]) {
-              result[key] = { Timestamp: key, TotalCustomers: 0 };
-            }
-            result[key].TotalCustomers += item.TotalCustomers;
-          }
+          key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
           key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
-          if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
-          }
-          result[key].TotalCustomers += item.TotalCustomers;
-        } else {
+        } else if (frequency === '1month') {
           key = moment(timestamp).format('YYYY-MM'); // Group by month
-          if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
-          }
-          result[key].TotalCustomers += item.TotalCustomers;
         }
+  
+        if (!result[key]) {
+          result[key] = { Timestamp: key, ROI_1: 0, ROI_4: 0, ROI_5: 0, ROI_6: 0 };
+        }
+  
+        // Increment the count for the specific ROI
+        result[key][`ROI_${item.ROI}`] += 1;
       }
-    });
-  
-    return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-  };
-
-  const processQueueData = (cameraQueueData, frequency, numberOfMonths, threshold = 3) => {
-    const result = {};
-  
-    cameraQueueData.forEach(item => {
-      // Skip items that do not meet the ROI criteria or have customers below the threshold
-      if (![1, 4, 5, 6].includes(item.ROI) || item.NumberOfCustomers < threshold) return;  
-  
-      const timestamp = new Date(item.Timestamp);
-      let key;
-  
-      // Format the timestamp based on the frequency
-      if (frequency === '1hour') {
-        key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
-      } else if (frequency === '1day') {
-        key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
-      } else {
-        key = moment(timestamp).format('YYYY-MM'); // Group by month
-      }
-  
-      if (!result[key]) {
-        result[key] = { Timestamp: key, ROI_1: 0, ROI_4: 0, ROI_5: 0, ROI_6: 0 };
-      }
-  
-      // Increment the count for the specific ROI
-      result[key][`ROI_${item.ROI}`] += 1;
     });
   
     const groupedData = Object.values(result);
   
-    // If monthly, limit to the last `numberOfMonths`
-    return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
-};
-
+    // If monthly, ensure we limit the data to the last month(s) in the range
+    return frequency === '1month' ? groupedData : groupedData;
+  };
+  
   
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency));
+      setProcessedData(processData(customerCountData, frequency, dates));
     }
   }, [customerCountData, frequency, dates]);
 
@@ -148,6 +153,7 @@ const HistoryPage = () => {
       setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates));
     }
   }, [cameraQueueData, frequency, dates]);
+  
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
@@ -221,7 +227,7 @@ const HistoryPage = () => {
         </Col>
         
         <Col span={12}>
-          <Card title="Number of queue alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title="Number of queue alerts per" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={processedQueueData || []}>
               <CartesianGrid strokeDasharray="3 3" />
