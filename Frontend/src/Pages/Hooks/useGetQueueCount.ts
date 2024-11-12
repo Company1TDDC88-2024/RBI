@@ -10,7 +10,6 @@ interface IQueueCount {
     Timestamp: string; // Timestamp as a string
 }
 
-
 interface IUseGetQueueCountReturn {
     data: IQueueCount[] | null; // Now returning an array of IQueueCount
     error: Error | null;

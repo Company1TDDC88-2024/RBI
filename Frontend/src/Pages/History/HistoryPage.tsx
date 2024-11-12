@@ -5,9 +5,9 @@ import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
 import styles from "./HistoryPage.module.css";
-import ExpectedCustomerCount from "./ExpectedCustomerCount";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
+import ExpectedCustomerCount from "./ExpectedCustomerCount";
 
 const { RangePicker } = DatePicker;
 
@@ -16,6 +16,13 @@ const HistoryPage = () => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
+  const todaysDate = new Date();  // Get today's date
+  console.log("date from history:",todaysDate);
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
+  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
+  const selectedDate = todaysDate.toISOString().split("T")[0];
+  console.log("Formatted selected date:", selectedDate); 
+
 
   const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
@@ -26,21 +33,6 @@ const HistoryPage = () => {
   const [processedData, setProcessedData] = useState([]);
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
-interface CustomerData {
-  date: string;
-  count: number;
-}
-
-const HistoryPage: React.FC = () => {
-  const [monthlyData, setMonthlyData] = useState<CustomerData[]>([]);
-  const [weeklyData, setWeeklyData] = useState<CustomerData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const currentDate = new Date();  // Get today's date
-  console.log("date from history:",currentDate);
-  currentDate.setFullYear(currentDate.getFullYear() - 1); 
-  console.log("Adjusted current date to last year:", currentDate); // Adjust the year to last year
-  const selectedDate = currentDate.toISOString().split("T")[0];
-  console.log("Formatted selected date:", selectedDate); 
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
@@ -115,6 +107,9 @@ const HistoryPage: React.FC = () => {
     const result = {};
   
     cameraQueueData.forEach(item => {
+      // Skip items that do not meet the ROI criteria or have customers below the threshold
+      if (![1, 4, 5, 6].includes(item.ROI) || item.NumberOfCustomers < threshold) return;  
+  
       const timestamp = new Date(item.Timestamp);
       let key;
   
@@ -127,22 +122,21 @@ const HistoryPage: React.FC = () => {
         key = moment(timestamp).format('YYYY-MM'); // Group by month
       }
   
-      // Only process if the NumberOfCustomers is greater than or equal to the threshold
-      if (item.NumberOfCustomers >= threshold) {
-        if (!result[key]) {
-          result[key] = { Timestamp: key, NumberOfCustomers: 0 };
-        }
-        result[key].NumberOfCustomers += 1;
+      if (!result[key]) {
+        result[key] = { Timestamp: key, ROI_1: 0, ROI_4: 0, ROI_5: 0, ROI_6: 0 };
       }
+  
+      // Increment the count for the specific ROI
+      result[key][`ROI_${item.ROI}`] += 1;
     });
   
     const groupedData = Object.values(result);
   
     // If monthly, limit to the last `numberOfMonths`
     return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
-  };
-  
+};
 
+  
   useEffect(() => {
     if (customerCountData) {
       setProcessedData(processData(customerCountData, frequency));
@@ -209,7 +203,6 @@ const HistoryPage: React.FC = () => {
                     if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
                     if (frequency === '1day') return moment(timestamp).format('DD MMM');
                     return moment(timestamp).format('MMM YYYY');
-                    return moment(timestamp).format('MMM YYYY');
                   }}
                 />
                 <YAxis />
@@ -229,32 +222,32 @@ const HistoryPage: React.FC = () => {
         
         <Col span={12}>
           <Card title="Number of queue alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedQueueData || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="Timestamp" 
-                  tickFormatter={timestamp => {
-                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY');
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="NumberOfCustomers" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                  name="Number of alerts over" 
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={processedQueueData || []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="Timestamp" 
+                tickFormatter={timestamp => {
+                  if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                  if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                  return moment(timestamp).format('MMM YYYY');
+                }}
+              />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+
+              {/* Define a separate line for each of the four ROIs */}
+              <Line type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
+              <Line type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
+              <Line type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
+              <Line type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
+            </LineChart>
+          </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
+      <ExpectedCustomerCount date={selectedDate} />
     </div>
   );
 };

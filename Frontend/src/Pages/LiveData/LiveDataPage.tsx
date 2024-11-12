@@ -1,10 +1,10 @@
 import React from "react";
-import { Card, Row, Col } from "antd";
+import { Card, Row, Col, Spin } from "antd";
 import styles from "./LiveDataPage.module.css";
 import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { useGetDailyCustomers } from "../Dashboard/Hooks/useGetDailyCustomers"; 
-import { useGetQueueCount } from "../Dashboard/Hooks/useGetQueueCount";
+import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers"; 
+import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 
 const LiveDataPage = () => {
@@ -59,7 +59,7 @@ const LiveDataPage = () => {
                 <Col span={12}>
                     <Card title="Total Customers graph, today and last year" bordered={false} className={styles.liveDataCard}>
                         <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold' }}>
-                            Total customers today: {loadingToday ? 'Loading...' : todayData?.totalEnteringCustomers}
+                            Total customers today: {loadingToday ? <Spin tip="Loading..."/> : todayData?.totalEnteringCustomers}
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={comparisonData}>
@@ -77,7 +77,7 @@ const LiveDataPage = () => {
                     <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
                         <ResponsiveContainer>
                         <p className={styles.customerCountText}>
-                                {loadingToday ? 'Loading...' : (todayData?.totalEnteringCustomers - todayData?.totalExitingCustomers || 0)} 
+                                {loadingToday ? <Spin tip="Loading..."/> : (todayData?.totalEnteringCustomers ?? 0) - (todayData?.totalExitingCustomers ?? 0)}
                                 {/* This should be TotalCustomers */}
                         </p>
                         </ResponsiveContainer>
@@ -86,7 +86,7 @@ const LiveDataPage = () => {
                 <Col span={6}>
                     <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
                         {loadingQueue ? (
-                            <p className={styles.queueCountText}>Loading...</p>
+                            <Spin tip="Loading..."/>
                         ) : (
                             Object.keys(filteredQueueCounts).length > 0 ? (
                                 Object.keys(filteredQueueCounts).map(roi => (
