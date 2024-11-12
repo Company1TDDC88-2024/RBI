@@ -26,10 +26,26 @@ const HistoryPage = () => {
 
   const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
-    return savedDates ? JSON.parse(savedDates) : [formattedStartDate, currentDate];
+    if (savedDates) {
+      return JSON.parse(savedDates);
+    } else {
+      // Default to the last 12 months if no dates are selected
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 12); // 12 months ago
+      return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
+    }
+  });
+  
+  const [frequency, setFrequency] = useState(() => {
+    // Default to '1month' if no frequency is set
+    if (!localStorage.getItem('frequency')) {
+      return '1month'; // Automatically set frequency to '1month' when dates are for 12 months
+    } else {
+      return localStorage.getItem('frequency') || '1day'; // Fallback to '1day' if not set
+    }
   });
 
-  const [frequency, setFrequency] = useState('1day');
   const [processedData, setProcessedData] = useState([]);
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
@@ -56,8 +72,21 @@ const HistoryPage = () => {
   }, [customerCountData, dailyCustomerData, cameraQueueData]);
 
   const onDateChange = (dates, dateStrings) => {
+  // Check if the dates are cleared (both start and end dates are null)
+  if (!dates || !dates[0] || !dates[1]) {
+    // Reset to the default date range (last 12 months)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 12); // 12 months ago
+
+    // Set dates back to the default range and frequency to '1month'
+    setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
+    setFrequency('1month');
+  } else {
+    // Otherwise, update the selected dates
     setDates(dateStrings);
-  };
+  }
+};
 
   // Process data to aggregate based on frequency within the selected date range
   const processData = (customerCountData, frequency, dates) => {
