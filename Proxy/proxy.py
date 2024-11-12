@@ -54,14 +54,21 @@ def forward_queue_count():
 @app.route('/camera_feed_1', methods=['GET'])
 def get_camera_feed_1():
     target_url = os.environ.get('CAMERA1_URL')
+    username = os.environ.get('CAMERA2_USERNAME')
+    password = os.environ.get('CAMERA2_PASSWORD')
     try:
-        response = requests.get(target_url)
+        response = requests.get(target_url, auth=(username, password), stream=True)
         if response.status_code == 200:
-            return jsonify({'status': 'success', 'message': 'Data forwarded successfully'}), 200
+            def generate():
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        yield chunk
+            return Response(generate(), content_type='multipart/x-mixed-replace; boundary=--myboundary')
         else:
-            return jsonify({'status': 'error', 'message': 'Failed to forward data'}), response.status_code
+            return jsonify({'status': 'error', 'message': 'Failed to forward data', 'status_code': response.status_code, 'response_text': response.text}), response.status_code
     except requests.exceptions.RequestException as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': str(e), 'details': e.response.text if e.response else 'No response received'}), 500
+
 
 @app.route('/camera_feed_2', methods=['GET'])
 def get_camera_feed_2():
