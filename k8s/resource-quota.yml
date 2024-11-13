@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+    name: resource-quota
+spec:
+    hard:
+        requests.cpu: "200m" # Increase the CPU limit
+        limits.cpu: "1" # Increase the CPU limit
+        requests.memory: "1Gi" # Increase memory limit
+        limits.memory: "4Gi" # Increase memory limit

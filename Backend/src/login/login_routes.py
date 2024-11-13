@@ -7,6 +7,7 @@ import secrets  # For generating unique tokens
 from functools import wraps
 import logging
 from flask import Flask, redirect, request
+import os
 
 def login_required(f):
     @wraps(f)
@@ -21,9 +22,11 @@ def send_verification(email_receiver, token):
     # Email configuration
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
+    url = os.getenv('BACKEND_URL')
+
 
     # Create the verification link
-    verification_link = f"http://127.0.0.1:5555/login/verify/{token}"
+    verification_link = f"{url}/login/verify/{token}"
 
     # Create the email content
     subject = "Email Verification"
