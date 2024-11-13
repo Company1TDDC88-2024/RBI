@@ -4,11 +4,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
+import { useGetExpectedCustomerCount } from '../Hooks/useGetExpectedCustomerCount';
+import { useGetMonthlyAverageCustomerCount } from "../Hooks/useGetMonthlyAverageCustomerCount";
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
-import ExpectedCustomerCount from "./ExpectedCustomerCount";
-import MonthlyAverageCustomerCount from "./Averagecustomercount";
 
 const { RangePicker } = DatePicker;
 
@@ -18,12 +18,8 @@ const HistoryPage = () => {
   startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
   const todaysDate = new Date();  // Get today's date
-  console.log("date from history:",todaysDate);
-  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
-  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
-  const selectedDate = todaysDate.toISOString().split("T")[0];
-  console.log("Formatted selected date:", selectedDate); 
-
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); // Adjust the year to last year
+  const selectedDate = todaysDate.toISOString().split("T")[0]; // Get last year's date as string
 
   const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
@@ -50,6 +46,11 @@ const HistoryPage = () => {
   const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
   const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading } = useGetQueueCount();
 
+  // Hook to fetch expected customer count for the same day last year
+  const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
+  const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
+
+
   useEffect(() => {
     if (customerCountData || dailyCustomerData || cameraQueueData) {
       setLastUpdated(moment().format('HH:mm:ss'));
@@ -65,34 +66,30 @@ const HistoryPage = () => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
-    
-    // Set endDate to 23:59:59 to include the entire end date, before it would be 00:00:00 and not show up
     endDate.setHours(23, 59, 59, 999);
   
     customerCountData.forEach(item => {
       const timestamp = new Date(item.Timestamp);
   
-      // Filter data within the selected date range, including the full end date
       if (timestamp >= startDate && timestamp <= endDate) {
         let key;
   
         if (frequency === '1hour') {
-          // Only include data from startDate if frequency is hourly
           if (timestamp.toISOString().split("T")[0] === dates[0]) {
-            key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour for startDate only
+            key = moment(timestamp).format('YYYY-MM-DD HH:00');
             if (!result[key]) {
               result[key] = { Timestamp: key, TotalCustomers: 0 };
             }
             result[key].TotalCustomers += item.TotalCustomers;
           }
         } else if (frequency === '1day') {
-          key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+          key = moment(timestamp).format('YYYY-MM-DD');
           if (!result[key]) {
             result[key] = { Timestamp: key, TotalCustomers: 0 };
           }
           result[key].TotalCustomers += item.TotalCustomers;
         } else {
-          key = moment(timestamp).format('YYYY-MM'); // Group by month
+          key = moment(timestamp).format('YYYY-MM');
           if (!result[key]) {
             result[key] = { Timestamp: key, TotalCustomers: 0 };
           }
@@ -111,16 +108,14 @@ const HistoryPage = () => {
       const timestamp = new Date(item.Timestamp);
       let key;
   
-      // Format the timestamp based on the frequency
       if (frequency === '1hour') {
-        key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
+        key = moment(timestamp).format('YYYY-MM-DD HH:00');
       } else if (frequency === '1day') {
-        key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        key = moment(timestamp).format('YYYY-MM-DD');
       } else {
-        key = moment(timestamp).format('YYYY-MM'); // Group by month
+        key = moment(timestamp).format('YYYY-MM');
       }
   
-      // Only process if the NumberOfCustomers is greater than or equal to the threshold
       if (item.NumberOfCustomers >= threshold) {
         if (!result[key]) {
           result[key] = { Timestamp: key, NumberOfCustomers: 0 };
@@ -130,11 +125,8 @@ const HistoryPage = () => {
     });
   
     const groupedData = Object.values(result);
-  
-    // If monthly, limit to the last `numberOfMonths`
     return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
   };
-  
 
   useEffect(() => {
     if (customerCountData) {
@@ -148,11 +140,11 @@ const HistoryPage = () => {
     }
   }, [cameraQueueData, frequency, dates]);
 
-  if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading) {
+  if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading || expectedCustomerCountLoading) {
     return <Spin tip="Loading..." />;
   }
 
-  const error = customerCountError || cameraQueueDataError || dailyCustomerError;
+  const error = customerCountError || cameraQueueDataError || dailyCustomerError || expectedCustomerCountError;
   if (error) {
     return <Alert message="Error" description={error.message} type="error" showIcon />;
   }
@@ -193,7 +185,7 @@ const HistoryPage = () => {
       <Row gutter={16}>
         <Col span={12}>
           <Card title="Number of customers" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -201,7 +193,6 @@ const HistoryPage = () => {
                   tickFormatter={timestamp => {
                     if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
                     if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY');
                     return moment(timestamp).format('MMM YYYY');
                   }}
                 />
@@ -219,7 +210,7 @@ const HistoryPage = () => {
             </ResponsiveContainer>
           </Card>
         </Col>
-        
+
         <Col span={12}>
           <Card title="Number of queue alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
             <ResponsiveContainer width="100%" height={300}>
@@ -239,17 +230,50 @@ const HistoryPage = () => {
                 <Line 
                   type="monotone" 
                   dataKey="NumberOfCustomers" 
-                  stroke="#8884d8" 
+                  stroke="#82ca9d" 
                   activeDot={{ r: 8 }} 
-                  name="Number of alerts over" 
+                  name="Queue alerts" 
                 />
               </LineChart>
             </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
-      <ExpectedCustomerCount date={selectedDate} />
-      <MonthlyAverageCustomerCount months={6} />
+
+      <Row gutter={16}>
+        <Col span={12}>
+          <Card title="Expected Customer Count (Last Year)" bordered={false} className={styles.dashboardCard}>
+            {expectedCustomerCountData && expectedCustomerCountData.length > 0 ? (
+              <div>Expected Customer Count for {selectedDate}: {expectedCustomerCountData.reduce((sum, item) => sum + item.TotalCustomers, 0)}</div>
+            ) : (
+              <div>No data available for the selected date last year</div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+      <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={monthlyAverageData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="month" 
+          tickFormatter={(month) => moment(month, "YYYY-MM").format("MMM YYYY")}
+        />
+        <YAxis />
+        <Tooltip 
+          labelFormatter={(label) => moment(label, "YYYY-MM").format("MMMM YYYY")}
+        />
+        <Legend />
+        <Line 
+          type="monotone" 
+          dataKey="averageCustomers" 
+          stroke="#82ca9d" 
+          name="Avg Customers" 
+        />
+      </LineChart>
+      </ResponsiveContainer>
+
+      
+
     </div>
   );
 };
