@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from .login_service import create_account, login_user, verify_user
+from .login_service import create_account, login_user, verify_user, delete_account
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,7 +16,6 @@ def login_required(f):
             return jsonify({'message': 'Unauthorized access, please log in'}), 401
         return await f(*args, **kwargs)  # Await the wrapped function
     return decorated_function
-
 
 def send_verification(email_receiver, token):
     # Email configuration
@@ -57,12 +56,13 @@ async def create_account_route():
     data = request.json
 
     # Ensure required data is present
-    if not all(key in data for key in ('first_name', 'last_name', 'email', 'password')):
-        return jsonify({'message': 'Missing first_name, last_name, email, or password'}), 400
+    if not all(key in data for key in ('first_name', 'last_name', 'email', 'password', 'is_admin')):
+        return jsonify({'message': 'Missing first_name, last_name, email, password, or is_admin'}), 400
 
     # Generate a unique verification token
     token = secrets.token_urlsafe(16)
     print(token)
+    
     # Skapa konto
     result = await create_account(data, token)
     if result == "Account with this email already exists":
@@ -73,6 +73,7 @@ async def create_account_route():
 
     # Returnera framgångsmeddelande
     return jsonify({'message': result}), 200
+
 
 # Route for email verification
 @login_bp.route('/verify/<token>', methods=['GET'])
@@ -99,6 +100,7 @@ async def login_route():
  
         if isinstance(result, dict):
             session['user_id'] = result['user_id']
+            session['is_admin'] = result['is_admin']
             return jsonify({'message': 'Login successful', 'session_id': session['user_id']})
  
         return jsonify({'message': result}), 401  # Return error message if login failed
@@ -106,6 +108,25 @@ async def login_route():
     # Handle GET request
     return jsonify({'message': 'GET request received. Show Login Page.'}), 200
 
+@login_bp.route('/delete', methods=['POST'])
+async def delete_route():
+    data = request.json
+
+    # Ensure 'email' key exists in data
+    if 'email' not in data:
+        return jsonify({'message': 'Email is required'}), 400
+
+    email = data['email']
+    result = await delete_account(email)
+
+    if result == f"Account with email {email} deleted successfully":
+        return jsonify({'message': result}), 200  # Success
+    elif result == "Account not found":
+        return jsonify({'message': result}), 404  # Not found
+    elif result == "Failed to connect to database" or result == "Error deleting account":
+        return jsonify({'message': result}), 500  # Internal server error
+
+    return jsonify({'message': 'Unexpected error'}), 500  # Fallback error
 
 # Route för att logga ut
 @login_bp.route('/logout', methods=['POST'])

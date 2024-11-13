@@ -10,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -34,7 +35,7 @@ const LoginPage: React.FC = () => {
     }
 
     if (isSignUp) {
-      await signUp(firstName, lastName, email, password);
+      await signUp(firstName, lastName, email, password, isAdmin);
 
       if (signUpError === "Account with this email already exists") {
         setEmailError(signUpError);
@@ -57,6 +58,7 @@ const LoginPage: React.FC = () => {
       setLastName('');
       setEmail('');
       setPassword('');
+      setIsAdmin(false);
     }
   }, [success, signUpError]);
 
@@ -100,6 +102,17 @@ const LoginPage: React.FC = () => {
                   placeholder="Enter your last name"
                   required
                   className={styles.input}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="isAdmin">Admin User:</label>
+                <input
+                  type="checkbox"
+                  id="isAdmin"
+                  checked={isAdmin}
+                  onChange={(e) => setIsAdmin(e.target.checked)}
+                  className={styles.checkbox}
                 />
               </div>
             </>
