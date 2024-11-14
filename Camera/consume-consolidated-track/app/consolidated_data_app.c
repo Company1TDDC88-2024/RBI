@@ -55,7 +55,7 @@ void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "localhost:4000/api/customer_count/upload");
+        curl_easy_setopt(curl, CURLOPT_URL, "localhost:4000/customer_count/upload");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
