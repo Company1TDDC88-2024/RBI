@@ -89,6 +89,7 @@ async def upload_data_to_db(data):
         await upload_function(i, counts, incoming_datetime, RoIs)
 
 async def get_data_from_db():
+    await play_sound([38])#TEST REMOVE LATER
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
@@ -118,8 +119,7 @@ async def get_data_from_db():
 async def play_sound(RoIs):
     clip_id = RoIs[0]
     clip_id = 39     #FOR TESTING
-
-    target_url = "http://localhost:4000/forward_to_speaker" + clip_id
+    target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
     try:
         response = requests.get(target_url)
         if response.status_code == 200:
