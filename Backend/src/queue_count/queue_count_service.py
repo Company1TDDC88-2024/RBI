@@ -24,9 +24,41 @@ def to_coord(b,l,r):
 
 
 async def upload_function(i, counts, incoming_datetime, RoIs):
-    #this could easily be any value with another row in coordinate table
-    QUEUE_THRESHOLD = 1
-    if (counts[i] > QUEUE_THRESHOLD): #Check if there are more people than "allowed"
+    #search and find lastest row for each roi in queue count
+
+    
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            WITH LatestCustomerCount AS (
+                SELECT 
+                    RoI,
+                    NumberOfCustomers,
+                    Timestamp,
+                    ROW_NUMBER() OVER (PARTITION BY RoI ORDER BY Timestamp DESC) AS row_num
+                FROM QueueCount
+                )
+                SELECT 
+                    RoI,
+                    NumberOfCustomers,
+                    Timestamp
+                    FROM LatestCustomerCount
+                WHERE row_num = 1;
+                """)
+        
+        current_count = cursor.fetchall()
+    except:
+        return "Error uploading data"
+    finally:
+        conn.close()
+
+    
+    # create a list of these rows "current_count"
+
+    if (counts[i] != current_count[i][1]): #Check if there are more people than "allowed"
 
         conn = await get_db_connection()
         if conn is None:

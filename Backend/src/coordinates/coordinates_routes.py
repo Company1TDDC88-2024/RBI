@@ -26,7 +26,7 @@ async def upload_data():
     return jsonify({'message': result})
 
 @coordinates_bp.route('/get', methods=['GET'])
-@login_required
+#@login_required
 async def get_data():
     data = await get_data_from_db()
     if isinstance(data, str):
