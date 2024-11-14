@@ -191,3 +191,23 @@ async def delete_account(email: str) -> str:
         return "Error deleting account"
     finally:
         conn.close()
+
+async def is_logged_in_service(user_id: int) -> dict:
+    conn = await get_db_connection()
+    if conn is None:
+        return {'logged_in': False, 'is_admin': False}  # Return false if connection fails
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT is_admin FROM \"User_temp\" WHERE user_id = ?", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            is_admin = user.is_admin
+            return {'logged_in': True, 'is_admin': is_admin}
+        else:
+            return {'logged_in': True, 'is_admin': False}  # Return false if user not found
+    except pyodbc.Error as e:
+        print(f"Error fetching admin status: {e}")
+        return {'logged_in': True, 'is_admin': False}  # Return false on error
+    finally:
+        conn.close()

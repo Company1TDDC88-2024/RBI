@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from .login_service import create_account, login_user, verify_user, delete_account
+from .login_service import create_account, login_user, verify_user, delete_account, is_logged_in_service
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -149,11 +149,12 @@ async def logout_route():
 
     return response
 
-
 # Kontrollera inloggning
 @login_bp.route('/is_logged_in', methods=['GET'])
-def is_logged_in():
+async def is_logged_in():
     if 'user_id' in session:
-        return jsonify({'logged_in': True})
+        user_id = session['user_id']
+        result = await is_logged_in_service(user_id)
+        return jsonify(result)
     else:
-        return jsonify({'logged_in': False})
+        return jsonify({'logged_in': False, 'is_admin': False})

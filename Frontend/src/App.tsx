@@ -20,7 +20,6 @@ const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, ad
   return element;
 };
 
-
 // Inactivity handler component
 const InactivityHandler = () => {
   const navigate = useNavigate(); // Get navigate function here

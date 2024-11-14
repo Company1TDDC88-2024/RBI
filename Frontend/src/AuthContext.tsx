@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
 
       if (response.data.logged_in) {
         // Assuming the server sends isAdmin in the response when logged in
+        console.log("Vad är admin " + response.data.is_admin);
         setIsAdmin(response.data.is_admin || false); // Set isAdmin based on the response
       }
     } catch (error) {
