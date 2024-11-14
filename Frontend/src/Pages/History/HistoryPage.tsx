@@ -5,11 +5,10 @@ import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
 import { useGetExpectedCustomerCount } from '../Hooks/useGetExpectedCustomerCount';
-import { useGetMonthlyAverageCustomerCount } from "../Hooks/useGetMonthlyAverageCustomerCount";
+import { useGetMonthlyAverageCustomerCount } from '../Hooks/useGetMonthlyAverageCustomerCount';
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
-//import ExpectedCustomerCount from "./ExpectedCustomerCount";
 
 const { RangePicker } = DatePicker;
 
@@ -19,8 +18,12 @@ const HistoryPage = () => {
   startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
   const todaysDate = new Date();  // Get today's date
-  todaysDate.setFullYear(todaysDate.getFullYear() - 1); // Adjust the year to last year
-  const selectedDate = todaysDate.toISOString().split("T")[0]; // Get last year's date as string
+  console.log("date from history:",todaysDate);
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
+  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
+  const selectedDate = todaysDate.toISOString().split("T")[0];
+  console.log("Formatted selected date:", selectedDate); 
+
 
   const [dates, setDates] = useState(() => {
     const savedDates = localStorage.getItem('dates');
@@ -64,6 +67,10 @@ const HistoryPage = () => {
   const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading, refetch: refetchDailyCustomer } = useGetDailyCustomers(currentDate);
   const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading, refetch: refetchCameraQueueData } = useGetQueueCount();
 
+  // Hook to fetch expected customer count for the same day last year
+  const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
+  const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
+
   useEffect(() => {
     const interval = setInterval(() => {
         refetchCustomerCount(dates[0], dates[1]);
@@ -75,11 +82,6 @@ const HistoryPage = () => {
 
     return () => clearInterval(interval); // Cleanup interval on component unmount
 }, [refetchCustomerCount, refetchDailyCustomer, refetchCameraQueueData, dates, currentDate]);
-
-  // Hook to fetch expected customer count for the same day last year
-  const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
-  const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
-
 
   useEffect(() => {
     if (customerCountData || dailyCustomerData || cameraQueueData) {
@@ -112,11 +114,6 @@ const HistoryPage = () => {
 
     // Set endDate to 23:59:59 to include the entire end date
     endDate.setHours(23, 59, 59, 999);
-  
-    customerCountData.forEach(item => {
-      const timestamp = new Date(item.Timestamp);
-  
-      if (timestamp >= startDate && timestamp <= endDate) {
 
     // Filter data based on the selected date range
     const filteredData = customerCountData.filter(item => {
@@ -130,23 +127,8 @@ const HistoryPage = () => {
 
         // Group data based on selected frequency
         if (frequency === '1hour') {
-          if (timestamp.toISOString().split("T")[0] === dates[0]) {
-            key = moment(timestamp).format('YYYY-MM-DD HH:00');
-            if (!result[key]) {
-              result[key] = { Timestamp: key, TotalCustomers: 0 };
-            }
-            result[key].TotalCustomers += item.TotalCustomers;
-          }
             key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
-          key = moment(timestamp).format('YYYY-MM-DD');
-          if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
-          }
-          result[key].TotalCustomers += item.TotalCustomers;
-        } else {
-          key = moment(timestamp).format('YYYY-MM');
-          if (!result[key]) {
             key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
         } else if (frequency === '1month') {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
@@ -182,13 +164,6 @@ const HistoryPage = () => {
   
         let key;
   
-      if (frequency === '1hour') {
-        key = moment(timestamp).format('YYYY-MM-DD HH:00');
-      } else if (frequency === '1day') {
-        key = moment(timestamp).format('YYYY-MM-DD');
-      } else {
-        key = moment(timestamp).format('YYYY-MM');
-      }
         // Format the timestamp based on the frequency
         if (frequency === '1hour') {
           key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
@@ -198,7 +173,6 @@ const HistoryPage = () => {
           key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
   
-      if (item.NumberOfCustomers >= threshold) {
         if (!result[key]) {
           result[key] = { Timestamp: key, ROI_1: 0, ROI_4: 0, ROI_5: 0, ROI_6: 0 };
         }
@@ -209,12 +183,10 @@ const HistoryPage = () => {
     });
   
     const groupedData = Object.values(result);
-    return frequency === '1month' ? groupedData.slice(-numberOfMonths) : groupedData;
   
     // If monthly, ensure we limit the data to the last month(s) in the range
     return frequency === '1month' ? groupedData : groupedData;
   };
-
   
   
   useEffect(() => {
@@ -275,7 +247,7 @@ const HistoryPage = () => {
       <Row gutter={16}>
         <Col span={12}>
           <Card title="Number of customers" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
@@ -300,32 +272,8 @@ const HistoryPage = () => {
             </ResponsiveContainer>
           </Card>
         </Col>
-
+        
         <Col span={12}>
-          <Card title="Number of queue alerts" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedQueueData || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="Timestamp" 
-                  tickFormatter={timestamp => {
-                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY');
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="NumberOfCustomers" 
-                  stroke="#82ca9d" 
-                  activeDot={{ r: 8 }} 
-                  name="Queue alerts" 
-                />
-              </LineChart>
-            </ResponsiveContainer>
           <Card title="Number of queue alerts per ROI" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={processedQueueData || []}>
@@ -384,10 +332,6 @@ const HistoryPage = () => {
         />
       </LineChart>
       </ResponsiveContainer>
-
-      
-
-      <ExpectedCustomerCount date={selectedDate} />
     </div>
   );
 };
