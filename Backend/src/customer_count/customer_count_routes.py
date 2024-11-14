@@ -20,7 +20,6 @@ customer_count_bp = Blueprint('customer_count', __name__)
 
 
 @customer_count_bp.route('/upload', methods=['POST'])
-@login_required
 async def process_observations():
     data = request.json
 

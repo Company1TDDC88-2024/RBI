@@ -95,12 +95,14 @@ async def login_route():
         # Check if email and password are provided
         if not all(key in data for key in ('email', 'password')):
             return jsonify({'message': 'Missing email or password'}), 400
- 
+
         result = await login_user(data)
- 
+
         if isinstance(result, dict):
             session['user_id'] = result['user_id']
             session['is_admin'] = result['is_admin']
+
+            print("Admin status in session:", session.get('is_admin'))
             return jsonify({'message': 'Login successful', 'session_id': session['user_id']})
  
         return jsonify({'message': result}), 401  # Return error message if login failed
