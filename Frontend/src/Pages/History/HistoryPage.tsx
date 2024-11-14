@@ -62,9 +62,21 @@ const HistoryPage = () => {
     localStorage.setItem('dates', JSON.stringify(dates));
   }, [dates]);
 
-  const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
-  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
-  const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading } = useGetQueueCount();
+  const { data: customerCountData, error: customerCountError, loading: customerCountLoading, refetch: refetchCustomerCount } = useGetCustomerCount(dates[0], dates[1]);
+  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading, refetch: refetchDailyCustomer } = useGetDailyCustomers(currentDate);
+  const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading, refetch: refetchCameraQueueData } = useGetQueueCount();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        refetchCustomerCount(dates[0], dates[1]);
+        refetchDailyCustomer(currentDate);
+        refetchCameraQueueData();
+        setLastUpdated(moment().format('HH:mm:ss'));
+        console.log('Data refetched');
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+}, [refetchCustomerCount, refetchDailyCustomer, refetchCameraQueueData, dates, currentDate]);
 
   useEffect(() => {
     if (customerCountData || dailyCustomerData || cameraQueueData) {

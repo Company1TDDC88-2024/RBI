@@ -11,13 +11,17 @@ import moment from 'moment';
 
 const { RangePicker } = DatePicker;
 
-const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day') => {
+const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day'| 'test') => {
   if (frequency === '1day') {
-    return moment(timestamp).format('YYYY-MM-DD'); // Display only the date
-  } else {
-    return moment(timestamp).format('HH:mm'); // Display hours and minutes
+    return moment.utc(timestamp).format('YYYY-MM-DD'); // Display only the date in UTC
+  } else if (frequency === 'test') {
+    return moment.utc(timestamp).format('YYYY-MM-DD'+' '+'HH:mm'); // Display hours and minutes in UTC
+  }
+  else {
+    return moment.utc(timestamp).format('HH:mm'); // Display hours and minutes in UTC
   }
 };
+
 
 const DashboardPage = () => {
   const currentDate = new Date().toISOString().split("T")[0];
@@ -50,8 +54,19 @@ const DashboardPage = () => {
   }, [dates]);
 
   // Fetch customer count data and daily customers data
-  const { data: customerCountData, error: customerCountError, loading: customerCountLoading } = useGetCustomerCount(dates[0], dates[1]);
-  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading } = useGetDailyCustomers(currentDate);
+  const { data: customerCountData, error: customerCountError, loading: customerCountLoading, refetch: refetchCustomerCount} = useGetCustomerCount(dates[0], dates[1]);
+  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading, refetch: refetchDailyCustomer } = useGetDailyCustomers(currentDate);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        refetchCustomerCount(dates[0], dates[1]);
+        refetchDailyCustomer(currentDate);
+        setLastUpdated(moment().format('HH:mm:ss'));
+        console.log('Data refetched');
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+}, [refetchCustomerCount, refetchDailyCustomer, dates, currentDate]);
 
   // Update the last updated time when the data changes
   useEffect(() => {
@@ -131,6 +146,8 @@ const DashboardPage = () => {
       title: 'Timestamp',
       dataIndex: 'Timestamp',
       key: 'timestamp',
+      render: (timestamp:string) => formatTimestamp(timestamp, frequency), // Format the timestamp
+
     },
     {
       title: 'Total Customers',
@@ -189,7 +206,9 @@ const DashboardPage = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="Timestamp" tickFormatter={(timestamp) => formatTimestamp(timestamp, frequency)} />
                 <YAxis />
-                <Tooltip />
+                <Tooltip 
+                labelFormatter={(timestamp) => formatTimestamp(timestamp, 'test')}
+                />
                 <Legend />
                 <Line type="monotone" dataKey="TotalCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
@@ -206,7 +225,7 @@ const DashboardPage = () => {
         </Col>
         <Col span={12}>
           <Card title="Queue Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <h3>Current Number of Customers in Queue: {queueData?.NumberOfCustomers || 0}</h3>
+            <h3>Current Number of Customers in Queue: {queueData?.[0]?.NumberOfCustomers || 0}</h3>
           </Card>
         </Col>
       </Row>

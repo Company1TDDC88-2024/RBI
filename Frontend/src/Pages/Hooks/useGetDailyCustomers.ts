@@ -12,16 +12,15 @@ interface IUseGetDailyCustomersReturn {
     data: IDailyCustomerCount | null;
     error: Error | null;
     loading: boolean;
+    refetch: (date: string) => void;
 }
 
-export const useGetDailyCustomers = (date: String): IUseGetDailyCustomersReturn => {
+export const useGetDailyCustomers = (date: string): IUseGetDailyCustomersReturn => {
     const [data, setData] = useState<IDailyCustomerCount | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
-    useEffect(() => {
-        if (!date) return; // Prevent fetching if date is not provided
-
+    const fetchData = (date: string) => {
         axios.get("/customer_count/get_daily", {
             params: {
                 date,
@@ -39,8 +38,12 @@ export const useGetDailyCustomers = (date: String): IUseGetDailyCustomersReturn 
             .finally(() => {
                 setLoading(false);
             });
+    }
+
+    useEffect(() => {
+        fetchData(date);
     }, [date]);
 
-    return { data, error, loading };
+    return { data, error, loading, refetch: fetchData };
 
 };
