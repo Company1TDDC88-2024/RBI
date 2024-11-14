@@ -98,7 +98,16 @@ async def login_user(data) -> Union[str, dict]:
             cursor.execute("""
                 UPDATE "User" SET wrong_password_count = wrong_password_count + 1 WHERE email = ?
             """, (data['email'],))
+            cursor.execute("""
+                SELECT wrong_password_count FROM "User" WHERE email = ?
+            """, (data['email'],))
+            count = cursor.fetchone()
+            if count and count[0] == 5:
+                send_blocked_email(data['email'])
             conn.commit()
+
+            if count and count[0] >= 5:
+                return "Your account has been blocked due to too many login attempts!"
             return "Invalid email or password"
 
     except pyodbc.Error as e:
