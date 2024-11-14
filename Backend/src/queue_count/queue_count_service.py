@@ -1,6 +1,8 @@
+from flask import Flask, request, jsonify, Response
 import pyodbc
 from src.database_connect import get_db_connection
 from datetime import datetime
+import requests
 
 #Function that calculates if a point x,y is in a rectangle defined by bl_x, bl_y, tr_x, tr_y
 def point_in_zone(x, y, bl_x, bl_y, tr_x, tr_y):
@@ -25,7 +27,8 @@ def to_coord(b,l,r):
 
 async def upload_function(i, counts, incoming_datetime, RoIs):
     #this could easily be any value with another row in coordinate table
-    QUEUE_THRESHOLD = 1
+    QUEUE_THRESHOLD = 0
+    print("count number of people in RoI: ", counts[i])
     if (counts[i] > QUEUE_THRESHOLD): #Check if there are more people than "allowed"
 
         conn = await get_db_connection()
@@ -35,6 +38,8 @@ async def upload_function(i, counts, incoming_datetime, RoIs):
         cursor = conn.cursor()
 
         try:
+            #CALL THE SPEAKER SOUND HERE
+            await play_sound(RoIs)
             # Adding data to the "QueueCount" table
             cursor.execute("""
             INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
@@ -108,3 +113,19 @@ async def get_data_from_db():
         return "Error fetching data"
     finally:
         conn.close()
+
+
+async def play_sound(RoIs):
+    clip_id = RoIs[0]
+    clip_id = 39     #FOR TESTING
+
+    target_url = "http://localhost:4000/forward_to_speaker" + clip_id
+    try:
+        response = requests.get(target_url)
+        if response.status_code == 200:
+            return jsonify({'status': 'success', 'message': 'Data forwarded successfully'}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to forward data'}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
