@@ -55,8 +55,19 @@ async def upload_data():
     if 'camera_id' not in data:
         return jsonify({'message': 'Missing "camera_id" field in the root object'}), 400
         
+    mock_observation = {
+        "track_id": "-1",
+        "bounding_box": {
+            "bottom": 10.0,
+            "left": 10.0,
+            "right": 10.0,
+            "top": 10.0
+        }
+    }
 
-    result = upload_data_to_db()
+    data["observations"].append(mock_observation)
+
+    result = upload_data_to_db(data)
     return jsonify({'message': result}), 200
     
 
