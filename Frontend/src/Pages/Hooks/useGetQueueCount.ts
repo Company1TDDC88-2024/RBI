@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 
 // Define the type for the queue count data
 interface IQueueCount {
-    CameraID: number | null; // CameraID can be null or a number
     ID: number;
     NumberOfCustomers: number; // Number of customers as a number
     ROI: number; // Return on investment or similar metric as a number
