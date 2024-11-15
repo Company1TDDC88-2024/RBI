@@ -69,3 +69,118 @@ http://<AXIS_DEVICE_IP>/index.html#apps
 - Browse to the newly built .eap file
 - Click `Install`
 - Run the application by enabling the `Start` switch
+
+## Example of input data for the application
+
+Example 1:
+{
+    "frame": {
+        "observations": [],
+        "operations": [],
+        "timestamp": "2024-10-09T15:15:26.659746Z"
+    }
+}
+
+Example 2:
+{
+    "frame": {
+        "observations": [
+            {
+                "bounding_box": {
+                    "bottom": 0.9974,
+                    "left": 0.661,
+                    "right": 0.7878,
+                    "top": 0.838
+                },
+                "timestamp": "2024-10-09T15:15:31.959696Z",
+                "track_id": "16"
+            }
+        ],
+        "operations": [],
+        "timestamp": "2024-10-09T15:15:31.959696Z"
+    }
+}
+
+Example 3:
+{
+    "frame": {
+        "observations": [
+            {
+                "bounding_box": {
+                    "bottom": 0.984,
+                    "left": 0.6553,
+                    "right": 0.814,
+                    "top": 0.8039
+                },
+                "class": {
+                    "lower_clothing_colors": [
+                        {
+                            "name": "Black",
+                            "score": 0.25
+                        }
+                    ],
+                    "score": 0.41,
+                    "type": "Human",
+                    "upper_clothing_colors": [
+                        {
+                            "name": "Black",
+                            "score": 0.32
+                        }
+                    ]
+                },
+                "timestamp": "2024-10-09T15:15:32.159694Z",
+                "track_id": "16"
+            },
+            {
+                "bounding_box": {
+                    "bottom": 0.9864,
+                    "left": 0.6641,
+                    "right": 0.7956,
+                    "top": 0.8066
+                },
+                "class": {
+                    "score": 0.61,
+                    "type": "Face"
+                },
+                "timestamp": "2024-10-09T15:15:32.159694Z",
+                "track_id": "17"
+            }
+        ],
+        "operations": [],
+        "timestamp": "2024-10-09T15:15:32.159694Z"
+    }
+}
+
+## Example of output data for the application
+
+Example 1:
+{    
+   "timestamp": "2024-02-14T15:37:21.040577Z",
+   "camera_id": "1",
+   "observations": [
+      {
+         "track_id": "25",
+         "bounding_box": {
+            "bottom": 0.7413,
+            "left": 0.4396,
+            "right": 0.7661,
+            "top": 0.4234
+         }
+      },
+      {
+         "track_id": "26",
+         "bounding_box": {
+            "bottom": 0.9431,
+            "left": 0.9656,
+            "right": 0.9989,
+            "top": 0.8365
+         }
+      }
+   ]
+}
+
+Example 2:
+{
+   "timestamp": "2024-02-14T15:37:21.040577Z",
+   "camera_id": "1"
+}
