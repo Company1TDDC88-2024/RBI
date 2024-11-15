@@ -30,6 +30,7 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
         });
 
         if (response.status === 200) {
+          console.log("Raw API Response",response.data);
           const monthlyData = response.data.reduce((acc: any, item: any) => {
             const monthKey = moment(item.Timestamp).format("YYYY-MM"); // Format as "YYYY-MM"
             if (!acc[monthKey]) {
@@ -39,11 +40,13 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
             acc[monthKey].count += 1;
             return acc;
           }, {});
+          console.log("Aggregated Monthly Data:", monthlyData);
 
           const monthlyAverage = Object.entries(monthlyData).map(([month, values]) => ({
             month,
             averageCustomers: Math.round(values.total / values.count) // Round off the average
           })).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+          console.log("Monthly Average Data:", monthlyAverage);
 
           setData(monthlyAverage);
         }

@@ -302,35 +302,56 @@ const HistoryPage = () => {
       </Row>
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Expected Customer Count (Last Year)" bordered={false} className={styles.dashboardCard}>
+          <Card
+            title="Expected Customer Count (Last Year)"
+            bordered={false}
+            className={styles.dashboardCard}
+          >
             {expectedCustomerCountData && expectedCustomerCountData.length > 0 ? (
-              <div>Expected Customer Count for {selectedDate}: {expectedCustomerCountData.reduce((sum, item) => sum + item.TotalCustomers, 0)}</div>
+              <div>
+                Expected Customer Count for {selectedDate}:{" "}
+                {expectedCustomerCountData.reduce((sum, item) => sum + item.TotalCustomers, 0)}
+              </div>
             ) : (
               <div>No data available for the selected date last year</div>
             )}
           </Card>
         </Col>
+
+        <Col span={12}>
+          <Card
+            title="Monthly Average Customer Count (Last 6 Months)"
+            bordered={false}
+            className={styles.dashboardCard}
+          >
+            {monthlyAverageData && monthlyAverageData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={monthlyAverageData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="month"
+                    tickFormatter={(month) => moment(month, "YYYY-MM").format("MMM YYYY")}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(label) => moment(label, "YYYY-MM").format("MMMM YYYY")}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="averageCustomers"
+                    stroke="#82ca9d"
+                    name="Avg Customers"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div>No data available for the last 6 months</div>
+            )}
+          </Card>
+        </Col>
       </Row>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={monthlyAverageData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="month" 
-            tickFormatter={(month) => moment(month, "YYYY-MM").format("MMM YYYY")}
-          />
-          <YAxis />
-          <Tooltip 
-            labelFormatter={(label) => moment(label, "YYYY-MM").format("MMMM YYYY")}
-          />
-          <Legend />
-          <Line 
-            type="monotone" 
-            dataKey="averageCustomers" 
-            stroke="#82ca9d" 
-            name="Avg Customers" 
-          />
-        </LineChart>
-      </ResponsiveContainer>
+
     </div>
   );
 };
