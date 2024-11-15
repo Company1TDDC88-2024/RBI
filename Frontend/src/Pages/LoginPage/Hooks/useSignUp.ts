@@ -2,7 +2,7 @@ import axios from "axios";
 import { useState } from "react";
 
 interface IUseSignUpReturn {
-    signUp: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+    signUp: (firstName: string, lastName: string, email: string, password: string, isAdmin: boolean) => Promise<void>;
     error: string | null;
     loading: boolean;
     success: boolean;
@@ -13,7 +13,7 @@ export const useSignUp = (): IUseSignUpReturn => {
     const [loading, setLoading] = useState<boolean>(false);
     const [success, setSuccess] = useState<boolean>(false);
 
-    const signUp = async (firstName: string, lastName: string, email: string, password: string): Promise<void> => {
+    const signUp = async (firstName: string, lastName: string, email: string, password: string, isAdmin: boolean): Promise<void> => {
         setLoading(true);
         setError(null);
         setSuccess(false);
@@ -23,18 +23,19 @@ export const useSignUp = (): IUseSignUpReturn => {
                 first_name: firstName,
                 last_name: lastName,
                 email,
-                password
+                password,
+                is_admin: isAdmin  
             }, {
                 withCredentials: true
             });
 
             if (response.status === 200) {
-                setSuccess(true);  // Endast sätt success till true om kontot skapades
+                setSuccess(true);  
             }
         } catch (err: any) {
-            setSuccess(false);  // Säkerställ att success är false om ett fel inträffade
+            setSuccess(false);  
             if (err.response && err.response.status === 400) {
-                setError(err.response.data.message);  // Sätt backend-felmeddelandet
+                setError(err.response.data.message); 
             } else {
                 setError("An error occurred during sign-up.");
             }
