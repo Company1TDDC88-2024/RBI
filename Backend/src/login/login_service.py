@@ -1,5 +1,6 @@
 import pyodbc
 import hashlib
+import os
 from src.database_connect import get_db_connection
 import smtplib
 from datetime import datetime
@@ -38,35 +39,44 @@ key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A='
 cipher_suite = Fernet(key)
 
 async def create_account(data, token) -> str:
-    # Anslut till databasen
+    # Connect to the database
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
     cursor = conn.cursor()
 
-    # Kryptera first_name, last_name och email
+    # Encrypt first_name, last_name, and email
     encrypted_first_name = cipher_suite.encrypt(data['first_name'].encode())
     encrypted_last_name = cipher_suite.encrypt(data['last_name'].encode())
-    encrypted_email = cipher_suite.encrypt(data['email'].encode())
+    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
 
-    # Kontrollera om e-postadressen redan existerar (krypterad sökning)
-    cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (encrypted_email,))
+    # Check if the email already exists
+    cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (hashed_email,))
     existing_user = cursor.fetchone()
     if existing_user:
-        return "Account with this email already exists"  # Returnera meddelande om kontot redan finns
+        return "Account with this email already exists"
 
-    # Hasha lösenordet för säker lagring
-    password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
-    is_admin = 1 if data.get('is_admin') else 0  # Sätt is_admin till 1 om det är en admin, annars 0
+    # Generate salt
+    salt = os.urandom(16)  # 16 bytes of random salt
+    salt_hex = salt.hex()  # Convert to hex for storage
+
+    # Hash password with the salt
+    password = data['password'].encode()
+    hashed_password = hashlib.pbkdf2_hmac("sha256", password, salt, 100000).hex()
+
+    # Combine salt and hashed password for storage
+    stored_password = f"{salt_hex}${hashed_password}"
+
+    is_admin = 1 if data.get('is_admin') else 0  # Set is_admin to 1 if it's an admin, otherwise 0
 
     try:
-        # Infoga den nya användaren i databasen med krypterade värden
+        # Insert the new user into the database
         cursor.execute("""
-            INSERT INTO "User_temp" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
+            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
             VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-        """, (encrypted_first_name, encrypted_last_name, encrypted_email, is_admin, password_hash, token))
-        
+        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token))
+
         conn.commit()
         return "Account created successfully"
     except pyodbc.Error as e:
@@ -82,54 +92,71 @@ async def login_user(data) -> Union[str, dict]:
         return "Failed to connect to database"
 
     cursor = conn.cursor()
-    password_hash = hashlib.sha256(data['password'].encode()).hexdigest()
+    email_hash = hashlib.sha256(data['email'].encode()).hexdigest()
 
     try:
-        # Fetch all users matching the password hash
+        # Fetch user details
         cursor.execute("""
-            SELECT user_id, email, verified, wrong_password_count, is_admin FROM "User_temp" 
-            WHERE password_hash = ? 
-        """, (password_hash,))
-        
-        users = cursor.fetchall()
-        
-        for user in users:
-            decrypted_email = cipher_suite.decrypt(user.email).decode()
-            if decrypted_email == data['email']:
-                # Check if the account is blocked or unverified
-                if user.wrong_password_count >= 5:
-                    return "Too many failed login attempts"
-                if user.verified == 0:
-                    return "Account not verified"
+            SELECT verified, wrong_password_count, password_hash, user_id, is_admin FROM "User" 
+            WHERE email = ? 
+        """, (email_hash,))
+        user = cursor.fetchone()
 
-                # Reset wrong_password_count on successful login
-                cursor.execute("""
-                    UPDATE "User_temp" SET wrong_password_count = 0 WHERE user_id = ?
-                """, (user.user_id,))
-                conn.commit()
+        if not user:
+            if wrong_password_count >= 5:
+                return "Too many failed login attempts"
+            else:
+                return "Invalid email or password"
 
-                # Return both user_id and is_admin
-                return {'user_id': user.user_id, 'is_admin': user.is_admin}
+        # Unpack user details
+        verified, wrong_password_count, stored_password, user_id, is_admin = user
+
+        # Extract salt and hashed password from the stored_password
+        salt_hex, stored_hash = stored_password.split('$')
+        salt = bytes.fromhex(salt_hex)
+
+        # Hash the incoming password with the stored salt
+        user_input_password = data['password'].encode()
+        hashed_input_password = hashlib.pbkdf2_hmac("sha256", user_input_password, salt, 100000).hex()
+
+        # Compare the hashed input password with the stored hash
+        if hashed_input_password == stored_hash:
+            # Check if the account is blocked or unverified
+            if wrong_password_count >= 5:
+                return "Too many failed login attempts"
+            if verified == 0:
+                return "Account not verified"
+
+            # Reset wrong_password_count on successful login
+            cursor.execute("""
+                UPDATE "User" SET wrong_password_count = 0 WHERE user_id = ?
+            """, (user_id,))
+            conn.commit()
+
+            # Return both user_id and is_admin
+            return {'user_id': user_id, 'is_admin': is_admin}
 
         # Handle invalid login attempt
-        encrypted_email = cipher_suite.encrypt(data['email'].encode())
         cursor.execute("""
-            UPDATE "User_temp" SET wrong_password_count = wrong_password_count + 1 WHERE email = ?
-        """, (encrypted_email,))
-        
+            UPDATE "User" SET wrong_password_count = wrong_password_count + 1 WHERE email = ?
+        """, (email_hash,))
+
         # Check wrong password count
         cursor.execute("""
-            SELECT wrong_password_count FROM "User_temp" WHERE email = ?
-        """, (encrypted_email,))
+            SELECT wrong_password_count FROM "User" WHERE email = ?
+        """, (email_hash,))
         count = cursor.fetchone()
-        
-        if count and count[0] >= 5:
-            await send_blocked_email(data['email'])  # Ensure async call compatibility
+
+        if count and count[0] == 5:
+            send_blocked_email(data['email'])  # Ensure async call compatibility
             conn.commit()
             return "Your account has been blocked due to too many failed login attempts!"
 
         conn.commit()
-        return "Invalid email or password"
+        if wrong_password_count >= 5:
+            return "Too many failed login attempts. Check your email for further assistance."
+        else:
+            return "Invalid email or password"
 
     except pyodbc.Error as e:
         print(f"Error logging in: {e}")
@@ -147,20 +174,16 @@ async def verify_user(token: str) -> str:
         cursor = conn.cursor()
         
         # Kontrollera om token existerar och hämta användaren
-        cursor.execute("SELECT email FROM \"User_temp\" WHERE token = ?", (token,))
+        cursor.execute("SELECT email FROM \"User\" WHERE token = ?", (token,))
         user = cursor.fetchone()
         
-        if user:
-            # Decrypt the email
-            encrypted_email = user[0]  # Access the email field in the fetched row
-            decrypted_email = cipher_suite.decrypt(encrypted_email).decode()
-            
+        if user: 
             # Uppdatera verified till 1 för användaren
-            cursor.execute("UPDATE \"User_temp\" SET verified = 1 WHERE token = ?", (token,))
+            cursor.execute("UPDATE \"User\" SET verified = 1 WHERE token = ?", (token,))
             conn.commit()  # Bekräfta ändringarna i databasen
-            return f"Hello {decrypted_email}. Email verified successfully"
+            return f"Hello. Email verified successfully."
         else:
-            return f"Invalid or expired token: {decrypted_email}"
+            return f"Invalid or expired token!"
     except pyodbc.Error as e:
         print(f"Error during verification: {e}")
         return "Error during verification process"
@@ -174,9 +197,10 @@ async def delete_account(email: str) -> str:
 
     try:
         cursor = conn.cursor()
+        hashed_email = hashlib.sha256(email.encode()).hexdigest()
 
         # Check if the user exists
-        cursor.execute("SELECT user_id FROM \"User\" WHERE email = ?", (email,))
+        cursor.execute("SELECT user_id FROM \"User\" WHERE email = ?", (hashed_email,))
         user = cursor.fetchone()
 
         if user:
@@ -199,7 +223,7 @@ async def is_logged_in_service(user_id: int) -> dict:
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT is_admin FROM \"User_temp\" WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT is_admin FROM \"User\" WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
         if user:
             is_admin = user.is_admin
