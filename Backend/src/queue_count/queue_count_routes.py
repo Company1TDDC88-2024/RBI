@@ -38,6 +38,29 @@ async def upload_data():
     return jsonify({'message': result}), 200
 
 
+@queue_count_bp.route('/uploadempty', methods=['POST'])
+async def upload_data():
+    data = request.json
+
+
+    
+    print(data)  # Print parsed JSON data
+
+    if not data:
+        return jsonify({'message': 'Invalid JSON format or empty request body'}), 400
+
+    # Check for timestamp in root
+    if 'timestamp' not in data:
+        return jsonify({'message': 'Missing "timestamp" field in the root object'}), 400
+    if 'camera_id' not in data:
+        return jsonify({'message': 'Missing "camera_id" field in the root object'}), 400
+        
+
+    result = upload_data_to_db()
+    return jsonify({'message': result}), 200
+    
+
+
 @queue_count_bp.route('/get', methods=['GET'])
 async def get_data():
     data = await get_data_from_db()

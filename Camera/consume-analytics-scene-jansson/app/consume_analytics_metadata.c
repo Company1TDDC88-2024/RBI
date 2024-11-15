@@ -48,11 +48,17 @@ static void on_connection_error(mdb_error_t *error, void *user_data)
     abort();
 }
 
-void send_json_to_server(const char *json_str) {
+void send_json_to_server(const char *json_str, int isempty) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
+        if (isempty = 0){   
+            curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5555/api/queue_count/upload");
+        }
+        else if (isempty = 1){
+            curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5555/api/queue_count/uploadempty");
+        }
+        
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -78,7 +84,10 @@ static void process_human_detections(const char *payload_data, size_t size)
     json_t *observations = json_object_get(frame, "observations");
 
     json_t *output_json = json_object();
+
+    //Adding timestamp and camera_id to the output JSON, camera_id is hardcoded
     json_object_set_new(output_json, "timestamp", json_string(timestamp));
+    json_object_set_new(output_json, "camera_id", json_string(1));
 
     json_t *filtered_observations = json_array();
 
@@ -109,7 +118,11 @@ static void process_human_detections(const char *payload_data, size_t size)
 
     if (json_array_size(filtered_observations) > 0)
     {
-        send_json_to_server(json_str);
+        send_json_to_server(json_str, 0);
+    }
+    else
+    {
+        send_json_to_server(json_str, 1);
     }
     
     free(json_str);
