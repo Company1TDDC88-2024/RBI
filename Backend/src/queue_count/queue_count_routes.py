@@ -38,7 +38,7 @@ async def upload_data():
     return jsonify({'message': result}), 200
 
 
-@queue_count_bp.route('/uploadempty', methods=['POST'])
+@queue_count_bp.route('/upload_empty', methods=['POST'])
 async def upload_empty_data():
     data = request.json
 
