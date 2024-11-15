@@ -39,7 +39,7 @@ async def upload_data():
 
 
 @queue_count_bp.route('/uploadempty', methods=['POST'])
-async def upload_data():
+async def upload_empty_data():
     data = request.json
 
 
@@ -67,7 +67,7 @@ async def upload_data():
 
     data["observations"].append(mock_observation)
 
-    result = upload_data_to_db(data)
+    result = await upload_data_to_db(data)
     return jsonify({'message': result}), 200
     
 
