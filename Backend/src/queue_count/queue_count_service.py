@@ -99,7 +99,9 @@ async def upload_data_to_db(data):
         return "Failed to connect to database"
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM Coordinates")
+        camera_id = data.get("camera_id")
+        query = "SELECT * FROM Coordinates WHERE CameraID = ?"
+        cursor.execute(query, (camera_id,))
         RoIs = cursor.fetchall()
     except pyodbc.Error as e:
         print(f"Error getting RoI data: {e}")
