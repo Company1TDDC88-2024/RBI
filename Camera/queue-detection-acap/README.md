@@ -1,6 +1,6 @@
 ## Introduction
 
-This is a modified README file based on the README file in consume-analytics-scene-description folder.
+This is a modified README file based on the README file in customer-count-acap folder.
 
 ## Getting started
 
@@ -36,7 +36,7 @@ device:
 Standing in the consume-consolidated-track folder, run the following command:
 
 ```sh
-docker build --build-arg ARCH=<ARCH> --tag consolidated-data-app .
+docker build --build-arg ARCH=<ARCH> --tag queue-detection-acap .
 ```
 
 - `<ARCH>` is the SDK architecture, `armv7hf` or `aarch64`.
@@ -44,7 +44,7 @@ docker build --build-arg ARCH=<ARCH> --tag consolidated-data-app .
 For Windows computers, then run:
 
 ```sh
-docker run -it consolidated-data-app
+docker run -it queue-detection-acap
 docker cp <CONTAINER_ID>:/opt/app ./build
 ```
 

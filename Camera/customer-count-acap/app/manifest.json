@@ -2,7 +2,7 @@
     "schemaVersion": "1.7.0",
     "acapPackageConf": {
         "setup": {
-            "appName": "consolidated_data_app",
+            "appName": "customer_count_acap",
             "vendor": "Axis Communications",
             "embeddedSdkVersion": "3.0",
             "vendorUrl": "https://www.axis.com",
