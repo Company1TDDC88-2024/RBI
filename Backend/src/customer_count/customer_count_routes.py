@@ -84,10 +84,12 @@ async def get_customers():
 @login_required
 async def get_daily_customers():
     date = request.args.get('date')
+    
 
     # Convert date to datetime objects
     if date:
         date = datetime.strptime(date, '%Y-%m-%d')
+        
 
     data = await get_daily_data_from_db(date)
     if isinstance(data, str):
@@ -97,8 +99,10 @@ async def get_daily_customers():
     total_entering_customers = sum(entry.get('EnteringCustomers', 0) or 0 for entry in data)
     total_exiting_customers = sum(entry.get('ExitingCustomers', 0) or 0 for entry in data)
     
+    
     # Get total customers as needed
     total_customers = data[0]['TotalCustomers'] if data else 0
+    
     # Return all totals in one JSON object
     return jsonify({
         'totalEnteringCustomers': total_entering_customers,
