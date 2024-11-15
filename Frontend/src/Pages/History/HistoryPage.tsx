@@ -71,11 +71,6 @@ const HistoryPage = () => {
   const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
 
 
-
-  // Hook to fetch expected customer count for the same day last year
-  const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
-  const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
-
   useEffect(() => {
     const interval = setInterval(() => {
         refetchCustomerCount(dates[0], dates[1]);
