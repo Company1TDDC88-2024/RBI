@@ -6,11 +6,10 @@ import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
 import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers';
 import { useGetExpectedCustomerCount } from '../Hooks/useGetExpectedCustomerCount';
-import { useGetMonthlyAverageCustomerCount } from "../Hooks/useGetMonthlyAverageCustomerCount";
+import { useGetMonthlyAverageCustomerCount } from '../Hooks/useGetMonthlyAverageCustomerCount';
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
-//import ExpectedCustomerCount from "./ExpectedCustomerCount";
 
 const { RangePicker } = DatePicker;
 
@@ -72,6 +71,10 @@ const HistoryPage = () => {
   const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
 
 
+
+  // Hook to fetch expected customer count for the same day last year
+  const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
+  const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
 
   useEffect(() => {
     const interval = setInterval(() => {
