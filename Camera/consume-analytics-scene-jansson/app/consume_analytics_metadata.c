@@ -53,10 +53,12 @@ void send_json_to_server(const char *json_str, int isempty) {
 
     if (curl) {
         if (isempty = 0){   
-            curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5555/api/queue_count/upload");
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload");
         }
         else if (isempty = 1){
-            curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5555/api/queue_count/uploadempty");
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload_empty");
         }
         
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
