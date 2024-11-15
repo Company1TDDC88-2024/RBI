@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-outbound-to-azure
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 20.91.149.128/25
+        - ipBlock:
+            cidr: 51.12.46.32/27
+        - ipBlock:
+            cidr: 51.12.46.64/27
+        - ipBlock:
+            cidr: 51.12.46.128/26
+        - ipBlock:
+            cidr: 51.12.96.0/27
+        - ipBlock:
+            cidr: 51.12.96.32/29
+        - ipBlock:
+            cidr: 51.12.97.0/27
+        - ipBlock:
+            cidr: 51.12.224.0/27
+        - ipBlock:
+            cidr: 51.12.224.32/29
+        - ipBlock:
+            cidr: 51.12.225.0/27
+        - ipBlock:
+            cidr: 51.12.232.0/27
+        - ipBlock:
+            cidr: 51.12.232.32/29
+        - ipBlock:
+            cidr: 51.12.233.0/27
+        - ipBlock:
+            cidr: 213.113.46.250/0
+      ports:
+        - protocol: TCP
+          port: 1433 # Port for Azure SQL

@@ -3,7 +3,6 @@ name = "backend"
 version = "0.1.0"
 description = ""
 authors = ["Philip Hilding <philip.hilding@hotmail.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -12,6 +11,8 @@ flask-cors = "^5.0.0"
 pyodbc = "^5.1.0"
 azure-identity = "^1.18.0"
 msal = "^1.31.0"
+flask-limiter = "^3.8.0"
+redis = "^5.1.1"
 python-dotenv = "^1.0.1"
 
 

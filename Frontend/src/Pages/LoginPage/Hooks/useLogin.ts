@@ -33,8 +33,12 @@ export const useLogin = (): IUseLoginReturn => {
                 return true; // Indicate successful login
             }
             
-        } catch (err) {
-            setError(err as Error);
+        } catch (err: any) {
+            if (err.response && err.response.data && err.response.data.message) {
+                setError(new Error(err.response.data.message)); // Set specific backend error message
+            } else {
+                setError(new Error("An error occurred during login."));
+            }
             return false; // Indicate failed login
         } finally {
             setLoading(false);

@@ -3,6 +3,7 @@ import { useSignUp } from "./Hooks/useSignUp";
 import { useLogin } from "./Hooks/useLogin";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../AuthContext";
+import styles from './LoginPage.module.css';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -26,135 +27,131 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
 
     if (!validateEmail(email)) {
-        setEmailError('Email must end with @student.liu.se, @axis.com, or @liu.se');
-        return;
+      setEmailError('Email must end with @student.liu.se, @axis.com, or @liu.se');
+      return;
     } else {
-        setEmailError(null);
+      setEmailError(null);
     }
 
     if (isSignUp) {
-        await signUp(firstName, lastName, email, password);
+      await signUp(firstName, lastName, email, password);
 
-        // Kontrollera om signUpError anger att kontot redan finns
-        if (signUpError === "Account with this email already exists") {
-            setEmailError(signUpError);  // Visa backend-felmeddelandet om kontot finns
-            return;
-        }
+      if (signUpError === "Account with this email already exists") {
+        setEmailError(signUpError);
+        return;
+      }
     } else {
-        const loginSuccess = await login(email, password);
-        if (loginSuccess) {
-            await checkLoginStatus();
-            navigate("/dashboard");
-        }
+      const loginSuccess = await login(email, password);
+      if (loginSuccess) {
+        await checkLoginStatus();
+        navigate("/dashboard");
+      }
     }
   };
 
   useEffect(() => {
-    if (success && !signUpError) {  // Kontrollera att inga felmeddelanden finns
-        setSuccessMessage('An email has been sent to ' + email + '. Click on the link to verify your account');
-        setIsSignUp(false);
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setPassword('');
+    if (success && !signUpError) {
+      setSuccessMessage('An email has been sent to ' + email + '. Click on the link to verify your account');
+      setIsSignUp(false);
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
     }
   }, [success, signUpError]);
 
   return (
-    <div className="login-page">
-      <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Visa backend-felmeddelandet i röd text om ett fel finns */}
-        {(signUpError || loginError) && (
-          <p style={{ color: 'red' }}>
-            {signUpError
-              ? typeof signUpError === 'string'
-                ? signUpError
-                : (signUpError as Error).message
-              : loginError
-              ? typeof loginError === 'string'
-                ? loginError
-                : (loginError as Error).message
-              : null}
-          </p>
-        )}
-        {(signUpLoading || loginLoading) && <p>Loading...</p>}
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          {(signUpError || loginError) && (
+            <p className={styles.errorText}>
+              {signUpError ? String(signUpError) : loginError ? String(loginError) : null}
+            </p>
+          )}
+          {(signUpLoading || loginLoading) && <p className={styles.loadingText}>Loading...</p>}
 
-        {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-        {emailError && <p style={{ color: 'red' }}>{emailError}</p>} {/* Visa rött felmeddelande */}
+          {successMessage && <p className={styles.successText}>{successMessage}</p>}
+          {emailError && <p className={styles.errorText}>{emailError}</p>}
 
-        {isSignUp && (
-          <>
-            <div>
-              <label htmlFor="firstName">First Name:</label>
-              <input
-                type="text"
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Enter your first name"
-                required
-              />
-            </div>
+          {isSignUp && (
+            <>
+              <div className={styles.inputGroup}>
+                <label htmlFor="firstName">First Name:</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Enter your first name"
+                  required
+                  className={styles.input}
+                />
+              </div>
 
-            <div>
-              <label htmlFor="lastName">Last Name:</label>
-              <input
-                type="text"
-                id="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Enter your last name"
-                required
-              />
-            </div>
-          </>
-        )}
+              <div className={styles.inputGroup}>
+                <label htmlFor="lastName">Last Name:</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Enter your last name"
+                  required
+                  className={styles.input}
+                />
+              </div>
+            </>
+          )}
 
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-          />
-        </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className={styles.input}
+            />
+          </div>
 
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            required
-          />
-        </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password">Password:</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className={styles.input}
+            />
+          </div>
 
-        <button type="submit">{isSignUp ? 'Sign Up' : 'Login'}</button>
-      </form>
+          <button type="submit" className={styles.button}>{isSignUp ? 'Sign Up' : 'Login'}</button>
+        </form>
 
-      <p>
-        {isSignUp ? (
-          <>
-            Already have an account?{' '}
-            <span onClick={() => setIsSignUp(false)} style={{ color: 'blue', cursor: 'pointer' }}>
-              Log in
-            </span>
-          </>
-        ) : (
-          <>
-            Don’t have an account?{' '}
-            <span onClick={() => setIsSignUp(true)} style={{ color: 'blue', cursor: 'pointer' }}>
-              Sign up
-            </span>
-          </>
-        )}
-      </p>
+        <p>
+          {isSignUp ? (
+            <>
+              Already have an account?{' '}
+              <span onClick={() => setIsSignUp(false)} className={styles.switchText}>
+                Log in
+              </span>
+            </>
+          ) : (
+            <>
+              Don’t have an account?{' '}
+              <span onClick={() => setIsSignUp(true)} className={styles.switchText}>
+                Sign up
+              </span>
+            </>
+          )}
+        </p>
+      </div>
     </div>
   );
 };

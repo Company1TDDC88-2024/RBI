@@ -3,9 +3,11 @@ import Test from "./Pages/Test/Test";
 import Layout from "./Components/Layout/Layout";
 import DashboardPage from "./Pages/Dashboard/DashboardPage";
 import HistoryPage from "./Pages/History/HistoryPage";
+import SettingsPage from "./Pages/Settings/SettingsPage";
 import LivefeedPage from "./Pages/Livefeed/LivefeedPage";
 import LoginPage from "./Pages/LoginPage/LoginPage";
 import LiveDataPage from "./Pages/LiveData/LiveDataPage";
+import { QueueThresholdProvider } from "./Pages/Settings/QueueThresholdContext";
 import { AuthProvider, useAuth } from "./AuthContext"; 
 import useInactivityTimeout from "./Hooks/useIdleTimer"; 
 
@@ -23,7 +25,7 @@ const InactivityHandler = () => {
     navigate("/login"); // Redirect to login when timeout occurs
   };
 
-  useInactivityTimeout(600000, handleTimeout); // Call inactivity timeout with 1 minute
+  useInactivityTimeout(6000000, handleTimeout); // Call inactivity timeout with 1 minute
 
   return null; // This component does not render anything
 };
@@ -31,20 +33,23 @@ const InactivityHandler = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <InactivityHandler /> {/* Include the inactivity handler */}
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/test" element={<PrivateRoute element={<Test />} />} />
-            <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
-            <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} />
-            <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} />
-            <Route path="/livedata"element={<PrivateRoute element={<LiveDataPage />} />} />
-          </Routes>
-        </Layout>
-      </Router>
+      <QueueThresholdProvider>
+        <Router>
+          <InactivityHandler /> {/* Include the inactivity handler */}
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/test" element={<PrivateRoute element={<Test />} />} />
+              <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
+              <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} />
+              <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} />
+              <Route path="/livedata"element={<PrivateRoute element={<LiveDataPage />} />} />
+              <Route path="/settings"element={<PrivateRoute element={<SettingsPage />} />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </QueueThresholdProvider>
     </AuthProvider>
   );
 }
