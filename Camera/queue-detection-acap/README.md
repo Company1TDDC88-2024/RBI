@@ -1,6 +1,6 @@
 ## Introduction
 
-This is a modified README file based on the README file in customer-count-acap folder.
+This is a modification of the README file found at https://github.com/AxisCommunications/acap-native-sdk-examples/blob/main/message-broker/consume-scene-metadata/README.md.
 
 ## Getting started
 
@@ -8,12 +8,12 @@ These instructions will guide you on how to execute the code. Below is the
 structure and scripts used in the example:
 
 ```sh
-consume-consolidated-track
+queue-detection-acap
 ├── app
 │   ├── LICENSE
 │   ├── Makefile
 │   ├── manifest.json
-│   └── consolidated_data_app.c
+│   └── queue_detection_acap.c
 ├── Dockerfile
 └── README.md
 ```
@@ -21,7 +21,7 @@ consume-consolidated-track
 - **app/LICENSE** - Text file which lists all open source licensed source code distributed with the application.
 - **app/Makefile** - Makefile containing the build and link instructions for building the ACAP application.
 - **app/manifest.json** - Defines the application and its configuration.
-- **app/consolidated_data_app.c** - Application source code.
+- **app/queue_detection_acap.c** - Application source code.
 - **Dockerfile** - Dockerfile with the specified Axis toolchain and API container to build the example specified.
 - **README.md** - Step by step instructions on how to run the example.
 
@@ -33,7 +33,7 @@ device:
 
 #### Build the application
 
-Standing in the consume-consolidated-track folder, run the following command:
+Standing in the queue-detection-acap folder, run the following command:
 
 ```sh
 docker build --build-arg ARCH=<ARCH> --tag queue-detection-acap .
