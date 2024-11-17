@@ -70,7 +70,7 @@ http://<AXIS_DEVICE_IP>/index.html#apps
 - Click `Install`
 - Run the application by enabling the `Start` switch
 
-## Input data examples for the application
+## Expected ACAP inputs
 
 Example 1:
 {
@@ -151,7 +151,7 @@ Example 3:
     }
 }
 
-## Output data examples for the application
+## Expected ACAP outputs
 
 Example 1:
 {    
