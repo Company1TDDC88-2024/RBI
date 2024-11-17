@@ -70,7 +70,7 @@ http://<AXIS_DEVICE_IP>/index.html#apps
 - Click `Install`
 - Run the application by enabling the `Start` switch
 
-## Example of input data for the application
+## Input data examples for the application
 
 Example 1:
 {
@@ -151,7 +151,7 @@ Example 3:
     }
 }
 
-## Example of output data for the application
+## Output data examples for the application
 
 Example 1:
 {    

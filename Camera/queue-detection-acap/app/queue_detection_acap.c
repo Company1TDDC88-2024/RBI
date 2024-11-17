@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/syslog.h>
-#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 #include <jansson.h>
@@ -45,18 +44,23 @@ void send_json_to_server(const char *json_str);
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {
     (void)user_data;
-
     syslog(LOG_ERR, "Got connection error: %s, Aborting...", error->message);
-
     abort();
 }
 
-void send_json_to_server(const char *json_str) {
+void send_json_to_server(const char *json_str, int isempty) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        // Replace <CAMERA_IP> with the camera's actual IP address
-        curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/customer_count/upload");
+        if (isempty = 0){   
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload");
+        }
+        else if (isempty = 1){
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload_empty");
+        }
+        
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -73,46 +77,59 @@ void send_json_to_server(const char *json_str) {
     }
 }
 
-static void process_human_detections(const char *payload_data, size_t size)
+static void process_detections(const char *payload_data, size_t size)
 {
     json_t *root = json_loadb(payload_data, size, 0, NULL);
 
-    json_t *classes = json_object_get(root, "classes");
-    const char *type = json_string_value(json_object_get(json_array_get(classes, 0), "type"));
-    const char *id = json_string_value(json_object_get(root, "id"));
-    json_t *observations = json_object_get(root, "observations");
+    json_t *frame = json_object_get(root, "frame");
+    const char *timestamp = json_string_value(json_object_get(frame, "timestamp"));
+    json_t *observations = json_object_get(frame, "observations");
 
     json_t *output_json = json_object();
-    json_object_set_new(output_json, "human_id", json_string(id));
+
+    //Adding timestamp and camera_id to the output JSON, camera_id is hardcoded
+    json_object_set_new(output_json, "timestamp", json_string(timestamp));
+    json_object_set_new(output_json, "camera_id", json_integer(1));
+
     json_t *filtered_observations = json_array();
 
-    if (type && strcmp(type, "Human") == 0)
+    size_t index;
+    json_t *observation;
+    json_array_foreach(observations, index, observation)
     {
-        size_t index;
-        json_t *observation;
-        json_array_foreach(observations, index, observation)
+        json_t *class_obj = json_object_get(observation, "class");
+
+        const char *type = json_string_value(json_object_get(class_obj, "type"));
+        if (type && strcmp(type, "Human") == 0)
         {
             json_t *filtered_observation = json_object();
 
+            const char *track_id = json_string_value(json_object_get(observation, "track_id"));
+            json_object_set_new(filtered_observation, "track_id", json_string(track_id));
+
             json_t *bounding_box = json_object_get(observation, "bounding_box");
             json_object_set_new(filtered_observation, "bounding_box", json_deep_copy(bounding_box));
-
-            const char *timestamp = json_string_value(json_object_get(observation, "timestamp"));
-            json_object_set_new(filtered_observation, "timestamp", json_string(timestamp));
 
             json_array_append_new(filtered_observations, filtered_observation);
         }
     }
 
-    json_object_set_new(output_json, "observations", filtered_observations);
+    if (json_array_size(filtered_observations) > 0)
+    {
+        json_object_set_new(output_json, "observations", filtered_observations);
+    }
 
     char *json_str = json_dumps(output_json, 0);
 
     if (json_array_size(filtered_observations) > 0)
     {
-        send_json_to_server(json_str);
+        send_json_to_server(json_str, 0);
     }
-
+    else
+    {
+        send_json_to_server(json_str, 1);
+    }
+    
     free(json_str);
     json_decref(output_json);
     json_decref(root);
@@ -123,7 +140,7 @@ static void on_message(const mdb_message_t *message, void *user_data)
     const mdb_message_payload_t *payload = mdb_message_get_payload(message);
     (void)user_data;
 
-    process_human_detections((const char *)payload->data, payload->size);
+    process_detections((const char *)payload->data, payload->size);
 }
 
 static void on_done_subscriber_create(const mdb_error_t *error, void *user_data)
@@ -134,7 +151,6 @@ static void on_done_subscriber_create(const mdb_error_t *error, void *user_data)
         abort();
     }
     channel_identifier_t *channel_identifier = (channel_identifier_t *)user_data;
-
     syslog(LOG_INFO,
            "Subscribed to %s (%s)...",
            channel_identifier->topic,
@@ -156,7 +172,7 @@ int main(int argc, char **argv)
     // For com.axis.analytics_scene_description.v0.beta source corresponds to the
     // video channel number.
     channel_identifier_t channel_identifier = {.topic =
-                                                   "com.axis.consolidated_track.v1.beta",
+                                                   "com.axis.analytics_scene_description.v0.beta",
                                                .source = "1"};
     mdb_error_t *error = NULL;
     mdb_subscriber_config_t *subscriber_config = NULL;

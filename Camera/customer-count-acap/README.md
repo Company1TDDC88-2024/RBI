@@ -70,7 +70,7 @@ http://<AXIS_DEVICE_IP>/index.html#apps
 - Click `Install`
 - Run the application by enabling the `Start` switch
 
-## Example of input data for the application
+## Input data examples for the application
 
 Example 1:
 {
@@ -232,7 +232,7 @@ Example 3:
     "start_time": "2024-10-09T14:40:14.779855Z"
 }
 
-## Example of output data for the application
+## Output data example for the application
 
 {
     "human_id": "5b8b4da4-bd35-41e6-b4d3-564b761727d7",
