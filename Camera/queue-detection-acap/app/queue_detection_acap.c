@@ -39,7 +39,7 @@ typedef struct channel_identifier
     char *source;
 } channel_identifier_t;
 
-void send_json_to_server(const char *json_str);
+void send_json_to_server(const char *json_strm int isempty);
 
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {
@@ -52,11 +52,11 @@ void send_json_to_server(const char *json_str, int isempty) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        if (isempty = 0){   
+        if (isempty == 0){   
             // Replace <CAMERA_IP> with the camera's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload");
         }
-        else if (isempty = 1){
+        else if (isempty == 1){
             // Replace <CAMERA_IP> with the camera's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload_empty");
         }
