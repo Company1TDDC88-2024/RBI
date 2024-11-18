@@ -48,11 +48,19 @@ static void on_connection_error(mdb_error_t *error, void *user_data)
     abort();
 }
 
-void send_json_to_server(const char *json_str) {
+void send_json_to_server(const char *json_str, int isempty) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "localhost:4000/queue_count/upload");
+        if (isempty = 0){   
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload");
+        }
+        else if (isempty = 1){
+            // Replace <CAMERA_IP> with the camera's actual IP address
+            curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/queue_count/upload_empty");
+        }
+        
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -69,7 +77,7 @@ void send_json_to_server(const char *json_str) {
     }
 }
 
-static void process_human_detections(const char *payload_data, size_t size)
+static void process_detections(const char *payload_data, size_t size)
 {
     json_t *root = json_loadb(payload_data, size, 0, NULL);
 
@@ -78,7 +86,10 @@ static void process_human_detections(const char *payload_data, size_t size)
     json_t *observations = json_object_get(frame, "observations");
 
     json_t *output_json = json_object();
+
+    //Adding timestamp and camera_id to the output JSON, camera_id is hardcoded
     json_object_set_new(output_json, "timestamp", json_string(timestamp));
+    json_object_set_new(output_json, "camera_id", json_integer(1));
 
     json_t *filtered_observations = json_array();
 
@@ -103,13 +114,20 @@ static void process_human_detections(const char *payload_data, size_t size)
         }
     }
 
-    json_object_set_new(output_json, "observations", filtered_observations);
+    if (json_array_size(filtered_observations) > 0)
+    {
+        json_object_set_new(output_json, "observations", filtered_observations);
+    }
 
     char *json_str = json_dumps(output_json, 0);
 
     if (json_array_size(filtered_observations) > 0)
     {
-        send_json_to_server(json_str);
+        send_json_to_server(json_str, 0);
+    }
+    else
+    {
+        send_json_to_server(json_str, 1);
     }
     
     free(json_str);
@@ -122,7 +140,7 @@ static void on_message(const mdb_message_t *message, void *user_data)
     const mdb_message_payload_t *payload = mdb_message_get_payload(message);
     (void)user_data;
 
-    process_human_detections((const char *)payload->data, payload->size);
+    process_detections((const char *)payload->data, payload->size);
 }
 
 static void on_done_subscriber_create(const mdb_error_t *error, void *user_data)
