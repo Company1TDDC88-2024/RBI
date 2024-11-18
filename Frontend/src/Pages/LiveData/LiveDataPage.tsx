@@ -61,6 +61,9 @@ const LiveDataPage = () => {
         if (queueData && !errorQueue) {
             setLastNonErrorQueueData(queueData);
         }
+        if (!errorToday && !errorLastYear && !errorQueue) {
+            setShowError(false); // Close the error alert if all data fetching operations succeed
+        }
     }, [todayData, lastYearData, queueData, errorToday, errorLastYear, errorQueue]);
 
     // Combine error states
@@ -72,6 +75,10 @@ const LiveDataPage = () => {
             setShowError(true);
         }
     }, [error]);
+
+    if (loadingToday || loadingQueue) {
+        return <Spin tip="Loading..." />;
+    }
 
     const queueCountsByROI = lastNonErrorQueueData && Array.isArray(lastNonErrorQueueData) 
         ? lastNonErrorQueueData.reduce((acc, item) => {
