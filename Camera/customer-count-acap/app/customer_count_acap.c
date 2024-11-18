@@ -55,8 +55,8 @@ void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        // Replace <CAMERA_IP> with the camera's actual IP address
-        curl_easy_setopt(curl, CURLOPT_URL, "<CAMERA_IP>:5555/api/customer_count/upload");
+        // Replace <BACKEND_IP> with the backend's actual IP address
+        curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/customer_count/upload");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
