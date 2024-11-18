@@ -132,6 +132,10 @@ const DashboardPage = () => {
   // Fetch queue count data
   const { data: queueData, loading: queueLoading, error: queueError } = useGetQueueCount(); // Fetch queue data
 
+  if (!queueError && queueLoading) {
+    const tempdata = queueData;
+  }
+
   if (queueLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
   }
