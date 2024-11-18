@@ -9,7 +9,7 @@ def point_in_zone(x, y, bl_x, bl_y, tr_x, tr_y):
 #Function that calculates the amount of coordinates in "points" that intersect with an arbitary amount of regions of interest.
 def count_points_in_zones(points, zones):
     counts = [0] * len(zones)  
-    for i, (_, top, bot, lef, rig) in enumerate(zones):
+    for i, (_, top, bot, lef, rig, _, _, _) in enumerate(zones):
         for x, y in points:
             if point_in_zone(x, y, lef, bot, rig, top):
                 counts[i] += 1 
@@ -24,9 +24,7 @@ def to_coord(b,l,r):
 
 
 async def upload_function(i, counts, incoming_datetime, RoIs):
-    #search and find lastest row for each roi in queue count
-
-    
+    #search and find lastest timestamp for each roi in queue count  
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
@@ -48,22 +46,18 @@ async def upload_function(i, counts, incoming_datetime, RoIs):
                     FROM LatestCustomerCount
                 WHERE row_num = 1;
                 """)
-        
+        # create a list of these rows "current_count"
         current_count = cursor.fetchall()
     except:
         return "Error uploading data"
     finally:
         conn.close()
 
-    
-    # create a list of these rows "current_count"
-
-    if (counts[i] != current_count[i][1]): #Check if there are more people than "allowed"
-
+    #Check if amount if people has changed in the RoI
+    if (counts[i] != current_count[i][1]): 
         conn = await get_db_connection()
         if conn is None:
             return "Failed to connect to database"
-
         cursor = conn.cursor()
 
         try:
@@ -73,6 +67,7 @@ async def upload_function(i, counts, incoming_datetime, RoIs):
                 VALUES (?, ?, ?)
                 """, (counts[i], incoming_datetime, RoIs[i][0]))
             conn.commit()
+            print("Data uploaded successfully")
             return "Data uploaded successfully"
         except pyodbc.Error as e:
             print(f"Error inserting data: {e}")
@@ -91,8 +86,8 @@ async def upload_data_to_db(data):
         for obs in data.get("observations", [])
     ]
 
-    #Get RoI data from coordinates table in DB
-    #RoI[i]  = id : top : bot : left : right
+    #Get RoI data from coordinates table in DB where the camera id matches post request id
+    #RoI[i] = id : top : bot : left : right : threshhold : cameraID : name
     #so in coordinates of a rectangle, TR_y, BL_y, BL_x, TR_x
     conn = await get_db_connection()
     if conn is None:
