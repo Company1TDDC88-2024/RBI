@@ -21,6 +21,7 @@ export const useGetDailyCustomers = (date: string): IUseGetDailyCustomersReturn 
     const [loading, setLoading] = useState<boolean>(true);
 
     const fetchData = (date: string) => {
+        setError(null); // Reset error state before fetching
         axios.get("/customer_count/get_daily", {
             params: {
                 date,

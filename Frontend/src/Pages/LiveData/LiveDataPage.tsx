@@ -10,6 +10,7 @@ import { useQueueThreshold } from "../Settings/QueueThresholdContext";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 import DateTimeDisplay from "../DateTimeDisplay.tsx";
 import moment from "moment";
+import Test from "../Test/Test.tsx";
 
 const LiveDataPage = () => {
     const [lastUpdated, setLastUpdated] = useState<string>('Never');
@@ -71,8 +72,19 @@ const LiveDataPage = () => {
 
     // Show error popup if an error occurs
     useEffect(() => {
+
         if (error) {
             setShowError(true);
+        } else {
+            setShowError(false);
+        }
+   
+    }, [error]);
+
+    useEffect(() => {
+        if (error) {
+            setShowError(true);
+            console.log("Error occurred:", error);
         }
     }, [error]);
 
@@ -120,8 +132,6 @@ const LiveDataPage = () => {
                     description="An error occurred while fetching data. Displaying last available data."
                     type="error"
                     showIcon
-                    closable
-                    onClose={() => setShowError(false)}
                 />
             )}
             <Row gutter={16} style={{ marginTop: '16px' }}>
