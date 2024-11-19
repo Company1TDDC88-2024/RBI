@@ -37,7 +37,7 @@ export const useLogin = (): IUseLoginReturn => {
             if (err.response && err.response.data && err.response.data.message) {
                 setError(new Error(err.response.data.message)); // Set specific backend error message
             } else {
-                setError(new Error("An error occurred during login."));
+                setError(new Error("Invalid email or password."));
             }
             return false; // Indicate failed login
         } finally {

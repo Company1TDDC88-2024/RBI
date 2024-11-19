@@ -39,7 +39,6 @@ const DeleteUser: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h2>Delete Account</h2>
       <form onSubmit={handleSubmit} className={styles.form}>
         {emailError && <p className={styles.errorText}>{emailError}</p>}
         {deleteUserError && <p className={styles.errorText}>{deleteUserError.toString()}</p>}
@@ -57,7 +56,7 @@ const DeleteUser: React.FC = () => {
           />
         </div>
 
-        <button type="submit" className={styles.button}>Delete Account</button>
+        <button type="submit" className={styles.deleteButton}>Delete Account</button>
       </form>
     </div>
   );

@@ -1,0 +1,105 @@
+.settingsPage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    background-color: #f5f5f5; /* Light grey background */
+    height: 100vh;
+    color: #000;
+  }
+  
+  .settingsContainer {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+     gap: 2rem;
+  }
+  
+  .userManagement,
+  .queueSettings {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .card {
+    background: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+  }
+  
+  
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .inputGroup {
+    margin-bottom: 1rem;
+  }
+  
+  .inputGroup label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  
+  .button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .button:hover {
+    background-color: #0056b3;
+  }
+  
+  input,
+  select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .ant-input-number {
+    width: 100% !important;
+  }
+  
+  .ant-card {
+    border: none;
+  }
+  
+  .button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: center;
+    transition: background-color 0.3s;
+  }
+
+  .settingsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1rem; /* Adjust padding as needed */
+  }
+  
+  .header {
+    width: 100%; /* Make the header take the full width */
+    text-align: left;
+    margin: 0 0 1rem 0; /* Add space below the header */
+    font-size: 2rem; /* Adjust font size if needed */
+  }
+  
