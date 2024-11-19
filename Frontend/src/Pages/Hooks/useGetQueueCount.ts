@@ -23,12 +23,15 @@ export const useGetQueueCount = (): IUseGetQueueCountReturn => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const fetchData = () => {
+        setError(null); // Reset error state before fetching
         axios.get("/queue_count/get", {
             withCredentials: true
         })
             .then((response) => {
                 if (response.status === 200) {
                     setData(response.data); // Expecting an array here
+                } else {
+                    setError(new Error(`Unexpected response status: ${response.status}`));
                 }
             })
             .catch(err => {

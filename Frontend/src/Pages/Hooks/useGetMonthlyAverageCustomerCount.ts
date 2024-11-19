@@ -16,6 +16,7 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
     const fetchMonthlyAverageData = async () => {
       try {
         setLoading(true);
+        setError(null); // Reset error state before fetching
 
         const endDate = new Date();
         const startDate = new Date();

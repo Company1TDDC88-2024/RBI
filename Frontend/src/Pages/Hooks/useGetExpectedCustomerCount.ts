@@ -15,6 +15,7 @@ export const useGetExpectedCustomerCount = (selectedDate: string): IUseGetExpect
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    setError(null); // Reset error state before fetching
     // Construct the API call to fetch data for the same date last year
     axios
       .get("/customer_count/get", {
