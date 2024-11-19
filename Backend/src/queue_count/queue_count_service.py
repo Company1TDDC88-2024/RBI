@@ -61,7 +61,7 @@ async def upload_function(i, counts, incoming_datetime, ROIs):
     finally:
         conn.close()
 
-    await play_sound(counts[i], ROIs)
+    await play_sound(counts[i], ROIs[i])
     #CALL THE SPEAKER SOUND HERE
     #await play_sound(counts, [38, 0, 0, 0, 0, 0])#TEST REMOVE LATER
 
@@ -99,7 +99,7 @@ async def upload_data_to_db(data):
     ]
 
     #Get ROI data from coordinates table in DB where the camera id matches post request id
-    #ROI[i] = id : top : bot : left : right : threshhold : cameraID : name
+    #ROI[i] = ID : TopBound : BottomBound : LeftBound : RightBound : Threshold : CameraID : Name : CooldownTime
     #so in coordinates of a rectangle, TR_y, BL_y, BL_x, TR_x
     conn = await get_db_connection()
     if conn is None:
@@ -150,11 +150,11 @@ async def get_data_from_db():
     finally:
         conn.close()
 
-async def play_sound(count, ROIs):
-    ROI_id = ROIs[0][0]
-    threshold = 1   #SHOULD BE FETCHED FROM DB
+async def play_sound(count, ROI):
+    ROI_id = ROI[0]
+    threshold = ROI[5]   #FETCHED FROM DB
     clip_id = 39     #ONLY ONE SOUND FOR NOW
-    cooldown = 1 #minutes #SHOULD BE FETCHED FROM DB
+    cooldown = ROI[8] #minutes #FETCHED FROM DB
     cooldown_period = timedelta(minutes=cooldown)
 
     if ROI_id not in timestamps_roi:
@@ -163,9 +163,6 @@ async def play_sound(count, ROIs):
 
     number_of_customers = count
 
-    
-    for each in ROIs:
-        print(each)
     print(f"Number of customers in ROI {ROI_id}: {number_of_customers}")
     print(f"Threshold for ROI {ROI_id}: {threshold}")
     print(f"Timestamp in ROI list {ROI_id}: {timestamps_roi[ROI_id]}")
