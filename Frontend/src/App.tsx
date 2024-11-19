@@ -28,7 +28,7 @@ const InactivityHandler = () => {
     navigate("/login"); // Redirect to login when timeout occurs
   };
 
-  useInactivityTimeout(30000, handleTimeout); // Call inactivity timeout with 1 minute
+  useInactivityTimeout(3000000, handleTimeout); // Call inactivity timeout with 1 minute
 
   return null; // This component does not render anything
 };
