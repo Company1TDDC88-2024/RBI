@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../AuthContext";
 import styles from './LoginPage.module.css';
 
+// Import the image
+import logo from '../Images/axis_communications_logo.png';
+
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -64,6 +67,10 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      {/* Add the image above the login card */}
+      <img src={logo} alt="Axis Communications Logo" className={styles.bannerImage} />
+      <div className={styles.separator}></div> {/* Add this line */}
+
       <div className={styles.card}>
         <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
         <form className={styles.form} onSubmit={handleSubmit}>
@@ -73,7 +80,6 @@ const LoginPage: React.FC = () => {
             </p>
           )}
           {(signUpLoading || loginLoading) && <p className={styles.loadingText}>Loading...</p>}
-
           {successMessage && <p className={styles.successText}>{successMessage}</p>}
           {emailError && <p className={styles.errorText}>{emailError}</p>}
 
