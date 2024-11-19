@@ -1,4 +1,4 @@
-PROG1	= consume_analytics_metadata
+PROG1	= customer_count_acap
 OBJS1	= $(PROG1).c
 PROGS	= $(PROG1)
 DEBUG_DIR = debug

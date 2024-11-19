@@ -24,7 +24,7 @@ async def process_observations():
     data = request.json
 
     # Validate the required fields in the JSON
-    if 'id' not in data or 'observations' not in data:
+    if 'human_id' not in data or 'observations' not in data:
         return jsonify({'message': 'Missing required fields (id or observations)'}), 400
     
     # Validate the structure of each observation
