@@ -57,10 +57,10 @@ const SettingsPage = () => {
         const updatedArea = updatedData?.find((area) => area.ID === selectedArea.ID);
         setSelectedArea(updatedArea || null); // This will update the selected value in the dropdown
 
-        message.success("Name updated successfully!");
+        message.success("Queue name updated successfully!");
         refetch();
       } catch (err) {
-        message.error("Failed to update name!");
+        message.error("Failed to update queue name!");
       } finally {
         setSavingName(false);
       }
@@ -72,7 +72,7 @@ const SettingsPage = () => {
       setSavingThreshold(true);
       try {
         await updateCoordinates(selectedArea.ID, { Threshold: newThreshold });
-        message.success("Threshold updated successfully!");
+        message.success("Queue threshold updated successfully!");
       } catch (err) {
         message.error("Failed to update threshold!");
       } finally {
@@ -86,9 +86,9 @@ const SettingsPage = () => {
       setSavingCooldown(true);
       try {
         await updateCoordinates(selectedArea.ID, { CooldownTime: newCooldown });
-        message.success("Cooldown updated successfully!");
+        message.success("Queue cooldown updated successfully!");
       } catch (err) {
-        message.error("Failed to update cooldown!");
+        message.error("Failed to update queue cooldown!");
       } finally {
         setSavingCooldown(false);
       }
