@@ -4,9 +4,8 @@ import styles from "./LiveDataPage.module.css";
 import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers.ts"; 
-import { useGetQueueCount } from "../Hooks/useGetQueueCount.ts";
+import { useGetQueueCount } from "../Hooks/useGetCurrentQueues.ts";
 import { ExclamationCircleFilled } from "@ant-design/icons";
-import { useQueueThreshold } from "../Settings/QueueThresholdContext";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 import DateTimeDisplay from "../DateTimeDisplay.tsx";
 import moment from "moment";
@@ -19,7 +18,6 @@ const LiveDataPage = () => {
     const currentDay = getDay(todayDate);
     const prevYear = addYears(todayDate, -1);
     const prevYearDate = setDay(setWeek(prevYear, currentWeek), currentDay).toISOString().split('T')[0];
-    const { thresholds } = useQueueThreshold(); // Get the threshold value
 
     // Get data for today and last year
     const { data: todayData, loading: loadingToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
