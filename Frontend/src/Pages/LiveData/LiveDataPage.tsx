@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, Row, Col, Spin } from "antd";
 import styles from "./LiveDataPage.module.css";
 import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers.ts"; 
 import { useGetQueueCount } from "../Hooks/useGetCurrentQueues.ts";
+import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 import DateTimeDisplay from "../DateTimeDisplay.tsx";
@@ -23,6 +24,22 @@ const LiveDataPage = () => {
     const { data: todayData, loading: loadingToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
     const { data: lastYearData, refetch: refetchLastYear } = useGetDailyCustomers(prevYearDate);
     const { data: queueData, loading: loadingQueue, refetch: refetchQueue } = useGetQueueCount();
+    const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
+
+    const queueDataMap: Record<number, { Threshold: number; Name: string }> =
+    coordinatesData?.reduce((acc, { ID, Threshold, Name }) => {
+        acc[ID] = { Threshold, Name }; 
+        return acc;
+    }, {} as Record<number, { Threshold: number; Name: string }>) || {};
+
+const queueCountsByROI: Record<number, { NumberOfCustomers: number }> = 
+    queueData && Array.isArray(queueData)
+        ? queueData.reduce((acc, item) => {
+            acc[item.ROI] = { NumberOfCustomers: item.NumberOfCustomers };
+            return acc;
+        }, {} as Record<number, { NumberOfCustomers: number }>)
+        : {};
+
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -39,28 +56,15 @@ const LiveDataPage = () => {
     // Update the last updated time when the data changes
     useEffect(() => {
         if (todayData || lastYearData || queueData) {
-        setLastUpdated(moment().format('HH:mm:ss'));
+            setLastUpdated(moment().format('HH:mm:ss'));
         }
     }, [todayData, lastYearData, queueData]);
-    
 
-    const queueCountsByROI = queueData && Array.isArray(queueData) 
-        ? queueData.reduce((acc, item) => {
-            // For each ROI, store the latest number of customers and timestamp in a map, ROI is the key.
-            acc[item.ROI] = {
-                NumberOfCustomers: item.NumberOfCustomers
-            };
-            return acc;
-        }, {} as Record<number, { NumberOfCustomers: number;}>) 
-        : {};
 
     const comparisonData = [
         { label: prevYearDate, total: lastYearData?.totalEnteringCustomers || 0 }, // Comparing data, last year with the same week and weekday
         { label: todayDate , total: todayData?.totalEnteringCustomers || 0 } // Today's data
     ];
-
-    
-
 
     return (
         <div className={styles.LiveDataPageContainer}>
@@ -87,45 +91,45 @@ const LiveDataPage = () => {
                 <Col span={6}>
                     <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
                         <ResponsiveContainer>
-                        <p className={styles.customerCountText}>
+                            <p className={styles.customerCountText}>
                                 {loadingToday ? <Spin tip="Loading..."/> : (todayData?.totalEnteringCustomers ?? 0) - (todayData?.totalExitingCustomers ?? 0)}
-                                {/* This should be TotalCustomers */}
-                        </p>
+                            </p>
                         </ResponsiveContainer>
                     </Card>
                 </Col>
+
                 <Col span={6}>
-    <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
-        {loadingQueue ? (
-            <Spin tip="Loading..." />
-        ) : (
-            Object.keys(queueCountsByROI).length > 0 ? (
-                Object.keys(queueCountsByROI).map(roi => {
-                    console.log(`Threshold for ROI ${roi}:`, thresholds[roi]); // Log the threshold for debugging
-                    return (
-                        <div key={roi} className={styles.queueCountText} style={{ display: "flex", alignItems: "center" }}>
-                            <p> 
-                                Queue {roi}: {queueCountsByROI[roi].NumberOfCustomers} customers
-                                <div style={{ fontWeight: "bold", fontSize: "0.9em", marginTop: "4px" }}>
-                                    Threshold: {thresholds[roi]}
-                                </div>
-                            </p>
-                            {queueCountsByROI[roi].NumberOfCustomers >= thresholds[roi] && (
-                                <ExclamationCircleFilled style={{ color: "red", marginLeft: 8, fontSize: 24 }} />
-                            )}
-                        </div>
-                    );
-                })
-            ) : (
-                <p className={styles.queueCountText}>No queues in store</p>
-            )
-        )}
-    </Card>
-</Col>
+                    <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
+                        {loadingQueue || loadingCoordinates ? (
+                            <Spin tip="Loading..." />
+                        ) : (
+                            Object.keys(queueCountsByROI).length > 0 ? (
+                                Object.keys(queueCountsByROI).map(roi => {
+                                    const { Threshold, Name } = queueDataMap[+roi]; // Get threshold and name from the map
+                                    return (
+                                        <div key={roi} className={styles.queueCountText} style={{ display: "flex", alignItems: "center" }}>
+                                            <p> 
+                                                {Name}: {queueCountsByROI[+roi].NumberOfCustomers} customers
+                                                <div style={{ fontWeight: "bold", fontSize: "0.9em", marginTop: "4px" }}>
+                                                    Threshold: {Threshold}
+                                                </div>
+                                            </p>
+                                            {queueCountsByROI[+roi].NumberOfCustomers > Threshold && (
+                                                <ExclamationCircleFilled style={{ color: "red", marginLeft: 8, fontSize: 24 }} />
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className={styles.queueCountText}>No queues in store</p>
+                            )
+                        )}
+                    </Card>
+                </Col>
+
             </Row>
         </div>
     );
 };
-
 
 export default LiveDataPage;

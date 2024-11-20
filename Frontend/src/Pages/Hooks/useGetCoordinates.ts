@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-interface Coordinate {
+export interface Coordinate {
     ID: number;
     TopBound: number;
     BottomBound: number;

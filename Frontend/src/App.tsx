@@ -7,7 +7,6 @@ import SettingsPage from "./Pages/Settings/SettingsPage";
 import LivefeedPage from "./Pages/Livefeed/LivefeedPage";
 import LoginPage from "./Pages/LoginPage/LoginPage";
 import LiveDataPage from "./Pages/LiveData/LiveDataPage";
-import { QueueThresholdProvider } from "./Pages/Settings/QueueThresholdContext";
 import { AuthProvider, useAuth } from "./AuthContext"; 
 import useInactivityTimeout from "./Hooks/useIdleTimer"; 
 
@@ -36,7 +35,6 @@ const InactivityHandler = () => {
 function App() {
   return (
     <AuthProvider>
-      <QueueThresholdProvider>
         <Router>
           <InactivityHandler />
           <Layout>
@@ -52,7 +50,6 @@ function App() {
             </Routes>
           </Layout>
         </Router>
-      </QueueThresholdProvider>
     </AuthProvider>
   );
 }

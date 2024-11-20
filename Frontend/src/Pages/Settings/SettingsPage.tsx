@@ -4,7 +4,7 @@ import styles from "./SettingsPage.module.css";
 import "../../global.css";
 import CreateUser from "./CreateUser";
 import DeleteUser from "./DeleteUser";
-import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
+import { useGetCoordinates, Coordinate} from "../Hooks/useGetCoordinates.ts";
 import { useUpdateCoordinates } from "../Hooks/useUpdateCoordinates"; // Import the hook
 
 const { Option } = Select;
@@ -19,12 +19,7 @@ const SettingsPage = () => {
   const [savingCooldown, setSavingCooldown] = useState(false); // Fixed missing state
 
   const { data, loading, error, refetch } = useGetCoordinates();
-  const {
-    updateCoordinates,
-    loading: updating,
-    error: updateError,
-    success,
-  } = useUpdateCoordinates();
+  const { updateCoordinates } = useUpdateCoordinates();
 
   const handleAreaChange = (value: string) => {
     const area = data?.find((item) => item.Name === value);
@@ -63,6 +58,7 @@ const SettingsPage = () => {
         setSelectedArea(updatedArea || null); // This will update the selected value in the dropdown
 
         message.success("Name updated successfully!");
+        refetch();
       } catch (err) {
         message.error("Failed to update name!");
       } finally {
