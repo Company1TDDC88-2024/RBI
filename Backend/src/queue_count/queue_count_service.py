@@ -108,3 +108,40 @@ async def get_data_from_db():
         return "Error fetching data"
     finally:
         conn.close()
+
+
+async def get_queues_from_db():
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            WITH LatestCustomerCount AS (
+                SELECT 
+                    ROI,
+                    NumberOfCustomers,
+                    Timestamp,
+                    ROW_NUMBER() OVER (PARTITION BY ROI ORDER BY Timestamp DESC) AS row_num
+                FROM QueueCount
+                )
+                SELECT 
+                    ROI,
+                    NumberOfCustomers,
+                    Timestamp
+                    FROM LatestCustomerCount
+                WHERE row_num = 1;
+                """)
+        rows = cursor.fetchall()
+        
+        # Convert rows to list of dictionaries
+        current_count = [
+            {"ROI": row[0], "NumberOfCustomers": row[1], "Timestamp": row[2]}
+            for row in rows
+        ]
+        return current_count
+    except:
+        return "Error uploading data"
+    finally:
+        conn.close()
+

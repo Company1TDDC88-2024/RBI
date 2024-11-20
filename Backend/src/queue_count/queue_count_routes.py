@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from .queue_count_service import upload_data_to_db, get_data_from_db
+from .queue_count_service import upload_data_to_db, get_data_from_db, get_queues_from_db
 
 # Skapa en Blueprint
 queue_count_bp = Blueprint('queue_count', __name__)
@@ -41,6 +41,15 @@ async def upload_data():
 @queue_count_bp.route('/get', methods=['GET'])
 async def get_data():
     data = await get_data_from_db()
+    if isinstance(data, str):
+        return jsonify({'message': data}), 500
+    return jsonify(data)
+
+
+
+@queue_count_bp.route('/get_current_queues', methods=['GET'])
+async def get_queue_data():
+    data = await get_queues_from_db()
     if isinstance(data, str):
         return jsonify({'message': data}), 500
     return jsonify(data)
