@@ -54,12 +54,8 @@ async def get_data_from_db():
     finally:
         conn.close()
         
-
-import pyodbc
-from src.database_connect import get_db_connection  # Assuming this function provides a pyodbc connection
-
+        
 async def update_data_in_db(id: int, data: dict):
-    # Get the database connection
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
@@ -67,28 +63,15 @@ async def update_data_in_db(id: int, data: dict):
     cursor = conn.cursor()
 
     try:
-        # Update the data in the Coordinates table
-        update_query = """
+        set_clause = ", ".join([f"{key} = ?" for key in data.keys()])
+        update_query = f"""
             UPDATE Coordinates
-            SET TopBound = ?, BottomBound = ?, LeftBound = ?, RightBound = ?, 
-                Threshold = ?, CameraID = ?, Name = ?, CooldownTime = ?
+            SET {set_clause}
             WHERE ID = ?
         """
-        
-        # Bind the data to the query
-        cursor.execute(update_query, (
-            data.get('TopBound', None),
-            data.get('BottomBound', None),
-            data.get('LeftBound', None),
-            data.get('RightBound', None),
-            data.get('Threshold', None),
-            data.get('CameraID', None),
-            data.get('Name', None),
-            data.get('CooldownTime', None),
-        id
-        ))
+        values = list(data.values()) + [id]
+        cursor.execute(update_query, values)
 
-        # Commit the changes to the database
         conn.commit()
 
         # Check if any rows were affected
