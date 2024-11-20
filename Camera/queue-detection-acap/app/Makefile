@@ -1,4 +1,4 @@
-PROG1	= consolidated_data_app
+PROG1	= queue_detection_acap
 OBJS1	= $(PROG1).c
 PROGS	= $(PROG1)
 DEBUG_DIR = debug

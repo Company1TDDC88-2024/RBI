@@ -55,7 +55,8 @@ void send_json_to_server(const char *json_str) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "192.168.1.238:5001/upload");
+        // Replace <BACKEND_IP> with the backend's actual IP address
+        curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/customer_count/upload");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -82,7 +83,7 @@ static void process_human_detections(const char *payload_data, size_t size)
     json_t *observations = json_object_get(root, "observations");
 
     json_t *output_json = json_object();
-    json_object_set_new(output_json, "id", json_string(id));
+    json_object_set_new(output_json, "human_id", json_string(id));
     json_t *filtered_observations = json_array();
 
     if (type && strcmp(type, "Human") == 0)

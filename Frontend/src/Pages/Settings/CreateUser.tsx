@@ -22,14 +22,16 @@ const CreateUser: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    setEmailError(null);
+    setSuccessMessage(null);
     if (!validateEmail(email)) {
       setEmailError('Email must end with @student.liu.se, @axis.com, or @liu.se');
       return;
-    } else {
-      setEmailError(null);
     }
 
     await signUp(firstName, lastName, email, password, isAdmin);
+
+    setEmailError(null);
 
     if (signUpError === "Account with this email already exists") {
       setEmailError(signUpError);
@@ -49,7 +51,6 @@ const CreateUser: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h2>Create Account</h2>
       <form onSubmit={handleSubmit} className={styles.form}>
         {emailError && <p className={styles.errorText}>{emailError}</p>}
         {signUpError && <p className={styles.errorText}>{signUpError}</p>}

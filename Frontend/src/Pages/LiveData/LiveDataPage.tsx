@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, Row, Col, Spin } from "antd";
+import { Card, Row, Col, Spin, Alert } from "antd";
 import styles from "./LiveDataPage.module.css";
 import "../../global.css";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -11,8 +11,14 @@ import { addYears, setWeek, setDay, getWeek, getDay } from 'date-fns';
 import DateTimeDisplay from "../DateTimeDisplay.tsx";
 import moment from "moment";
 
+
 const LiveDataPage = () => {
     const [lastUpdated, setLastUpdated] = useState<string>('Never');
+    const [lastNonErrorTodayData, setLastNonErrorTodayData] = useState<any>(null);
+    const [lastNonErrorLastYearData, setLastNonErrorLastYearData] = useState<any>(null);
+    const [lastNonErrorQueueData, setLastNonErrorQueueData] = useState<any>(null);
+    const [showError, setShowError] = useState<boolean>(false);
+
     // Gets today's date and finds corresponding date (same week and weekday) from previous year.
     const todayDate = new Date().toISOString().split('T')[0]; // transforms Date into string
     const currentWeek = getWeek(todayDate);
@@ -21,9 +27,9 @@ const LiveDataPage = () => {
     const prevYearDate = setDay(setWeek(prevYear, currentWeek), currentDay).toISOString().split('T')[0];
 
     // Get data for today and last year
-    const { data: todayData, loading: loadingToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
-    const { data: lastYearData, refetch: refetchLastYear } = useGetDailyCustomers(prevYearDate);
-    const { data: queueData, loading: loadingQueue, refetch: refetchQueue } = useGetQueueCount();
+    const { data: todayData, loading: loadingToday, error: errorToday, refetch: refetchToday } = useGetDailyCustomers(todayDate);
+    const { data: lastYearData, error: errorLastYear, refetch: refetchLastYear } = useGetDailyCustomers(prevYearDate);
+    const { data: queueData, loading: loadingQueue, error: errorQueue, refetch: refetchQueue } = useGetQueueCount();
     const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
 
     const queueDataMap: Record<number, { Threshold: number; Name: string }> =
@@ -32,13 +38,7 @@ const LiveDataPage = () => {
         return acc;
     }, {} as Record<number, { Threshold: number; Name: string }>) || {};
 
-const queueCountsByROI: Record<number, { NumberOfCustomers: number }> = 
-    queueData && Array.isArray(queueData)
-        ? queueData.reduce((acc, item) => {
-            acc[item.ROI] = { NumberOfCustomers: item.NumberOfCustomers };
-            return acc;
-        }, {} as Record<number, { NumberOfCustomers: number }>)
-        : {};
+
 
 
     useEffect(() => {
@@ -57,24 +57,88 @@ const queueCountsByROI: Record<number, { NumberOfCustomers: number }> =
     useEffect(() => {
         if (todayData || lastYearData || queueData) {
             setLastUpdated(moment().format('HH:mm:ss'));
+
         }
     }, [todayData, lastYearData, queueData]);
 
+    // Update last non-error data when data is successfully fetched
+    useEffect(() => {
+        if (todayData && !errorToday) {
+            setLastNonErrorTodayData(todayData);
+        }
+        if (lastYearData && !errorLastYear) {
+            setLastNonErrorLastYearData(lastYearData);
+        }
+        if (queueData && !errorQueue) {
+            setLastNonErrorQueueData(queueData);
+        }
+        if (!errorToday && !errorLastYear && !errorQueue) {
+            setShowError(false); // Close the error alert if all data fetching operations succeed
+        }
+    }, [todayData, lastYearData, queueData, errorToday, errorLastYear, errorQueue]);
+
+    // Combine error states
+    const error = errorToday || errorLastYear || errorQueue;
+
+    // Show error popup if an error occurs
+    useEffect(() => {
+
+        if (error) {
+            setShowError(true);
+        } else {
+            setShowError(false);
+        }
+   
+    }, [error]);
+
+    useEffect(() => {
+        if (error) {
+            setShowError(true);
+            console.log("Error occurred:", error);
+        }
+    }, [error]);
+
+    if (loadingToday || loadingQueue) {
+        return <Spin tip="Loading..." />;
+    }
+
+    const queueCountsByROI = lastNonErrorQueueData && Array.isArray(lastNonErrorQueueData) 
+        ? lastNonErrorQueueData.reduce((acc, item) => {
+            // For each ROI, store the latest number of customers and timestamp in a map, ROI is the key.
+            acc[item.ROI] = {
+                NumberOfCustomers: item.NumberOfCustomers,
+                Timestamp: item.Timestamp,  
+            };
+            return acc;
+        }, {} as Record<number, { NumberOfCustomers: number; Timestamp: Date }>) 
+        : {};
+
+
+
+    
 
     const comparisonData = [
-        { label: prevYearDate, total: lastYearData?.totalEnteringCustomers || 0 }, // Comparing data, last year with the same week and weekday
-        { label: todayDate , total: todayData?.totalEnteringCustomers || 0 } // Today's data
+        { label: prevYearDate, total: lastNonErrorLastYearData?.totalEnteringCustomers || 0 }, // Comparing data, last year with the same week and weekday
+        { label: todayDate , total: lastNonErrorTodayData?.totalEnteringCustomers || 0 } // Today's data
     ];
 
     return (
         <div className={styles.LiveDataPageContainer}>
             <h1>Live Data</h1>
             <DateTimeDisplay lastUpdated={lastUpdated} />
+            {showError && (
+                <Alert
+                    message="Error"
+                    description="An error occurred while fetching data. Displaying last available data."
+                    type="error"
+                    showIcon
+                />
+            )}
             <Row gutter={16} style={{ marginTop: '16px' }}>
                 <Col span={12}>
                     <Card title="Total Customers graph, today and last year" bordered={false} className={styles.liveDataCard}>
                         <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold' }}>
-                            Total customers today: {loadingToday ? <Spin tip="Loading..."/> : todayData?.totalEnteringCustomers}
+                            Total customers today: {loadingToday ? <Spin tip="Loading..."/> : lastNonErrorTodayData?.totalEnteringCustomers}
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={comparisonData}>
@@ -91,9 +155,10 @@ const queueCountsByROI: Record<number, { NumberOfCustomers: number }> =
                 <Col span={6}>
                     <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
                         <ResponsiveContainer>
-                            <p className={styles.customerCountText}>
-                                {loadingToday ? <Spin tip="Loading..."/> : (todayData?.totalEnteringCustomers ?? 0) - (todayData?.totalExitingCustomers ?? 0)}
-                            </p>
+                        <p className={styles.customerCountText}>
+                                {loadingToday ? <Spin tip="Loading..."/> : (lastNonErrorTodayData?.totalEnteringCustomers ?? 0) - (lastNonErrorTodayData?.totalExitingCustomers ?? 0)}
+                                {/* This should be TotalCustomers */}
+                        </p>
                         </ResponsiveContainer>
                     </Card>
                 </Col>

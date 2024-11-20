@@ -96,18 +96,20 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className={styles.settingsPage}>
-      <h1>Settings</h1>
-      <div className={styles.settingsContainer}>
-        <div className={styles.userManagement}>
-          <Card title="Create a new user" className={styles.card}>
-            <CreateUser />
-          </Card>
-          <Card title="Delete user" className={styles.card}>
-            <DeleteUser />
-          </Card>
-        </div>
+  <div className={styles.settingsPage}>
+    <div className={styles.settingsContainer}>
+      <h1 className={styles.header}>Settings</h1>
+      {/* Vänster kolumn */}
+      <div className={styles.userManagement}>
+        <Card title="Create a new user" className={styles.card}>
+          <CreateUser />
+        </Card>
+        <Card title="Delete user" className={styles.card}>
+          <DeleteUser />
+        </Card>
+      </div>
 
+        {/* Höger kolumn */}
         <div className={styles.queueSettings}>
           <Card title="Queue settings" className={styles.card}>
             <div className={styles.inputGroup}>
