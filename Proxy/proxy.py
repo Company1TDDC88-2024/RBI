@@ -89,6 +89,22 @@ def get_camera_feed_2():
     except requests.exceptions.RequestException as e:
         return jsonify({'status': 'error', 'message': str(e), 'details': e.response.text if e.response else 'No response received'}), 500
 
+@app.route('/forward_to_speaker', methods=['GET'])
+def forward_to_speaker():
+    target_url = os.environ.get('SPEAKER_URL')
+    username = os.environ.get('SPEAKER_USERNAME')
+    password = os.environ.get('SPEAKER_PASSWORD')
+
+    sound_id = request.args.get('sound_id')
+    #SET SPECIFIC SOUND FILE
+    target_url = f"{target_url}{sound_id}"
+
+    try:
+        response = requests.get(target_url, auth=(username, password))
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        return jsonify({'status': 'success', 'data': response.json()}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'status': 'error', 'message': str(e), 'details': e.response.text if e.response else 'No response received'}), 500
 
 
 if __name__ == '__main__':
