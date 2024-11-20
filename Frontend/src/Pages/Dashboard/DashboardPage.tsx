@@ -132,6 +132,10 @@ const DashboardPage = () => {
   // Fetch queue count data
   const { data: queueData, loading: queueLoading, error: queueError } = useGetQueueCount(); // Fetch queue data
 
+  if (!queueError && queueLoading) {
+    const tempdata = queueData;
+  }
+
   if (queueLoading || dailyCustomerLoading || customerCountLoading) {
     return <Spin tip="Loading..." />;
   }
@@ -158,7 +162,7 @@ const DashboardPage = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <h1>Dashboard</h1>
+      <h1>Overview</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>

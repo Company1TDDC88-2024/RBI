@@ -17,6 +17,7 @@ export const useGetCustomerCount = (startDate: string, endDate: string): IUseGet
     const [loading, setLoading] = useState<boolean>(true);
 
     const fetchData = (startDate: string, endDate: string) => {
+        setError(null); // Reset error state before fetching
         axios.get("/customer_count/get", {
             params: {
                 startDate,

@@ -5,11 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../AuthContext";
 import styles from './LoginPage.module.css';
 
+// Import the image
+import logo from '../Images/axis_communications_logo.png';
+
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -34,7 +38,7 @@ const LoginPage: React.FC = () => {
     }
 
     if (isSignUp) {
-      await signUp(firstName, lastName, email, password);
+      await signUp(firstName, lastName, email, password, isAdmin);
 
       if (signUpError === "Account with this email already exists") {
         setEmailError(signUpError);
@@ -57,11 +61,16 @@ const LoginPage: React.FC = () => {
       setLastName('');
       setEmail('');
       setPassword('');
+      setIsAdmin(false);
     }
   }, [success, signUpError]);
 
   return (
     <div className={styles.container}>
+      {/* Add the image above the login card */}
+      <img src={logo} alt="Axis Communications Logo" className={styles.bannerImage} />
+      <div className={styles.separator}></div> {/* Add this line */}
+
       <div className={styles.card}>
         <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
         <form className={styles.form} onSubmit={handleSubmit}>
@@ -71,7 +80,6 @@ const LoginPage: React.FC = () => {
             </p>
           )}
           {(signUpLoading || loginLoading) && <p className={styles.loadingText}>Loading...</p>}
-
           {successMessage && <p className={styles.successText}>{successMessage}</p>}
           {emailError && <p className={styles.errorText}>{emailError}</p>}
 
@@ -100,6 +108,17 @@ const LoginPage: React.FC = () => {
                   placeholder="Enter your last name"
                   required
                   className={styles.input}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="isAdmin">Admin User:</label>
+                <input
+                  type="checkbox"
+                  id="isAdmin"
+                  checked={isAdmin}
+                  onChange={(e) => setIsAdmin(e.target.checked)}
+                  className={styles.checkbox}
                 />
               </div>
             </>

@@ -12,9 +12,12 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import useInactivityTimeout from "./Hooks/useIdleTimer"; 
 
 // PrivateRoute component to protect routes
-const PrivateRoute = ({ element }: { element: JSX.Element }) => {
-  const { isLoggedIn } = useAuth();
-  return isLoggedIn ? element : <Navigate to="/login" />;
+const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, adminOnly?: boolean }) => {
+  const { isLoggedIn, isAdmin } = useAuth();
+  if (!isLoggedIn) return <Navigate to="/login" />;
+  if (adminOnly && !isAdmin) return <Navigate to="/" />; // Redirect if not admin
+
+  return element;
 };
 
 // Inactivity handler component
@@ -25,7 +28,7 @@ const InactivityHandler = () => {
     navigate("/login"); // Redirect to login when timeout occurs
   };
 
-  useInactivityTimeout(6000000, handleTimeout); // Call inactivity timeout with 1 minute
+  useInactivityTimeout(3000000, handleTimeout); // Call inactivity timeout with 1 minute
 
   return null; // This component does not render anything
 };
@@ -35,17 +38,17 @@ function App() {
     <AuthProvider>
       <QueueThresholdProvider>
         <Router>
-          <InactivityHandler /> {/* Include the inactivity handler */}
+          <InactivityHandler />
           <Layout>
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/test" element={<PrivateRoute element={<Test />} />} />
               <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
-              <Route path="/history" element={<PrivateRoute element={<HistoryPage />} />} />
-              <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} />} />
-              <Route path="/livedata"element={<PrivateRoute element={<LiveDataPage />} />} />
-              <Route path="/settings"element={<PrivateRoute element={<SettingsPage />} />} />
+              <Route path="/history" element={<PrivateRoute element={<HistoryPage />} adminOnly={true} />} />
+              <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} adminOnly={true} />} />
+              <Route path="/livedata" element={<PrivateRoute element={<LiveDataPage />} />} />
+              <Route path="/settings" element={<PrivateRoute element={<SettingsPage />} adminOnly={true} />} />
             </Routes>
           </Layout>
         </Router>
@@ -53,5 +56,6 @@ function App() {
     </AuthProvider>
   );
 }
+
 
 export default App;

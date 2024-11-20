@@ -1,45 +1,48 @@
 import axios from "axios";
 import { useState } from "react";
 
-interface ILoginResponse {
+interface IDeleteResponse {
     message: string;
 }
 
-interface IUseLoginReturn {
-    login: (email: string, password: string) => Promise<boolean>;
+interface IUseDeleteUserReturn {
+    deleteUser: (email: string) => Promise<boolean>;
     error: Error | null;
     loading: boolean;
+    success: boolean;
 }
 
-export const useLogin = (): IUseLoginReturn => {
+export const useDeleteUser = (): IUseDeleteUserReturn => {
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [success, setSuccess] = useState<boolean>(false);
 
-    const login = async (email: string, password: string): Promise<boolean> => {
+    const deleteUser = async (email: string): Promise<boolean> => {
         setLoading(true);
         setError(null);
+        setSuccess(false);
 
         try {
-            const response = await axios.post<ILoginResponse>(
-                '/login/login', // Ensure this matches your route
-                { email, password },
+            const response = await axios.post<IDeleteResponse>(
+                '/login/delete', // Ensure this matches your route
+                { email },
                 {
                     withCredentials: true // Include credentials if needed
                 }
             );
 
             if (response.status === 200) {
-                // alert(response.data.message || 'Login successful!'); // Remove this line to prevent pop-up
-                return true; // Indicate successful login
+                setSuccess(true);
+                return true; // Indicate successful deletion
             }
             
         } catch (err: any) {
             if (err.response && err.response.data && err.response.data.message) {
                 setError(new Error(err.response.data.message)); // Set specific backend error message
             } else {
-                setError(new Error("Invalid email or password."));
+                setError(new Error("An error occurred during account deletion."));
             }
-            return false; // Indicate failed login
+            return false; // Indicate failed deletion
         } finally {
             setLoading(false);
         }
@@ -47,5 +50,5 @@ export const useLogin = (): IUseLoginReturn => {
         return false; // Fallback
     };
 
-    return { login, error, loading };
+    return { deleteUser, error, loading, success };
 };
