@@ -2,23 +2,17 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface QueueThresholdContextType {
-  thresholds: { [roi: string]: number }; // Map of ROI to thresholds
-  setThresholdForROI: (roi: string, value: number) => void;
+  queueThreshold: number;
+  setQueueThreshold: (value: number) => void;
 }
 
 const QueueThresholdContext = createContext<QueueThresholdContextType | undefined>(undefined);
 
 export const QueueThresholdProvider = ({ children }: { children: ReactNode }) => {
-  const [thresholds, setThresholds] = useState<{ [roi: string]: number }>({});
-
-
-  const setThresholdForROI = (roi: string, value: number) => {
-    console.log(`Updating thresholds: ROI ${roi}, Value: ${value}`); // Debug log
-    setThresholds((prev) => ({ ...prev, [roi]: value })); // Update threshold
-};
+  const [queueThreshold, setQueueThreshold] = useState<number>(1); // Default threshold is 1
 
   return (
-    <QueueThresholdContext.Provider value={{ thresholds, setThresholdForROI }}>
+    <QueueThresholdContext.Provider value={{ queueThreshold, setQueueThreshold }}>
       {children}
     </QueueThresholdContext.Provider>
   );
