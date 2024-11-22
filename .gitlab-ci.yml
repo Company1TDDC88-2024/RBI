@@ -109,7 +109,8 @@ deploy:
     - kubectl delete service frontend-service --ignore-not-found
     - kubectl delete service backend-service --ignore-not-found
     - kubectl delete ingress app-ingress -n tddc88-ht24-company1 --ignore-not-found
-
+    - kubectl delete deployment redis --ignore-not-found
+    - kubectl delete service redis --ignore-not-found
     # Wait for frontend deployment to be deleted
     - kubectl wait --for=delete deployment/frontend-deployment --timeout=60s || echo "Frontend deployment already deleted or timed out"
 
