@@ -31,15 +31,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   const checkLoginStatus = async () => {
     try {
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
-      setIsLoggedIn(response.data.logged_in);
-
-      if (response.data.logged_in) {
-        setIsAdmin(response.data.is_admin || false); // Set isAdmin based on the response
-      }
+      const { logged_in, is_admin } = response.data;
+  
+      // Update state and localStorage based on the response
+      setIsLoggedIn(logged_in);
+      setIsAdmin(is_admin || false);
+      console.log("isAdmin", is_admin);
+      console.log("logged_in", logged_in);
+      localStorage.setItem("isLoggedIn", JSON.stringify(logged_in));
+      localStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
-      setIsAdmin(false); // Reset admin status in case of error
+      setIsAdmin(false);
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("isAdmin");
     } finally {
       setLoading(false);
     }
@@ -56,6 +62,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   };
 
   useEffect(() => {
+    const storedIsLoggedIn = JSON.parse(localStorage.getItem("isLoggedIn") || "false");
+    const storedIsAdmin = JSON.parse(localStorage.getItem("isAdmin") || "false");
+    setIsLoggedIn(storedIsLoggedIn);
+    setIsAdmin(storedIsAdmin);
     checkLoginStatus();
   }, []);
 
