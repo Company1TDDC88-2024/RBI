@@ -16,28 +16,16 @@ const { Option } = Select;
 const HistoryPage = () => {
   const currentDate = new Date().toISOString().split("T")[0];
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
   const todaysDate = new Date();  // Get today's date
-  console.log("date from history:",todaysDate);
-  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
-  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); // Adjust the year to last year
   const selectedDate = todaysDate.toISOString().split("T")[0];
-  console.log("Formatted selected date:", selectedDate); 
-
 
   const [dates, setDates] = useState(() => {
-    const savedDates = localStorage.getItem('dates');
-    if (savedDates) {
-      return JSON.parse(savedDates);
-    } else {
-      // Default to the current month for both start and end dates
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setMonth(startDate.getMonth()); // Set to last month
-    
+      startDate.setDate(1); // Set to current month
       return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
-    }
   });
   
   const [frequency, setFrequency] = useState(() => {
@@ -58,7 +46,7 @@ const HistoryPage = () => {
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7);
+    startDate.setDate(1);
     setDates([startDate.toISOString().split("T")[0], endDate]);
   }, [currentDate]);
 
@@ -79,7 +67,6 @@ const HistoryPage = () => {
         refetchDailyCustomer(currentDate);
         refetchCameraQueueData();
         setLastUpdated(moment().format('HH:mm:ss'));
-        console.log('Data refetched');
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval); // Cleanup interval on component unmount
