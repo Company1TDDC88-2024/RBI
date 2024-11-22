@@ -133,6 +133,8 @@ const HistoryPage = () => {
         } else if (frequency === '1day') {
             if (selectedWeekday !== null && timestamp.getDay() !== selectedWeekday) return;
             key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        } else if (frequency === '1week') {
+            key = moment(timestamp).format('YYYY-[W]WW'); // Group by week
         } else if (frequency === '1month') {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
@@ -173,6 +175,8 @@ const HistoryPage = () => {
           key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
           key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        } else if (frequency === '1week') {
+          key = moment(timestamp).format('YYYY-[W]WW'); // Group by week
         } else if (frequency === '1month') {
           key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
@@ -192,7 +196,14 @@ const HistoryPage = () => {
     return frequency === '1month' ? groupedData : groupedData;
   };
   
-  
+  const getTitle = (baseTitle) => {
+    if (frequency === '1hour') return `${baseTitle} per hour`;
+    if (frequency === '1day') return `${baseTitle} per day`;
+    if (frequency === '1week') return `${baseTitle} per week`;
+    if (frequency === '1month') return `${baseTitle} per month`;
+    return baseTitle;
+  };
+
   useEffect(() => {
     if (customerCountData) {
       setProcessedData(processData(customerCountData, frequency, dates, selectedWeekday));
@@ -253,6 +264,16 @@ const HistoryPage = () => {
           </Button>
           <Button 
             onClick={() => {
+              setFrequency('1week');
+              setSelectedWeekday(null);
+            }}
+            type={frequency === '1week' ? 'primary' : 'default'}
+            style={{ marginRight: '10px' }}
+          >
+            Per Week
+          </Button>
+          <Button 
+            onClick={() => {
               setFrequency('1month');
               setSelectedWeekday(null);
             }} 
@@ -297,7 +318,7 @@ const HistoryPage = () => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Number of customers" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title={getTitle("Number of customers")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -306,6 +327,7 @@ const HistoryPage = () => {
                   tickFormatter={timestamp => {
                     if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
                     if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                    if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
                     return moment(timestamp).format('MMM YYYY');
                   }}
                 />
@@ -325,7 +347,7 @@ const HistoryPage = () => {
         </Col>
         
         <Col span={12}>
-          <Card title="Number of queue alerts per ROI" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card title={getTitle("Number of queue alerts")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={processedQueueData || []}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -334,6 +356,7 @@ const HistoryPage = () => {
                 tickFormatter={timestamp => {
                   if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
                   if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                  if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
                   return moment(timestamp).format('MMM YYYY');
                 }}
               />
