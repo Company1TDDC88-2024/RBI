@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Button, Card, Row, Col, Spin, Alert, DatePicker } from "antd";
+import { Button, Card, Row, Col, Spin, Alert, DatePicker, Select } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
@@ -12,6 +11,7 @@ import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const HistoryPage = () => {
   const currentDate = new Date().toISOString().split("T")[0];
@@ -49,9 +49,11 @@ const HistoryPage = () => {
     }
   });
 
+  const [selectedWeekday, setSelectedWeekday] = useState(null);
   const [processedData, setProcessedData] = useState([]);
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
+  const [rangePickerValue, setRangePickerValue] = useState(null);
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
@@ -107,7 +109,7 @@ const HistoryPage = () => {
 };
 
   // Process data to aggregate based on frequency within the selected date range
-  const processData = (customerCountData, frequency, dates) => {
+  const processData = (customerCountData, frequency, dates, selectedWeekday) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
@@ -129,6 +131,7 @@ const HistoryPage = () => {
         if (frequency === '1hour') {
             key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
+            if (selectedWeekday !== null && timestamp.getDay() !== selectedWeekday) return;
             key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
         } else if (frequency === '1month') {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
@@ -146,7 +149,7 @@ const HistoryPage = () => {
     return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
 };
 
-  const processQueueData = (cameraQueueData, frequency, dates, threshold = 1) => {
+  const processQueueData = (cameraQueueData, frequency, dates, selectedWeekday, threshold = 1) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
@@ -161,6 +164,7 @@ const HistoryPage = () => {
       if (timestamp >= startDate && timestamp <= endDate) {
         // Skip items that do not meet the ROI criteria or have customers below the threshold
         if (![1, 4, 5, 6].includes(item.ROI) || item.NumberOfCustomers < threshold) return;
+        if (selectedWeekday !== null && timestamp.getDay() !== selectedWeekday) return;
   
         let key;
   
@@ -191,15 +195,15 @@ const HistoryPage = () => {
   
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency, dates));
+      setProcessedData(processData(customerCountData, frequency, dates, selectedWeekday));
     }
-  }, [customerCountData, frequency, dates]);
+  }, [customerCountData, frequency, dates, selectedWeekday]);
 
   useEffect(() => {
     if (cameraQueueData) {
-      setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates));
+      setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates, selectedWeekday));
     }
-  }, [cameraQueueData, frequency, dates]);
+  }, [cameraQueueData, frequency, dates, selectedWeekday]);
   
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading||expectedCustomerCountLoading) {
@@ -218,28 +222,75 @@ const HistoryPage = () => {
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>
-          <RangePicker onChange={onDateChange} />
+          <RangePicker 
+            onChange={(dates, dateStrings) => {
+              onDateChange(dates, dateStrings);
+              setRangePickerValue(dates);
+            }}
+            value={rangePickerValue}
+          />
         </Col>
         <Col>
-          <Button 
-            onClick={() => setFrequency('1hour')} 
+        <Button 
+            onClick={() => {
+              setFrequency('1hour');
+              setSelectedWeekday(null);
+            }} 
             type={frequency === '1hour' ? 'primary' : 'default'}
             style={{ marginRight: '10px' }}
           >
             Per Hour
           </Button>
           <Button 
-            onClick={() => setFrequency('1day')} 
+            onClick={() => {
+              setFrequency('1day');
+              setSelectedWeekday(null);
+            }}
             type={frequency === '1day' ? 'primary' : 'default'}
             style={{ marginRight: '10px' }}
           >
             Per Day
           </Button>
           <Button 
-            onClick={() => setFrequency('1month')} 
+            onClick={() => {
+              setFrequency('1month');
+              setSelectedWeekday(null);
+            }} 
             type={frequency === '1month' ? 'primary' : 'default'}
           >
             Per Month
+          </Button>
+        </Col>
+        <Col>
+          <Select
+            disabled={frequency !== '1day'}
+            placeholder="Select weekday"
+            onChange={value => setSelectedWeekday(value)}
+            value={selectedWeekday}
+            style={{ width: 145 }}
+          >
+            <Option value={1}>Monday</Option>
+            <Option value={2}>Tuesday</Option>
+            <Option value={3}>Wednesday</Option>
+            <Option value={4}>Thursday</Option>
+            <Option value={5}>Friday</Option>
+            <Option value={6}>Saturday</Option>
+            <Option value={0}>Sunday</Option>
+          </Select>
+        </Col>
+        <Col>
+          <Button 
+            onClick={() => {
+              const endDate = new Date();
+              const startDate = new Date();
+              startDate.setMonth(startDate.getMonth() - 1); // Set to last month
+              setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
+              setFrequency('1month');
+              setSelectedWeekday(null);
+              setRangePickerValue(null); // Reset RangePicker value
+            }}
+          >
+            Reset Filters
           </Button>
         </Col>
       </Row>
@@ -301,7 +352,7 @@ const HistoryPage = () => {
         </Col>
       </Row>
       <Row gutter={16}>
-        <Col span={12}>
+        {/* <Col span={12}>
           <Card
             title="Expected Customer Count (Last Year)"
             bordered={false}
@@ -316,7 +367,7 @@ const HistoryPage = () => {
               <div>No data available for the selected date last year</div>
             )}
           </Card>
-        </Col>
+        </Col> */}
 
         <Col span={12}>
           <Card
@@ -357,5 +408,3 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
-
-
