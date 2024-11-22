@@ -4,9 +4,9 @@
 }
   
 .dashboard-container h1 {
-    margin-bottom: 24px;
+    padding: 24px;
 }
-  
+
 .dashboard-container .ant-row {
     margin-bottom: 24px;
 }
