@@ -28,7 +28,7 @@ redis_client = Redis(host='redis', port=6379)
 
 # Limiter for requests to prevent DDOS attacks
 limiter = Limiter(
-    get_remote_address,
+    key_func=get_remote_address,
     app=app,
     storage_uri="redis://redis:6379",
     default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
