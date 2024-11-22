@@ -4,9 +4,11 @@ import { useLogin } from "./Hooks/useLogin";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../AuthContext";
 import styles from './LoginPage.module.css';
+import { Spin } from 'antd';
 
 // Import the image
 import logo from '../Images/axis_communications_logo.png';
+
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -79,7 +81,7 @@ const LoginPage: React.FC = () => {
               {signUpError ? String(signUpError) : loginError ? String(loginError) : null}
             </p>
           )}
-          {(signUpLoading || loginLoading) && <p className={styles.loadingText}>Loading...</p>}
+          {(signUpLoading || loginLoading) && <Spin tip="Loading..." />}
           {successMessage && <p className={styles.successText}>{successMessage}</p>}
           {emailError && <p className={styles.errorText}>{emailError}</p>}
 

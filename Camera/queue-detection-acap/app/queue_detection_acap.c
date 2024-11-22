@@ -39,7 +39,7 @@ typedef struct channel_identifier
     char *source;
 } channel_identifier_t;
 
-void send_json_to_server(const char *json_strm int isempty);
+void send_json_to_server(const char *json_strm, int isempty);
 
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {

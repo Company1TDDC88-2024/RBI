@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSignUp } from '../LoginPage/Hooks/useSignUp';
 import styles from './CreateUser.module.css';
+import { Spin } from 'antd';
 
 const CreateUser: React.FC = () => {
   const [firstName, setFirstName] = useState<string>('');
@@ -54,7 +55,7 @@ const CreateUser: React.FC = () => {
       <form onSubmit={handleSubmit} className={styles.form}>
         {emailError && <p className={styles.errorText}>{emailError}</p>}
         {signUpError && <p className={styles.errorText}>{signUpError}</p>}
-        {signUpLoading && <p className={styles.loadingText}>Loading...</p>}
+        {signUpLoading && <Spin tip="Loading..." />}
         {successMessage && <p className={styles.successText}>{successMessage}</p>}
 
         <div className={styles.inputGroup}>

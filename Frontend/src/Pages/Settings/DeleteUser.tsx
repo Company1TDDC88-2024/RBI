@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDeleteUser } from '../LoginPage/Hooks/useDeleteUser';
 import styles from './CreateUser.module.css';
+import { Spin } from 'antd';
 
 const DeleteUser: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -42,7 +43,7 @@ const DeleteUser: React.FC = () => {
       <form onSubmit={handleSubmit} className={styles.form}>
         {emailError && <p className={styles.errorText}>{emailError}</p>}
         {deleteUserError && <p className={styles.errorText}>{deleteUserError.toString()}</p>}
-        {deleteUserLoading && <p className={styles.loadingText}>Loading...</p>}
+        {deleteUserLoading && <Spin tip="Loading..." />}
         {successMessage && <p className={styles.successText}>{successMessage}</p>}
 
         <div className={styles.inputGroup}>
