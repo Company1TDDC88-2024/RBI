@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 
 app = Flask(__name__)
-if(os.getenv('Deployment') == 'True'):
+if(os.getenv('Deployment') == "True"):
     port = 80
     redis_uri = "redis://redis:6379"
 else:
