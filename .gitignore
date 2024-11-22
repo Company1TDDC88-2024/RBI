@@ -33,3 +33,6 @@ __pycache__/
 
 # Ignore IDE/editor files
 .vscode/
+
+# Ignore package-lock.json
+package-lock.json

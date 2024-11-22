@@ -1,0 +1,90 @@
+.container {
+  display: flex;
+  flex-direction: column; /* Changed to column to stack the image and card */
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f2f5;
+  padding: 1rem; /* Added padding for better spacing on smaller screens */
+}
+
+.bannerImage {
+  width: 25%; /* Adjust the width to 33% of its original size */
+  max-width: 500px; /* Optional: Set a max width to limit the size */
+  height: auto; /* Maintain the aspect ratio */
+  margin-bottom: 1rem; /* Add spacing between the image and the login card */
+}
+
+
+.card {
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.input {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.button {
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: none;
+  background-color: #007bff;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+.errorText {
+  color: red;
+  font-size: 0.9rem;
+}
+
+.successText {
+  color: green;
+  font-size: 0.9rem;
+}
+
+.loadingText {
+  color: #007bff;
+  font-size: 0.9rem;
+}
+
+.switchText {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.separator {
+  width: 35%; /* Adjust the width as needed */
+  height: 1px; /* Thin line for the separator */
+  background-color: grey; /* Grey color for the line */
+  margin: 1.5rem auto; /* Adds space above and below, centers the line */
+}
