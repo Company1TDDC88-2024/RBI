@@ -22,6 +22,7 @@ export const useGetQueueCount = (): IUseGetQueueCountReturn => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const fetchData = () => {
+        setError(null); // Reset error state before fetching
         axios.get("/queue_count/get_current_queues", {
             withCredentials: true
         })

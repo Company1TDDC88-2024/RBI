@@ -26,6 +26,7 @@ export const useGetCoordinates = (): IUseGetCoordinatesReturn => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const fetchData = () => {
+        setError(null); // Reset error state before fetching
         setLoading(true); // Set loading state at the start of the request
         axios.get("/coordinates/get", { withCredentials: true })
             .then((response) => {
