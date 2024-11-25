@@ -4,9 +4,9 @@
 }
   
 .dashboard-container h1 {
-    margin-bottom: 24px;
+    padding: 24px;
 }
-  
+
 .dashboard-container .ant-row {
     margin-bottom: 24px;
 }
@@ -14,4 +14,17 @@
 .dashboard-container .ant-card {
     background: #fff;
     border-radius: 8px;
+}
+
+.fixed-height-card {
+    height: 120px; /* Fast höjd */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    background-color: #fafafa; /* Samma grå som används i Current queue och Queue threshold */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid #f0f0f0; /* Samma kant som Current queue och Queue threshold */
 }
