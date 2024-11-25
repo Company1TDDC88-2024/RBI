@@ -33,7 +33,7 @@ limiter = Limiter(
     key_func=get_remote_address,
     app=app,
     storage_uri=redis_uri,
-    default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
+    default_limits=["1000 per minute"] # Limits: ["x requests per hour, y requests per minute"]
 )
 
 # Middleware

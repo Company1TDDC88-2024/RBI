@@ -31,11 +31,6 @@ def to_coord(b,l,r):
     return [(l+r)/2, 1-b]
 
 async def upload_function(i, counts, incoming_datetime, ROIs):
-    #search and find lastest timestamp for each roi in queue count 
-    global last_upload_time
-    # Check if the last upload was within the last 10 seconds
-    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=1):
-        return "Upload skipped to avoid frequent uploads"
     
     conn = await get_db_connection()
     if conn is None:
@@ -84,7 +79,6 @@ async def upload_function(i, counts, incoming_datetime, ROIs):
                 VALUES (?, ?, ?)
                 """, (counts[i], incoming_datetime, ROIs[i][0]))
             conn.commit()
-            last_upload_time = datetime.now()
             print("Data uploaded successfully")
             return "Data uploaded successfully"
         except pyodbc.Error as e:
@@ -178,15 +172,15 @@ async def play_sound(count, ROI):
 
     number_of_customers = count
 
-    if (ROI_id == 1):
-        print(f"NUMBER OF CUSTOMERS IN ROI {ROI_id}: {number_of_customers}")
-        print(f"Threshold for ROI {ROI_id}: {threshold}")
-        print(f"Timestamp in ROI list {ROI_id}: {timestamps_roi[ROI_id]}")
-        print(f"Cooldown period: {cooldown_period}")
-        print(f"Time left for cooldown: {datetime.now() - timestamps_roi[ROI_id]}")
-        print(f"Timestamp in start list for ROI {ROI_id}: {timestamps_start[ROI_id]}")
-        print(f"Current time: {datetime.now()}")
-        print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
+    # if (ROI_id == 1):
+    #     print(f"NUMBER OF CUSTOMERS IN ROI {ROI_id}: {number_of_customers}")
+    #     print(f"Threshold for ROI {ROI_id}: {threshold}")
+    #     print(f"Timestamp in ROI list {ROI_id}: {timestamps_roi[ROI_id]}")
+    #     print(f"Cooldown period: {cooldown_period}")
+    #     print(f"Time left for cooldown: {datetime.now() - timestamps_roi[ROI_id]}")
+    #     print(f"Timestamp in start list for ROI {ROI_id}: {timestamps_start[ROI_id]}")
+    #     print(f"Current time: {datetime.now()}")
+    #     print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
