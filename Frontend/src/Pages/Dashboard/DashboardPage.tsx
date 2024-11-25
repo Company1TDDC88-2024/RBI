@@ -19,7 +19,6 @@ import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import moment from "moment";
 
-
 const DashboardPage = () => {
   const [processedData, setProcessedData] = useState<any[]>([]);
   const [hourlyData, setHourlyData] = useState<any[]>([]);
@@ -27,23 +26,27 @@ const DashboardPage = () => {
   const [lastNonErrorQueueData, setLastNonErrorQueueData] = useState<any>(null);
   const [lastNonErrorTodayData, setLastNonErrorTodayData] = useState<any>(null);
 
-
-  const today = new Date();
-  const todayDate = new Date().toISOString().split("T")[0];
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const [today] = useState(new Date());
+  const [todayDate] = useState(new Date().toISOString().split("T")[0]);
+  const [monday] = useState(() => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+  const [sunday] = useState(() => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + 6);
+    date.setHours(23, 59, 59, 999);
+    return date;
+  });
 
   const {
     data: customerCountData,
     error: customerCountError,
     loading: customerCountLoading,
     refetch: refetchCustomerCount,
-  } = useGetCustomerCount(monday.toISOString().split('T')[0], sunday.toISOString().split('T')[0]);
+  } = useGetCustomerCount(monday.toISOString().split("T")[0], sunday.toISOString().split("T")[0]);
 
   const {
     data: todayData,
@@ -80,14 +83,21 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      refetchCustomerCount(monday.toISOString(), sunday.toISOString());
+      refetchCustomerCount(monday.toISOString().split('T')[0], sunday.toISOString().split('T')[0]);
       refetchToday(todayDate);
       refetchQueue();
       setLastUpdated(moment().format("HH:mm:ss"));
+      console.log("Data refetched");
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [refetchCustomerCount, refetchQueue, monday, sunday]);
+  }, [refetchCustomerCount, refetchQueue, monday, sunday, todayDate, refetchToday]);
+
+  useEffect(() => {
+    if (customerCountData || todayData || queueData) {
+      setLastUpdated(moment().format('HH:mm:ss'));
+    }
+  }, [customerCountData, todayData, queueData]);
 
   useEffect(() => {
     if (queueData && !errorQueue) {
