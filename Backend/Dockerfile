@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
 
+#test
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg
