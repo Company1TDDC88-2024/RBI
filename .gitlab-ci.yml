@@ -187,8 +187,8 @@ deploy:
     - echo "Checking endpoint availability..."
     - kubectl get endpoints -n $POD_NAMESPACE
     - kubectl describe ingress app-ingress -n tddc88-ht24-company1
-    - kubectl logs $POD_NAME_FE -n tddc88-ht24-company1
-    - kubectl logs -f $POD_NAME -n tddc88-ht24-company1
+    #- kubectl logs $POD_NAME_FE -n tddc88-ht24-company1
+    #- kubectl logs -f $POD_NAME -n tddc88-ht24-company1
     #- kubectl exec -it $POD_NAME_FE -n tddc88-ht24-company1 -- cat /etc/nginx/conf.d/default.conf
     #- kubectl get pods --all-namespaces -l app.kubernetes.io/name=ingress
 status:
