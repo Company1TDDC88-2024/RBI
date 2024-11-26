@@ -12,6 +12,7 @@ import axios from "axios";
 import { useAuth } from "../../AuthContext";
 
 const { Sider } = Layout;
+const currentPath = location.pathname;
 
 const SiderMenu: React.FC = () => {
   const navigate = useNavigate();
@@ -30,10 +31,27 @@ const SiderMenu: React.FC = () => {
     }
   };
 
+  const getMenuKey = (path) => {
+    switch (path) {
+      case '/dashboard':
+        return '1';
+      case '/history':
+        return '2';
+      case '/livefeed':
+        return '3';
+      case '/livedata':
+        return '5';
+      case '/settings':
+        return '6';
+      default:
+        return '1';
+    }
+  };
+
   return (
     <Sider collapsible>
       <div className="logo" />
-      <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline">
+      <Menu theme="dark" selectedKeys={[getMenuKey(currentPath)]} mode="inline">
         <Menu.Item key="1" icon={<DashboardOutlined />}>
           <Link to="/dashboard">Overview</Link>
         </Menu.Item>
