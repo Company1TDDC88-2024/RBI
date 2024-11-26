@@ -133,7 +133,7 @@ async def upload_data_to_db(data):
 
 
 async def upload_function_fast(i, ROIs, counts, timestamp):
-
+    #
     if ROIs[i][9] != counts[i]:
         #change RoI currenctcount value in DB
         query = "UPDATE Coordinates SET currentqueue = ? WHERE id = ? " #Make real logic for this
@@ -151,7 +151,7 @@ async def upload_fast(data):
 
     #Check that we dont upload too often, there might be an issue with 2 cameras here.
     global last_upload_time
-    # Check if the last upload was within the last 10 seconds
+    # Check if the last upload was within the last x seconds
     if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=2):
         return "Upload skipped to avoid frequent uploads"
  
