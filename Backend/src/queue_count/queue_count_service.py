@@ -5,6 +5,11 @@ from datetime import datetime
 from datetime import timedelta
 import requests
 
+from cryptography.fernet import Fernet
+
+key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
+cipher_suite = Fernet(key)
+
 # Dictionary to store the last timestamp for each ROI
 timestamps_roi = {}
 timestamps_start = {}
