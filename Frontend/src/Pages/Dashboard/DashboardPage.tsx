@@ -1,240 +1,401 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Card, Row, Col, Spin, Alert, Table, DatePicker, Button } from "antd";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
-import { useGetQueueCount } from "../Hooks/useGetQueueCount"; // Import the Queue Count hook
-import { useGetDailyCustomers } from '../Hooks/useGetDailyCustomers'; // Import the Daily Customers hook
+import { Card, Row, Col, Spin, Alert } from "antd";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";  
 import styles from "./DashboardPage.module.css";
-import DateTimeDisplay from '../DateTimeDisplay'; 
-import moment from 'moment';
-
-const { RangePicker } = DatePicker;
-
-const formatTimestamp = (timestamp: string, frequency: '10min' | '1hour' | '1day'| 'test') => {
-  if (frequency === '1day') {
-    return moment.utc(timestamp).format('YYYY-MM-DD'); // Display only the date in UTC
-  } else if (frequency === 'test') {
-    return moment.utc(timestamp).format('YYYY-MM-DD'+' '+'HH:mm'); // Display hours and minutes in UTC
-  }
-  else {
-    return moment.utc(timestamp).format('HH:mm'); // Display hours and minutes in UTC
-  }
-};
-
+import DateTimeDisplay from "../DateTimeDisplay";
+import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
+import { useGetQueueCount } from "../Hooks/useGetCurrentQueues.ts";
+import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
+import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers";
+import { ExclamationCircleFilled } from "@ant-design/icons";
+import moment from "moment";
 
 const DashboardPage = () => {
-  const currentDate = new Date().toISOString().split("T")[0];
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7);
-  const formattedStartDate = startDate.toISOString().split("T")[0];
+  const [processedData, setProcessedData] = useState<any[]>([]);
+  const [hourlyData, setHourlyData] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>("Never");
+  const [lastNonErrorQueueData, setLastNonErrorQueueData] = useState<any>(null);
+  const [lastNonErrorTodayData, setLastNonErrorTodayData] = useState<any>(null);
 
-  const [dates, setDates] = useState<[string, string]>(() => {
-    const savedDates = localStorage.getItem('dates');
-    return savedDates ? JSON.parse(savedDates) : [formattedStartDate, currentDate];
+  const [today] = useState(new Date());
+  const [todayDate] = useState(new Date().toISOString().split("T")[0]);
+  const [monday] = useState(() => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+  const [sunday] = useState(() => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + 6);
+    date.setHours(23, 59, 59, 999);
+    return date;
   });
 
-  const [frequency, setFrequency] = useState<'10min' | '1hour' | '1day'>('10min'); 
-  const [processedData, setProcessedData] = useState<any[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<string>('Never');
+  const {
+    data: customerCountData,
+    error: customerCountError,
+    loading: customerCountLoading,
+    refetch: refetchCustomerCount,
+  } = useGetCustomerCount(monday.toISOString().split("T")[0], sunday.toISOString().split("T")[0]);
 
+  const {
+    data: todayData,
+    loading: loadingToday,
+    error: errorToday,
+    refetch: refetchToday,
+  } = useGetDailyCustomers(todayDate);
 
-  // Set the default date range to the last 7 days if not already set
-  useEffect(() => {
-    const endDate = new Date().toISOString().split("T")[0]; // Use the current date
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7);
-    const formatDate = (date: Date) => date.toISOString().split("T")[0];
-    setDates([formatDate(startDate), endDate]);
-  }, [currentDate]); // Empty dependency array to run only on initial render
+  const {
+    data: queueData,
+    loading: loadingQueue,
+    error: errorQueue,
+    refetch: refetchQueue,
+  } = useGetQueueCount();
 
-  // Save dates to local storage whenever they change
-  useEffect(() => {
-    localStorage.setItem('dates', JSON.stringify(dates));
-  }, [dates]);
+  const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
 
-  // Fetch customer count data and daily customers data
-  const { data: customerCountData, error: customerCountError, loading: customerCountLoading, refetch: refetchCustomerCount} = useGetCustomerCount(dates[0], dates[1]);
-  const { data: dailyCustomerData, error: dailyCustomerError, loading: dailyCustomerLoading, refetch: refetchDailyCustomer } = useGetDailyCustomers(currentDate);
+  const queueDataMap: Record<number, { Threshold: number; Name: string }> =
+    coordinatesData?.reduce((acc, { ID, Threshold, Name }) => {
+      acc[ID] = { Threshold, Name };
+      return acc;
+    }, {} as Record<number, { Threshold: number; Name: string }>) || {};
+
+  const queueCountsByROI =
+    lastNonErrorQueueData && Array.isArray(lastNonErrorQueueData)
+      ? lastNonErrorQueueData.reduce((acc, item) => {
+          acc[item.ROI] = {
+            NumberOfCustomers: item.NumberOfCustomers,
+            Timestamp: item.Timestamp,
+          };
+          return acc;
+        }, {} as Record<number, { NumberOfCustomers: number; Timestamp: Date }>)
+      : {};
 
   useEffect(() => {
     const interval = setInterval(() => {
-        refetchCustomerCount(dates[0], dates[1]);
-        refetchDailyCustomer(currentDate);
-        setLastUpdated(moment().format('HH:mm:ss'));
-        console.log('Data refetched');
-    }, 30000); // 30 seconds
+      refetchCustomerCount(monday.toISOString().split('T')[0], sunday.toISOString().split('T')[0]);
+      refetchToday(todayDate);
+      refetchQueue();
+      setLastUpdated(moment().format("HH:mm:ss"));
+      console.log("Data refetched");
+    }, 30000);
 
-    return () => clearInterval(interval); // Cleanup interval on component unmount
-}, [refetchCustomerCount, refetchDailyCustomer, dates, currentDate]);
+    return () => clearInterval(interval);
+  }, [refetchCustomerCount, refetchQueue, monday, sunday, todayDate, refetchToday]);
 
-  // Update the last updated time when the data changes
   useEffect(() => {
-    if (customerCountData || dailyCustomerData) {
+    if (customerCountData || todayData || queueData) {
       setLastUpdated(moment().format('HH:mm:ss'));
     }
-  }, [customerCountData, dailyCustomerData]);
+  }, [customerCountData, todayData, queueData]);
 
-  const onDateChange = (dates: any, dateStrings: [string, string]) => {
-    setDates(dateStrings);
-  };
+  useEffect(() => {
+    if (queueData && !errorQueue) {
+      setLastNonErrorQueueData(queueData);
+    }
+  }, [queueData, errorQueue]);
 
-  const processQueuData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
-    const result: any = {};
-    customerCountData.forEach(item => {
-      const timestamp = new Date(item.Timestamp);
-      let key: string;
-
-      if (frequency === '10min') {
-        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
-      } else if (frequency === '1hour') {
-        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
-      } else {
-        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`;
-      }
-
-      if (!result[key]) {
-        result[key] = { Timestamp: key, TotalCustomers: 0 };
-      }
-      result[key].TotalCustomers += item.TotalCustomers;
-    });
-    return Object.values(result);
-  };
-
-  const processData = (customerCountData: any[], frequency: '10min' | '1hour' | '1day') => {
-    const result: any = {};
-    customerCountData.forEach(item => {
-      const timestamp = new Date(item.Timestamp);
-      let key: string;
-
-      if (frequency === '10min') {
-        key = new Date(Math.floor(timestamp.getTime() / 600000) * 600000).toISOString(); // Round down to nearest 10 minutes
-      } else if (frequency === '1hour') {
-        key = new Date(Math.floor(timestamp.getTime() / 3600000) * 3600000).toISOString(); // Round down to nearest hour
-      } else {
-        key = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`;
-      }
-
-      if (!result[key]) {
-        result[key] = { Timestamp: key, TotalCustomers: 0 };
-      }
-      result[key].TotalCustomers += item.TotalCustomers;
-    });
-    return Object.values(result);
-  };
+  useEffect(() => {
+    if (todayData && !errorToday) {
+      setLastNonErrorTodayData(todayData);
+    }
+  }, [todayData, errorToday]);
+  
 
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency));
+      const processData = (data: any[]) => {
+        const result = Array(7)
+          .fill(0)
+          .map((_, i) => ({
+            day: moment(monday).add(i, "days").format("YYYY-MM-DD"),
+            NumberOfCustomers: 0,  // Changed label to "NoCustomers"
+          }));
+
+        data.forEach((item) => {
+          const date = moment(item.Timestamp).format("YYYY-MM-DD");
+          const dayIndex = result.findIndex((d) => d.day === date);
+          if (dayIndex !== -1) {
+            result[dayIndex].NumberOfCustomers += item.EnteringCustomers || 0;
+          }
+        });
+
+        return result;
+      };
+
+      setProcessedData(processData(customerCountData));
+
+      const processHourlyData = (data: any[]) => {
+        const result = Array(24)
+          .fill(0)
+          .map((_, i) => ({
+            hour: `${i}:00`,
+            NumberOfCustomers: 0,  // Changed label to "NoCustomers"
+          }));
+      
+        // Filter data to include only today's entries
+        data
+          .filter((item) => moment(item.Timestamp).isSame(today, "day"))
+          .forEach((item) => {
+            let hour = moment(item.Timestamp).startOf("hour").hour();  // Normalize the timestamp to start of hour
+      
+            // Move the hour one back (shift left by 1 hour)
+            hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (to handle midnight case)
+            
+            result[hour].NumberOfCustomers += item.EnteringCustomers || 0;  // Sum the customers
+          });
+      
+        return result;
+      };
+      
+
+      setHourlyData(processHourlyData(customerCountData.filter((item) => {
+        return moment(item.Timestamp).isSame(today, "day");
+      })));
     }
-  }, [customerCountData, frequency]);
+  }, [customerCountData, monday, sunday, today]);
 
-  // Fetch queue count data
-  const { data: queueData, loading: queueLoading, error: queueError } = useGetQueueCount(); // Fetch queue data
-
-  if (!queueError && queueLoading) {
-    const tempdata = queueData;
-  }
-
-  if (queueLoading || dailyCustomerLoading || customerCountLoading) {
+  if (customerCountLoading || loadingToday || loadingQueue || loadingCoordinates) {
     return <Spin tip="Loading..." />;
   }
 
-  const error = customerCountError || queueError || dailyCustomerError;
-  if (error) {
-    return <Alert message="Error" description={error?.message || queueError?.message} type="error" showIcon />;
+  if (customerCountError || errorToday || errorQueue) {
+    return (
+      <Alert
+        message="Error"
+        description={
+          customerCountError?.message || errorQueue?.message || "An error occurred."
+        }
+        type="error"
+        showIcon
+      />
+    );
   }
 
-  const columns = [
-    {
-      title: 'Timestamp',
-      dataIndex: 'Timestamp',
-      key: 'timestamp',
-      render: (timestamp:string) => formatTimestamp(timestamp, frequency), // Format the timestamp
-
-    },
-    {
-      title: 'Total Customers',
-      dataIndex: 'TotalCustomers',
-      key: 'totalCustomers',
-    },
-  ];
+  const renderQueueCards = () => {
+    return (
+      <Row gutter={[16, 16]} style={{ width: "100%" }}>
+        {Object.keys(queueCountsByROI).map((roi, index) => {
+          const { Threshold, Name } = queueDataMap[+roi] || {
+            Threshold: "-",
+            Name: `Area ${index + 1}`,
+          };
+          const { NumberOfCustomers } = queueCountsByROI[+roi] || { NumberOfCustomers: "-" };
+          const isOverThreshold = NumberOfCustomers >= Threshold;
+  
+          return (
+            <Col
+              key={roi}
+              xs={24} 
+              sm={24} 
+              md={12} 
+              lg={8} 
+              xl={6} 
+              xxl={6} 
+            >
+              <Card
+                bordered={false}
+                className={styles.dashboardCard}
+                style={{
+                  textAlign: "center",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                }}
+              >
+                {/* Area Title */}
+                <div style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "16px" }}>
+                  {Name}
+                  {isOverThreshold && (
+                    <ExclamationCircleFilled
+                      style={{ color: "red", fontSize: 20, marginLeft: 8 }}
+                    />
+                  )}
+                </div>
+  
+                {/* Info Sections */}
+                <Row gutter={[8, 8]} style={{ margin: "0" }}>
+                  <Col span={12}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "80px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        padding: "8px",
+                        background: "#fafafa",
+                        boxSizing: "border-box",
+                        textAlign: "center",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "14px",
+                          fontWeight: "bold",
+                          whiteSpace: "normal", // Allows text wrapping if necessary
+                          wordBreak: "break-word", // Ensures text doesn't overflow
+                        }}
+                      >
+                        Current queue:
+                      </p>
+                      <p style={{ margin: 0, fontSize: "18px" }}>{NumberOfCustomers}</p>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "80px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        padding: "8px",
+                        background: "#fafafa",
+                        boxSizing: "border-box",
+                        textAlign: "center",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "14px",
+                          fontWeight: "bold",
+                          whiteSpace: "normal", // Allows text wrapping if necessary
+                          wordBreak: "break-word", // Ensures text doesn't overflow
+                        }}
+                      >
+                        Queue threshold:
+                      </p>
+                      <p style={{ margin: 0, fontSize: "18px" }}>{Threshold}</p>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+    );
+  };
+  
 
   return (
     <div className={styles.dashboardContainer}>
       <h1>Overview</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
-      <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
-        <Col>
-          <RangePicker onChange={onDateChange} />
-        </Col>
-        <Col>
-          <Button 
-            onClick={() => setFrequency('10min')} 
-            type={frequency === '10min' ? 'primary' : 'default'} 
-            style={{ marginRight: '10px' }}
-          >
-            Every 10 Minutes
-          </Button>
-          <Button 
-            onClick={() => setFrequency('1hour')} 
-            type={frequency === '1hour' ? 'primary' : 'default'}
-            style={{ marginRight: '10px' }}
-          >
-            Every Hour
-          </Button>
-          <Button 
-            onClick={() => setFrequency('1day')} 
-            type={frequency === '1day' ? 'primary' : 'default'}
-          >
-            Per Day
-          </Button>
-        </Col>
+  
+      {/* Wrapper Row for Queue Cards */}
+      <Row gutter={[16, 16]} style={{ padding: "0 16px" }}>
+        {renderQueueCards()}
       </Row>
-      
-      <Row gutter={16}>
+  
+      {/* Wrapper Row for Graphs */}
+      <Row gutter={[16, 16]} style={{ padding: "16px" }}>
+        {/* Left: No. customers per hour */}
         <Col span={12}>
-          <Card title="Customer Count Data" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <Table
-              dataSource={processedData || []}
-              columns={columns}
-              rowKey="Timestamp"
-              pagination={{ pageSize: 5 }} 
-            />
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card title="Customer Count Over Time" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+          <Card
+            bordered={false}
+            style={{
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+              <Card bordered={false} className={styles["fixed-height-card"]}>
+                <div style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
+                  Current customer count:
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+                  {lastNonErrorTodayData
+                    ? (lastNonErrorTodayData.totalEnteringCustomers ?? 0) -
+                      (lastNonErrorTodayData.totalExitingCustomers ?? 0)
+                    : "-"}
+                </div>
+              </Card>
+
+              </Col>
+              <Col span={12}>
+              <Card bordered={false} className={styles["fixed-height-card"]}>
+                <div style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
+                  No. of customers today:
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+                  {hourlyData.reduce((total, hour) => total + hour.NumberOfCustomers, 0)}
+                </div>
+              </Card>
+
+              </Col>
+            </Row>
+  
+            <h3 style={{ textAlign: "center" }}>No. customers per hour</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedData || []}>
+              <BarChart data={hourlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="Timestamp" tickFormatter={(timestamp) => formatTimestamp(timestamp, frequency)} />
+                <XAxis dataKey="hour" />
                 <YAxis />
-                <Tooltip 
-                labelFormatter={(timestamp) => formatTimestamp(timestamp, 'test')}
-                />
+                <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="TotalCustomers" stroke="#8884d8" activeDot={{ r: 8 }} />
-              </LineChart>
+                <Bar dataKey="NumberOfCustomers" fill="#0088FE" barSize={30} />
+              </BarChart>
             </ResponsiveContainer>
           </Card>
         </Col>
-      </Row>
-      
-      <Row gutter={16}>
+  
+        {/* Right: No. customers per day this week */}
         <Col span={12}>
-          <Card title="Daily customer count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <h3>Number of customers today: {dailyCustomerData?.totalEnteringCustomers}</h3>
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card title="Queue Count" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-            <h3>Current Number of Customers in Queue: {queueData?.[0]?.NumberOfCustomers || 0}</h3>
+          <Card
+            bordered={false}
+            style={{
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <Card bordered={false} className={styles["fixed-height-card"]}>
+              <div style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
+                No. of customers this week:
+              </div>
+              <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+                {processedData.reduce((total, day) => total + day.NumberOfCustomers, 0)}
+              </div>
+            </Card>
+
+  
+            <h3 style={{ textAlign: "center" }}>No. customers per day this week</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={processedData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" tickFormatter={(day) => moment(day).format("ddd")} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="NumberOfCustomers" fill="#0088FE" barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
     </div>
   );
+  
+     
 };
 
 export default DashboardPage;

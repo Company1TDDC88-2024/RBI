@@ -49,9 +49,9 @@ const SiderMenu: React.FC = () => {
             <Link to="/livefeed">Live Feed</Link>
           </Menu.Item>
         )}
-        <Menu.Item key="5" icon={<Badge color="red" dot />}>
+        {/* <Menu.Item key="5" icon={<Badge color="red" dot />}>
           <Link to="/livedata">Live Data</Link>
-        </Menu.Item>
+        </Menu.Item> */}
         {/* Render Settings menu item only for admins */}
         {isAdmin && (
           <Menu.Item key="6" icon={<SettingOutlined />}>
