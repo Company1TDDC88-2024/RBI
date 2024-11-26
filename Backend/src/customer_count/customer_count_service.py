@@ -116,28 +116,21 @@ async def upload_data_to_db(data):
     finally:
         conn.close()
 
-async def get_data_from_db(
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
-) -> Union[str, List[Dict[str, Union[int, str]]]]:
-    conn = await get_db_connection()  # Ensure this is an async function
+# ENCRYPTION DONE
+async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
 
-    try:
-        # Open a cursor for executing the query
-        cursor = conn.cursor()
+    cursor = conn.cursor()
 
-        # Base query to fetch data
-        query = """
-        SELECT ID, TotalCustomers_temp, EnteringCustomers_temp, Timestamp 
-        FROM CustomerCount_temp
-        """
+    try:
+        # Fecth all data from CustomerCount table, if no start_date or end_date is provided
+        query = ("SELECT ID, TotalCustomers, Timestamp FROM CustomerCount")
         params = []
 
-        # Add date filtering logic
         if start_date and end_date:
-            # Adjust end_date to include the full day
+            # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
             if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
                 end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
@@ -150,55 +143,21 @@ async def get_data_from_db(
             query += " WHERE Timestamp <= ?"
             params.append(end_date)
 
-        # Execute the query with the parameters
         cursor.execute(query, params)
         rows = cursor.fetchall()
-
-        # Process and decrypt the data
         data = []
         for row in rows:
-            encrypted_total = row[1]
-            encrypted_entering = row[2]
-            try:
-                # Decrypt `TotalCustomers_temp` value
-                decrypted_total = (
-                    int(cipher_suite.decrypt(encrypted_total).decode())
-                    if encrypted_total
-                    else 0
-                )
-            except Exception as e:
-                print(f"Decryption error for TotalCustomers_temp (ID={row[0]}): {e}")
-                decrypted_total = None
-
-            try:
-                # Decrypt `EnteringCustomers_temp` value
-                decrypted_entering = (
-                    int(cipher_suite.decrypt(encrypted_entering).decode())
-                    if encrypted_entering
-                    else 0
-                )
-            except Exception as e:
-                print(f"Decryption error for EnteringCustomers_temp (ID={row[0]}): {e}")
-                decrypted_entering = None
-
-            # Add the decrypted data to the result list
             data.append({
                 'ID': row[0],
-                'TotalCustomers': decrypted_total,
-                'EnteringCustomers': decrypted_entering,
-                'Timestamp': row[3],
+                'TotalCustomers': row[1],
+                'Timestamp': row[2],
             })
-
         return data
-
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
         return "Error fetching data"
-
     finally:
-        # Ensure the connection is closed
         conn.close()
-
 
 #ENCRYPTION DONE
 async def get_number_of_customers(start_timestamp, end_timestamp):

@@ -38,8 +38,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       setIsAdmin(is_admin || false);
       console.log("isAdmin", is_admin);
       console.log("logged_in", logged_in);
-      localStorage.setItem("isLoggedIn", logged_in);
-      localStorage.setItem("isAdmin", is_admin || false);
+      localStorage.setItem("isLoggedIn", JSON.stringify(logged_in));
+      localStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);

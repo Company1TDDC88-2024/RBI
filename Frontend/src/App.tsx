@@ -16,7 +16,7 @@ const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, ad
   if (localStorage.getItem("isLoggedIn") == "true") {
     return element;
   }
-  if (!isLoggedIn) return <Navigate to="/login" />;
+  if (!isLoggedIn || !(localStorage.getItem("isLoggedIn") == "true")) return <Navigate to="/login" />;
   if (adminOnly && !isAdmin) return <Navigate to="/" />; // Redirect if not admin
 
   return element;
