@@ -25,6 +25,7 @@ def count_points_in_zones(points, zones):
 
     return counts
 
+
 #Function that calculates the bottom middle coord of an input object.
 def to_coord(b,l,r):
     #returns 1-b since the camera starts 0,0 top left instead of bot left
@@ -95,7 +96,7 @@ async def upload_function(i, counts, incoming_datetime, ROIs):
     else: 
         #print("Data not uploaded, queue is too small")
         return "Data not uploaded, queue is too small"
-    
+
 async def upload_data_to_db(data):
 
     #coords of each person in frame
@@ -129,6 +130,60 @@ async def upload_data_to_db(data):
 
     for i in range(len(ROIs)):
         await upload_function(i, counts, incoming_datetime, ROIs)
+
+
+async def upload_function_fast(i, ROIs, counts, timestamp):
+
+    if ROIs[i][9] != counts[i]:
+        #change RoI currenctcount value in DB
+        query = "UPDATE Coordinates SET currentqueue = ? WHERE id = ? " #Make real logic for this
+
+    await play_sound(counts[i], ROIs[i])    #add logic to add to queueCount table on sound play
+
+    
+#this will replace the async def upload_data_to_db(data): function
+async def upload_fast(data):
+    #Get the timestamp from camera to correct format for DB
+    incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
+    #Get the camera_id of the camera
+    camera_id = data.get("camera_id")
+
+
+    #Check that we dont upload too often, there might be an issue with 2 cameras here.
+    global last_upload_time
+    # Check if the last upload was within the last 10 seconds
+    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=2):
+        return "Upload skipped to avoid frequent uploads"
+ 
+
+    #Get ROI data from coordinates table in DB where the camera id matches post request id
+    #ROI[i] = ID : TopBound : BottomBound : LeftBound : RightBound : Threshold : CameraID : Name : CooldownTime
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+    cursor = conn.cursor()
+    try:
+        
+        query = "SELECT * FROM Coordinates WHERE CameraID = ?"
+        cursor.execute(query, (camera_id,))
+        ROIs = cursor.fetchall()
+    except pyodbc.Error as e:
+        print(f"Error getting ROI data: {e}")
+        return "Error getting ROI data"
+    finally:
+        conn.close()
+
+    #Calculate the coords of each person in the frame
+    points = [
+        to_coord(obs["bounding_box"]["bottom"], obs["bounding_box"]["left"], obs["bounding_box"]["right"])
+        for obs in data.get("observations", [])
+    ]
+    
+    #counts represent the amount of people in each ROI
+    counts = count_points_in_zones(points, ROIs)
+
+    for i in range(len(ROIs)):
+        upload_function_fast(i, ROIs, counts, incoming_datetime)
 
 async def get_data_from_db():
     conn = await get_db_connection()
