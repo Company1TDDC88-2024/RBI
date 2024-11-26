@@ -200,7 +200,7 @@ async def get_data_from_db(
             while current_date <= end_date_only:
                 if current_date not in existing_dates:
                     data.append({
-                        'ID': None,  # No ID for missing dates
+                        'ID': None,  # No ID for missing dates, dont need to have one 
                         'TotalCustomers': 0,
                         'EnteringCustomers': 0,
                         'Timestamp': datetime.combine(current_date, datetime.min.time()),
