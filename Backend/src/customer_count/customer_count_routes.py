@@ -54,9 +54,8 @@ async def get_data():
     if end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
-    
+
     data = await get_data_from_db(start_date, end_date)
-    print(data)
     if isinstance(data, str):
         return jsonify({'message': data}), 500
     return jsonify(data)

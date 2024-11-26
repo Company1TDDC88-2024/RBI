@@ -16,12 +16,10 @@ from dotenv import load_dotenv
 
 
 app = Flask(__name__)
-if(os.getenv('DEPLOYMENT') == "True"):
+if(os.getenv('Deployment') == 'True'):
     port = 80
-    redis_uri = "redis://redis:6379"
 else:
     port = 5555
-    redis_uri = "redis://localhost:6379"
 
 app.secret_key = secrets.token_hex(16)
 
@@ -32,8 +30,8 @@ redis_client = Redis(host='redis', port=6379)
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
-    storage_uri=redis_uri,
-    default_limits=["1000 per minute"] # Limits: ["x requests per hour, y requests per minute"]
+    storage_uri="redis://redis:6379",
+    default_limits=["5000 per hour, 100 per minute"] # Limits: 5000 requests per hour, 100 requests per minute.
 )
 
 # Middleware

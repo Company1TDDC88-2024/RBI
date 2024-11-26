@@ -135,7 +135,7 @@ const LiveDataPage = () => {
                 />
             )}
             <Row gutter={16} style={{ marginTop: '16px' }}>
-                {/* <Col span={12}>
+                <Col span={12}>
                     <Card title="Total Customers graph, today and last year" bordered={false} className={styles.liveDataCard}>
                         <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold' }}>
                             Total customers today: {loadingToday ? <Spin tip="Loading..."/> : lastNonErrorTodayData?.totalEnteringCustomers}
@@ -150,10 +150,10 @@ const LiveDataPage = () => {
                             </BarChart>
                         </ResponsiveContainer>
                     </Card>
-                </Col> */}
+                </Col>
                 
                 <Col span={6}>
-                    <Card title="Current customer count:" bordered={false} className={styles.liveCustomerCountCard}>
+                    <Card title="Customers in store" bordered={false} className={styles.liveCustomerCountCard}>
                         <ResponsiveContainer>
                         <p className={styles.customerCountText}>
                                 {loadingToday ? <Spin tip="Loading..."/> : (lastNonErrorTodayData?.totalEnteringCustomers ?? 0) - (lastNonErrorTodayData?.totalExitingCustomers ?? 0)}
@@ -164,7 +164,7 @@ const LiveDataPage = () => {
                 </Col>
 
                 <Col span={6}>
-                    <Card title="Current queue" bordered={false} className={styles.liveQueueCountCard}>
+                    <Card title="Customers in queue" bordered={false} className={styles.liveQueueCountCard}>
                         {loadingQueue || loadingCoordinates ? (
                             <Spin tip="Loading..." />
                         ) : (
@@ -176,7 +176,7 @@ const LiveDataPage = () => {
                                             <p> 
                                                 {Name}: {queueCountsByROI[+roi].NumberOfCustomers} customers
                                                 <div style={{ fontWeight: "bold", fontSize: "0.9em", marginTop: "4px" }}>
-                                                    Queue Threshold: {Threshold}
+                                                    Threshold: {Threshold}
                                                 </div>
                                             </p>
                                             {queueCountsByROI[+roi].NumberOfCustomers > Threshold && (

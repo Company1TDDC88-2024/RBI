@@ -66,16 +66,3 @@ h1 {
 .deleteButton:hover {
   background-color: #d9363e; /* Darker red for hover */
 }
-
-.errorText {
-  color: red;
-  font-weight: bold;
-  margin-top: 0.5rem;
-}
-
-.successText {
-  color: green;
-  font-weight: bold;
-  margin-top: 0.5rem;
-}
-
