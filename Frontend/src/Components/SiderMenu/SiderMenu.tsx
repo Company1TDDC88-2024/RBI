@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Menu, message, Badge } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   DashboardOutlined,
   HistoryOutlined,
@@ -12,13 +12,13 @@ import axios from "axios";
 import { useAuth } from "../../AuthContext";
 
 const { Sider } = Layout;
-const currentPath = location.pathname;
 
 const SiderMenu: React.FC = () => {
   const navigate = useNavigate();
-  const { setIsLoggedIn, isAdmin } = useAuth(); // Get isAdmin from AuthContext
+  const location = useLocation();
+  const { setIsLoggedIn, isAdmin } = useAuth();
+  const [selectedKey, setSelectedKey] = useState('1');
 
-  // Function to handle logout
   const handleLogout = async () => {
     try {
       await axios.post("/login/logout", {}, { withCredentials: true });
@@ -48,20 +48,23 @@ const SiderMenu: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const currentPath = location.pathname;
+    setSelectedKey(getMenuKey(currentPath));
+  }, [location.pathname]);
+
   return (
     <Sider collapsible>
       <div className="logo" />
-      <Menu theme="dark" selectedKeys={[getMenuKey(currentPath)]} mode="inline">
+      <Menu theme="dark" selectedKeys={[selectedKey]} mode="inline">
         <Menu.Item key="1" icon={<DashboardOutlined />}>
           <Link to="/dashboard">Overview</Link>
         </Menu.Item>
-        {/* Render Historical Data menu item only for admins */}
         {isAdmin && (
           <Menu.Item key="2" icon={<HistoryOutlined />}>
             <Link to="/history">Historical Data</Link>
           </Menu.Item>
         )}
-        {/* Render Live Feed menu item only for admins */}
         {isAdmin && (
           <Menu.Item key="3" icon={<VideoCameraOutlined />}>
             <Link to="/livefeed">Live Feed</Link>
@@ -70,17 +73,12 @@ const SiderMenu: React.FC = () => {
         <Menu.Item key="5" icon={<Badge color="red" dot />}>
           <Link to="/livedata">Live Data</Link>
         </Menu.Item>
-        {/* Render Settings menu item only for admins */}
         {isAdmin && (
           <Menu.Item key="6" icon={<SettingOutlined />}>
             <Link to="/settings">Settings</Link>
           </Menu.Item>
         )}
-        <Menu.Item
-          key="4"
-          icon={<LogoutOutlined />}
-          onClick={handleLogout}
-        >
+        <Menu.Item key="4" icon={<LogoutOutlined />} onClick={handleLogout}>
           Logout
         </Menu.Item>
       </Menu>
