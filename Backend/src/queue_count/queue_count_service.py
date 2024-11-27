@@ -31,107 +31,6 @@ def to_coord(b,l,r):
     #returns 1-b since the camera starts 0,0 top left instead of bot left
     return [(l+r)/2, 1-b]
 
-async def upload_function(i, counts, incoming_datetime, ROIs):
-    #search and find lastest timestamp for each roi in queue count 
-    global last_upload_time
-    # Check if the last upload was within the last 10 seconds
-    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=1):
-        return "Upload skipped to avoid frequent uploads"
-    
-    conn = await get_db_connection()
-    if conn is None:
-        return "Failed to connect to database"
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            WITH LatestCustomerCount AS (
-                SELECT 
-                    ROI,
-                    NumberOfCustomers,
-                    Timestamp,
-                    ROW_NUMBER() OVER (PARTITION BY ROI ORDER BY Timestamp DESC) AS row_num
-                FROM QueueCount
-                )
-                SELECT 
-                    ROI,
-                    NumberOfCustomers,
-                    Timestamp
-                    FROM LatestCustomerCount
-                WHERE row_num = 1;
-                """)
-        # create a list of these rows "current_count"
-        current_count = cursor.fetchall()
-    except:
-        return "Error uploading data"
-    finally:
-        conn.close()
-
-    await play_sound(counts[i], ROIs[i])
-
-    #CALL THE SPEAKER SOUND HERE
-    #await play_sound(counts, [38, 0, 0, 0, 0, 0])#TEST REMOVE LATER
-
-    #Check if amount if people has changed in the ROI
-    if (counts[i] != current_count[i][1]):
-        conn = await get_db_connection()
-        if conn is None:
-            return "Failed to connect to database"
-        cursor = conn.cursor()
-
-        try:
-            # Adding data to the "QueueCount" table
-            cursor.execute("""
-            INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
-                VALUES (?, ?, ?)
-                """, (counts[i], incoming_datetime, ROIs[i][0]))
-            conn.commit()
-            last_upload_time = datetime.now()
-            print("Data uploaded successfully")
-            return "Data uploaded successfully"
-        except pyodbc.Error as e:
-            print(f"Error inserting data: {e}")
-            return "Error uploading data"
-        finally:
-            conn.close()
-    else: 
-        #print("Data not uploaded, queue is too small")
-        return "Data not uploaded, queue is too small"
-
-async def old_upload_data_to_db(data):
-
-    #coords of each person in frame
-    points = [
-        to_coord(obs["bounding_box"]["bottom"], obs["bounding_box"]["left"], obs["bounding_box"]["right"])
-        for obs in data.get("observations", [])
-    ]
-
-    #Get ROI data from coordinates table in DB where the camera id matches post request id
-    #ROI[i] = ID : TopBound : BottomBound : LeftBound : RightBound : Threshold : CameraID : Name : CooldownTime
-    #so in coordinates of a rectangle, TR_y, BL_y, BL_x, TR_x
-    conn = await get_db_connection()
-    if conn is None:
-        return "Failed to connect to database"
-    cursor = conn.cursor()
-    try:
-        camera_id = data.get("camera_id")
-        query = "SELECT * FROM Coordinates WHERE CameraID = ?"
-        cursor.execute(query, (camera_id,))
-        ROIs = cursor.fetchall()
-    except pyodbc.Error as e:
-        print(f"Error getting ROI data: {e}")
-        return "Error getting ROI data"
-    finally:
-        conn.close()
-    
-    #counts represent the amount of people in each ROI
-    counts = count_points_in_zones(points, ROIs)
-
-    incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
-
-    for i in range(len(ROIs)):
-        await upload_function(i, counts, incoming_datetime, ROIs)
-
-
 async def upload_queue_alert(ROI_id, count, timestamp):
     conn = await get_db_connection()
     if conn is None:
@@ -152,7 +51,6 @@ async def upload_queue_alert(ROI_id, count, timestamp):
         return "Error uploading data"
     finally:
         conn.close()
-
 
 async def upload_function_fast(i, ROIs, counts, timestamp):
     ROI_id = ROIs[i][0]
@@ -177,8 +75,6 @@ async def upload_function_fast(i, ROIs, counts, timestamp):
 
     await play_sound(counts[i], ROIs[i], timestamp)
 
-    
-#this will replace the async def upload_data_to_db(data): function
 async def upload_data_to_db(data):
     #Get the timestamp from camera to correct format for DB
     incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
