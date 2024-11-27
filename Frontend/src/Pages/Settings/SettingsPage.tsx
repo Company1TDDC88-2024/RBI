@@ -186,7 +186,7 @@ const SettingsPage = () => {
                   </Button>
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>New cooldown time</label>
+                  <label>New cooldown time (Minutes)</label>
                   <InputNumber
                     min={1}
                     max={1000}
