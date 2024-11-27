@@ -33,12 +33,24 @@ const SettingsPage = () => {
     setNewName(e.target.value);
   };
 
-  const handleThresholdChange = (value: number | null) => {
-    setNewThreshold(value);
+  const handleThresholdChange = (value: string | number | null) => {
+    if (value === null || value === "") {
+      setNewThreshold(null);
+    } else if (typeof value === "number" && value >= 1 && value <= 100) {
+      setNewThreshold(value); 
+    } else {
+      setNewThreshold(newThreshold); 
+    }
   };
 
-  const handleCooldownChange = (value: number | null) => {
-    setNewCooldown(value);
+  const handleCooldownChange = (value: string | number | null) => {
+    if (value === null || value === "") {
+      setNewCooldown(null); 
+    } else if (typeof value === "number" && value >= 1 && value <= 1000) {
+      setNewCooldown(value); 
+    } else {
+      setNewCooldown(newCooldown); 
+    }
   };
 
   const handleSaveName = async () => {
@@ -68,7 +80,7 @@ const SettingsPage = () => {
   };
 
   const handleSaveThreshold = async () => {
-    if (selectedArea && newThreshold !== null) {
+    if (selectedArea && newThreshold !== null && newThreshold >= 1 && newThreshold <= 100) {
       setSavingThreshold(true);
       try {
         await updateCoordinates(selectedArea.ID, { Threshold: newThreshold });
@@ -78,11 +90,13 @@ const SettingsPage = () => {
       } finally {
         setSavingThreshold(false);
       }
+    } else {
+      message.error("Please enter a valid threshold (1-100).");
     }
   };
 
   const handleSaveCooldown = async () => {
-    if (selectedArea && newCooldown !== null) {
+    if (selectedArea && newCooldown !== null && newCooldown >= 1 && newCooldown <= 1000) {
       setSavingCooldown(true);
       try {
         await updateCoordinates(selectedArea.ID, { CooldownTime: newCooldown });
@@ -92,6 +106,8 @@ const SettingsPage = () => {
       } finally {
         setSavingCooldown(false);
       }
+    } else {
+      message.error("Please enter a valid cooldown time (1-1000).");
     }
   };
 
@@ -156,8 +172,9 @@ const SettingsPage = () => {
                   <InputNumber
                     min={1}
                     max={100}
-                    value={newThreshold !== null ? newThreshold : selectedArea?.Threshold}
+                    value={newThreshold !== null ? newThreshold : ""}
                     onChange={handleThresholdChange}
+                    placeholder="Enter threshold"
                     style={{ width: "100%" }}
                   />
                   <Button
@@ -173,8 +190,9 @@ const SettingsPage = () => {
                   <InputNumber
                     min={1}
                     max={1000}
-                    value={newCooldown !== null ? newCooldown : selectedArea?.CooldownTime}
+                    value={newCooldown !== null ? newCooldown : ""}
                     onChange={handleCooldownChange}
+                    placeholder="Enter cooldown time"
                     style={{ width: "100%" }}
                   />
                   <Button
