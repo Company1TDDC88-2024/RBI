@@ -182,5 +182,6 @@ Example 1:
 Example 2:
 {
    "timestamp": "2024-02-14T15:37:21.040577Z",
-   "camera_id": "1"
+   "camera_id": "1",
+   "observations": []
 }

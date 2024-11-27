@@ -156,11 +156,11 @@ async def get_data_from_db(
 
         # Process and decrypt the data
         data = []
+        existing_dates = set()
         for row in rows:
             encrypted_total = row[1]
             encrypted_entering = row[2]
             try:
-                # Decrypt `TotalCustomers_temp` value
                 decrypted_total = (
                     int(cipher_suite.decrypt(encrypted_total).decode())
                     if encrypted_total
@@ -171,7 +171,6 @@ async def get_data_from_db(
                 decrypted_total = None
 
             try:
-                # Decrypt `EnteringCustomers_temp` value
                 decrypted_entering = (
                     int(cipher_suite.decrypt(encrypted_entering).decode())
                     if encrypted_entering
@@ -181,6 +180,10 @@ async def get_data_from_db(
                 print(f"Decryption error for EnteringCustomers_temp (ID={row[0]}): {e}")
                 decrypted_entering = None
 
+            # Record the date for this row
+            date_only = row[3].date()
+            existing_dates.add(date_only)
+
             # Add the decrypted data to the result list
             data.append({
                 'ID': row[0],
@@ -188,6 +191,24 @@ async def get_data_from_db(
                 'EnteringCustomers': decrypted_entering,
                 'Timestamp': row[3],
             })
+
+        # Add missing dates with TotalCustomers = 0
+        if start_date and end_date:
+            current_date = start_date.date()
+            end_date_only = end_date.date()
+
+            while current_date <= end_date_only:
+                if current_date not in existing_dates:
+                    data.append({
+                        'ID': None,  # No ID for missing dates, dont need to have one 
+                        'TotalCustomers': 0,
+                        'EnteringCustomers': 0,
+                        'Timestamp': datetime.combine(current_date, datetime.min.time()),
+                    })
+                current_date += timedelta(days=1)
+
+        # Sort data by timestamp
+        data.sort(key=lambda x: x['Timestamp'])
 
         return data
 
