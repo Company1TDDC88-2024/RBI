@@ -33,19 +33,19 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
       const { logged_in, is_admin } = response.data;
   
-      // Update state and localStorage based on the response
+      // Update state and sessionStorage based on the response. If webbrowser is closed, the session will be lost
       setIsLoggedIn(logged_in);
       setIsAdmin(is_admin || false);
       console.log("isAdmin", is_admin);
       console.log("logged_in", logged_in);
-      localStorage.setItem("isLoggedIn", logged_in);
-      localStorage.setItem("isAdmin", is_admin || false);
+      sessionStorage.setItem("isLoggedIn", logged_in);
+      sessionStorage.setItem("isAdmin", is_admin || false);
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
       setIsAdmin(false);
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("isAdmin");
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("isAdmin");
     } finally {
       setLoading(false);
     }
@@ -62,8 +62,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   };
 
   useEffect(() => {
-    const storedIsLoggedIn = JSON.parse(localStorage.getItem("isLoggedIn") || "false");
-    const storedIsAdmin = JSON.parse(localStorage.getItem("isAdmin") || "false");
+    const storedIsLoggedIn = JSON.parse(sessionStorage.getItem("isLoggedIn") || "false");
+    const storedIsAdmin = JSON.parse(sessionStorage.getItem("isAdmin") || "false");
     setIsLoggedIn(storedIsLoggedIn);
     setIsAdmin(storedIsAdmin);
     checkLoginStatus();

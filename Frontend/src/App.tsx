@@ -13,7 +13,7 @@ import useInactivityTimeout from "./Hooks/useIdleTimer";
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, adminOnly?: boolean }) => {
   const { isLoggedIn, isAdmin } = useAuth();
-  if (localStorage.getItem("isLoggedIn") == "true") {
+  if (sessionStorage.getItem("isLoggedIn") == "true") {
     return element;
   }
   if (!isLoggedIn) return <Navigate to="/login" />;
