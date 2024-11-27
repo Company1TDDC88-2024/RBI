@@ -18,7 +18,7 @@ def point_in_zone(x, y, bl_x, bl_y, tr_x, tr_y):
 #Function that calculates the amount of coordinates in "points" that intersect with an arbitary amount of regions of interest.
 def count_points_in_zones(points, zones):
     counts = [0] * len(zones)  
-    for i, (_, top, bot, lef, rig, _, _, _, _) in enumerate(zones):
+    for i, (_, top, bot, lef, rig, _, _, _, _, _) in enumerate(zones):
         for x, y in points:
             if point_in_zone(x, y, lef, bot, rig, top):
                 counts[i] += 1 
@@ -145,7 +145,6 @@ async def upload_queue_alert(ROI_id, count, timestamp):
             VALUES (?, ?, ?)
             """, (count, timestamp, ROI_id))
         conn.commit()
-        last_upload_time = datetime.now()
         print("Data uploaded successfully")
         return "Data uploaded successfully"
     except pyodbc.Error as e:
@@ -156,9 +155,10 @@ async def upload_queue_alert(ROI_id, count, timestamp):
 
 
 async def upload_function_fast(i, ROIs, counts, timestamp):
-    ROI_id = RoIs[i][0]
+    ROI_id = ROIs[i][0]
     count = counts[i]
-    old_count = RoIs[i][9]
+    old_count = ROIs[i][9]
+
     if old_count != count:
         #change RoI currenctcount value in DB
         conn = await get_db_connection()
@@ -166,8 +166,9 @@ async def upload_function_fast(i, ROIs, counts, timestamp):
             return "Failed to connect to database"
         cursor = conn.cursor()
         try:
-            query = "UPDATE Coordinates SET currentqueue = ? WHERE id = ? " #Make real logic for this
+            query = "UPDATE Coordinates SET CurrentCount = ? WHERE id = ? " #Make real logic for this
             cursor.execute(query, (count, ROI_id))
+            conn.commit()
         except pyodbc.Error as e:
             print(f"Error setting new queue count: {e}")
             return "Error setting new queue count"
@@ -184,13 +185,12 @@ async def upload_data_to_db(data):
     #Get the camera_id of the camera
     camera_id = data.get("camera_id")
 
-
     #Check that we dont upload too often, there might be an issue with 2 cameras here.
     global last_upload_time
     # Check if the last upload was within the last x seconds
     if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=2):
         return "Upload skipped to avoid frequent uploads"
- 
+    last_upload_time = datetime.now()
 
     #Get ROI data from coordinates table in DB where the camera id matches post request id
     #ROI[i] = ID : TopBound : BottomBound : LeftBound : RightBound : Threshold : CameraID : Name : CooldownTime
@@ -219,7 +219,7 @@ async def upload_data_to_db(data):
     counts = count_points_in_zones(points, ROIs)
 
     for i in range(len(ROIs)):
-        upload_function_fast(i, ROIs, counts, incoming_datetime)
+        await upload_function_fast(i, ROIs, counts, incoming_datetime)
 
 async def get_data_from_db():
     conn = await get_db_connection()
@@ -280,7 +280,7 @@ async def play_sound(count, ROI, timestamp):
         print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
-        upload_queue_alert(ROI_id, count, timestamp)
+        await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
         try:
