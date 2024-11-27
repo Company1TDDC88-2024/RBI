@@ -52,6 +52,7 @@ login_bp = Blueprint('login', __name__)
 
 # Route to create an account
 @login_bp.route('/create_account', methods=['POST'])
+@login_required
 async def create_account_route():
     data = request.json
 
