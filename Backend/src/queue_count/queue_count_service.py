@@ -97,7 +97,7 @@ async def upload_function(i, counts, incoming_datetime, ROIs):
         #print("Data not uploaded, queue is too small")
         return "Data not uploaded, queue is too small"
 
-async def upload_data_to_db(data):
+async def old_upload_data_to_db(data):
 
     #coords of each person in frame
     points = [
@@ -132,17 +132,53 @@ async def upload_data_to_db(data):
         await upload_function(i, counts, incoming_datetime, ROIs)
 
 
-async def upload_function_fast(i, ROIs, counts, timestamp):
-    #
-    if ROIs[i][9] != counts[i]:
-        #change RoI currenctcount value in DB
-        query = "UPDATE Coordinates SET currentqueue = ? WHERE id = ? " #Make real logic for this
+async def upload_queue_alert(ROI_id, count, timestamp):
+    conn = await get_db_connection()
+    if conn is None:
+        return "Failed to connect to database"
+    cursor = conn.cursor()
 
-    await play_sound(counts[i], ROIs[i])    #add logic to add to queueCount table on sound play
+    try:
+        # Adding data to the "QueueCount" table
+        cursor.execute("""
+            INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
+            VALUES (?, ?, ?)
+            """, (count, timestamp, ROI_id))
+        conn.commit()
+        last_upload_time = datetime.now()
+        print("Data uploaded successfully")
+        return "Data uploaded successfully"
+    except pyodbc.Error as e:
+        print(f"Error inserting data: {e}")
+        return "Error uploading data"
+    finally:
+        conn.close()
+
+
+async def upload_function_fast(i, ROIs, counts, timestamp):
+    ROI_id = RoIs[i][0]
+    count = counts[i]
+    old_count = RoIs[i][9]
+    if old_count != count:
+        #change RoI currenctcount value in DB
+        conn = await get_db_connection()
+        if conn is None:
+            return "Failed to connect to database"
+        cursor = conn.cursor()
+        try:
+            query = "UPDATE Coordinates SET currentqueue = ? WHERE id = ? " #Make real logic for this
+            cursor.execute(query, (count, ROI_id))
+        except pyodbc.Error as e:
+            print(f"Error setting new queue count: {e}")
+            return "Error setting new queue count"
+        finally:
+            conn.close()
+
+    await play_sound(counts[i], ROIs[i], timestamp)
 
     
 #this will replace the async def upload_data_to_db(data): function
-async def upload_fast(data):
+async def upload_data_to_db(data):
     #Get the timestamp from camera to correct format for DB
     incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
     #Get the camera_id of the camera
@@ -211,7 +247,7 @@ async def get_data_from_db():
     finally:
         conn.close()
 
-async def play_sound(count, ROI):
+async def play_sound(count, ROI, timestamp):
     ROI_id = ROI[0]
     threshold = ROI[5]
     clip_id = 39
@@ -244,6 +280,7 @@ async def play_sound(count, ROI):
         print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
+        upload_queue_alert(ROI_id, count, timestamp)
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
         try:
