@@ -39,7 +39,7 @@ typedef struct channel_identifier
     char *source;
 } channel_identifier_t;
 
-void send_json_to_server(const char *json_strm, int isempty);
+void send_json_to_server(const char *json_strm, int is_empty);
 
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {
@@ -48,15 +48,15 @@ static void on_connection_error(mdb_error_t *error, void *user_data)
     abort();
 }
 
-void send_json_to_server(const char *json_str, int isempty) {
+void send_json_to_server(const char *json_str, int is_empty) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        if (isempty == 0){   
+        if (is_empty == 0){   
             // Replace <BACKEND_IP> with the backend's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/queue_count/upload");
         }
-        else if (isempty == 1){
+        else if (is_empty == 1){
             // Replace <BACKEND_IP> with the backend's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/queue_count/upload_empty");
         }
@@ -114,10 +114,7 @@ static void process_detections(const char *payload_data, size_t size)
         }
     }
 
-    if (json_array_size(filtered_observations) > 0)
-    {
-        json_object_set_new(output_json, "observations", filtered_observations);
-    }
+    json_object_set_new(output_json, "observations", filtered_observations);
 
     char *json_str = json_dumps(output_json, 0);
 
