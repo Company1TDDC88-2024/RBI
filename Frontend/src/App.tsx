@@ -1,4 +1,5 @@
 import { Route, BrowserRouter as Router, Routes, Navigate, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
 import Test from "./Pages/Test/Test";
 import Layout from "./Components/Layout/Layout";
 import DashboardPage from "./Pages/Dashboard/DashboardPage";
@@ -24,15 +25,29 @@ const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, ad
 
 // Inactivity handler component
 const InactivityHandler = () => {
-  const navigate = useNavigate(); // Get navigate function here
+  const navigate = useNavigate();
+  const { clearCookies } = useAuth();  // Access the clearCookies function
 
   const handleTimeout = () => {
-    navigate("/login"); // Redirect to login when timeout occurs
+    clearCookies();  // Clear cookies and session when timeout occurs
+    navigate("/login");  // Redirect to login page after inactivity timeout
   };
 
-  useInactivityTimeout(300000, handleTimeout); // Call inactivity timeout with 5 minute
+  useInactivityTimeout(300000, handleTimeout);  // Call inactivity timeout with 5-minute timeout
 
-  return null; // This component does not render anything
+  useEffect(() => {
+    const handleTabClose = () => {
+      clearCookies();  // Call clearCookies when tab is closed
+    };
+
+    window.addEventListener('beforeunload', handleTabClose);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleTabClose); // Cleanup listener on component unmount
+    };
+  }, [clearCookies]);
+
+  return null;  // This component doesn't render anything
 };
 
 function App() {
