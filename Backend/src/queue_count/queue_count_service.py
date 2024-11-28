@@ -231,27 +231,12 @@ async def get_queues_from_db():
         return "Failed to connect to database"
     cursor = conn.cursor()
     try:
-        cursor.execute("""
-            WITH LatestCustomerCount AS (
-                SELECT 
-                    ROI,
-                    NumberOfCustomers,
-                    Timestamp,
-                    ROW_NUMBER() OVER (PARTITION BY ROI ORDER BY Timestamp DESC) AS row_num
-                FROM QueueCount
-                )
-                SELECT 
-                    ROI,
-                    NumberOfCustomers,
-                    Timestamp
-                    FROM LatestCustomerCount
-                WHERE row_num = 1;
-                """)
+        cursor.execute("SELECT * FROM Coordinates")
         rows = cursor.fetchall()
         
         # Convert rows to list of dictionaries
         current_count = [
-            {"ROI": row[0], "NumberOfCustomers": row[1], "Timestamp": row[2]}
+            {"ROI": row[0], "NumberOfCustomers": row[9], "Timestamp": row[1]}
             for row in rows
         ]
         return current_count
