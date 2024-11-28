@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from .login_service import create_account, login_user, verify_user, delete_account, is_logged_in_service
+from .login_service import create_account, login_user, verify_user, delete_account, is_logged_in_service, get_user_email
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -158,3 +158,22 @@ async def is_logged_in():
         return jsonify(result)
     else:
         return jsonify({'logged_in': False, 'is_admin': False})
+
+# Get email
+@login_bp.route('/get_email', methods=['GET'])
+async def get_email():
+    if 'user_id' in session:
+        user_id = session['user_id']
+    else:
+        return jsonify({'status': 'error', 'message': "User not logged in"}), 401
+    
+    try:
+        # Call the function to get the user's email
+        email = await get_user_email(user_id)
+        if email:
+            return jsonify({'status': 'success', 'email': email}), 200
+        else:
+            return jsonify({'status': 'error', 'message': "Email not found"}), 404
+    except Exception as e:
+        print(f"Error fetching email: {e}")
+        return jsonify({'status': 'error', 'message': "Internal server error"}), 500

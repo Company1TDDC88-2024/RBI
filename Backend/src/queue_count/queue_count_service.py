@@ -1,15 +1,24 @@
 from flask import Flask, request, jsonify, Response
 import pyodbc
 from src.database_connect import get_db_connection
+from src.login.login_routes import get_email
 from datetime import datetime
 from datetime import timedelta
 import requests
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
 
 # Dictionary to store the last timestamp for each ROI
 timestamps_roi = {}
 timestamps_start = {}
 last_upload_time = None
 count_prev: int
+
+#temp
+bol_check = True
+
+last_email_time = None
 
 #Function that calculates if a point x,y is in a rectangle defined by bl_x, bl_y, tr_x, tr_y
 def point_in_zone(x, y, bl_x, bl_y, tr_x, tr_y):
@@ -22,7 +31,6 @@ def count_points_in_zones(points, zones):
         for x, y in points:
             if point_in_zone(x, y, lef, bot, rig, top):
                 counts[i] += 1 
-
     return counts
 
 #Function that calculates the bottom middle coord of an input object.
@@ -196,15 +204,70 @@ async def play_sound(count, ROI):
     # elif ROI_id in timestamps_start and timestamps_start[ROI_id] is not None and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=20):
     #     print(f"Queue count for ROI {ROI_id} is below threshold or cooldown period has not passed")
     #     if ROI_id in timestamps_start:
-    #         print(f"Removing ROI {ROI_id} from timestamps_start due to cooldown")
+    #         print(f"Removing ROI {ROI_id} from timestamps_start due 
+    # to cooldown")
     #         del timestamps_start[ROI_id]
     
 async def check_threshold(threshold, count):
+    
     if count >= threshold: #If the queue count is greater than or equal to the threshold, might change
         return True
     else:
         return False
+
     
+def sendAlertEmail():
+
+    url = 'http://127.0.0.1:5555/api/login/get_email'  # Adjust URL if needed
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()  # Get the JSON response
+        else:
+            print(f"Error {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Error calling /get_email route: {e}")
+        return None
+
+
+   # global last_email_time
+    ##if last_email_time and datetime.now() - last_email_time < timedelta(minutes=5):
+    ##    print("Email not sent: 5-minute cooldown period not elapsed.")
+     #   return  # Exit the function if the cooldown period hasn't passed
+
+
+    # Email configuration
+    print("THE EMAIL RECEIVER IS: " + data)
+    email_sender = "company1.customer@gmail.com"
+    email_password = "rpmu qrel qczc jmhd"
+
+    # Create the email content (INCLUDING Queue Label and Timestamp of the threshhold being executed)
+    subject = "Queue Alert!"
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
+    body = (
+        #f"There is a Queue at {queue_label}"
+        f"Time of this alert: {current_time}"
+    )
+
+    # Create a multipart email
+    msg = MIMEMultipart()
+    msg['From'] = email_sender
+    msg['To'] = email_receiver
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Secure the connection
+            server.login(email_sender, email_password)
+            server.send_message(msg)
+            print("Email sent successfully!")
+            #last_email_time = datetime.now()
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
 # async def check_queue_time(count, ROI_id, threshold):
 #     if ROI_id not in timestamps_start:
 #         timestamps_start[ROI_id] = datetime.now()
@@ -228,6 +291,7 @@ async def check_threshold(threshold, count):
 
 
 async def get_queues_from_db():
+    sendAlertEmail()
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
