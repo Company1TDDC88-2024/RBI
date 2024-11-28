@@ -31,14 +31,14 @@ async def upload_data_to_db(data):
         "Timestamp": last_timestamp
     }
 
-    if bounding_boxes[-1]["left"] < 0.3:
+    if bounding_boxes[-1]["left"] < 0.2 and bounding_boxes[0]["right"] > 0.8:
         # Customer is exiting
         placeholder = {
             "EnteringCustomers": 0,
             "ExitingCustomers": 1,
             "Timestamp": last_timestamp
         }
-    elif bounding_boxes[-1]["right"] > 0.7:
+    elif bounding_boxes[-1]["right"] > 0.8 and bounding_boxes[0]["left"] < 0.2:
         # Customer is entering
         placeholder = {
             "EnteringCustomers": 1,
