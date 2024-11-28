@@ -49,8 +49,10 @@ async def create_account(data, token) -> str:
     # Encrypt first_name, last_name, and email
     encrypted_first_name = cipher_suite.encrypt(data['first_name'].encode())
     encrypted_last_name = cipher_suite.encrypt(data['last_name'].encode())
-    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    encrypted_email = cipher_suite.encrypt(data['email'].encode())
 
+    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    
     # Check if the email already exists
     cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (hashed_email,))
     existing_user = cursor.fetchone()
@@ -73,9 +75,9 @@ async def create_account(data, token) -> str:
     try:
         # Insert the new user into the database
         cursor.execute("""
-            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
-            VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token))
+            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count, email_encrypted)
+            VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
+        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token, encrypted_email,))
 
         conn.commit()
         return "Account created successfully"
@@ -102,14 +104,14 @@ async def login_user(data) -> Union[str, dict]:
         """, (email_hash,))
         user = cursor.fetchone()
 
+        # Unpack user details
+        verified, wrong_password_count, stored_password, user_id, is_admin = user
+
         if not user:
             if wrong_password_count >= 5:
                 return "Too many failed login attempts"
             else:
                 return "Invalid email or password"
-
-        # Unpack user details
-        verified, wrong_password_count, stored_password, user_id, is_admin = user
 
         # Extract salt and hashed password from the stored_password
         salt_hex, stored_hash = stored_password.split('$')
@@ -235,3 +237,31 @@ async def is_logged_in_service(user_id: int) -> dict:
         return {'logged_in': True, 'is_admin': False}  # Return false on error
     finally:
         conn.close()
+
+async def get_user_email(user_id: int) -> dict:
+
+    conn = await get_db_connection()
+    if conn is None:
+        print("Failed to connect to database")
+        return None
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT email_encrypted FROM \"User\" WHERE user_id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+    except pyodbc.Error as e:
+        print(f"Error fetching email: {e}")
+        return None
+        
+    if user:
+        try:
+            email = str(cipher_suite.decrypt(user.email_encrypted).decode())
+            return email
+        except Exception as e:
+            print(f"Error decrypting email: {e}")
+            return None
+    else:
+        print("User not found")
+        return None
+
