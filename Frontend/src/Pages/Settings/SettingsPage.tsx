@@ -4,8 +4,9 @@ import styles from "./SettingsPage.module.css";
 import "../../global.css";
 import CreateUser from "./CreateUser";
 import DeleteUser from "./DeleteUser";
-import { useGetCoordinates, Coordinate} from "../Hooks/useGetCoordinates.ts";
-import { useUpdateCoordinates } from "../Hooks/useUpdateCoordinates"; // Import the hook
+import { useGetCoordinates, Coordinate } from "../Hooks/useGetCoordinates.ts";
+import { useUpdateCoordinates } from "../Hooks/useUpdateCoordinates";
+import { useSettings } from "./InfluxSettingsContext.tsx";
 
 const { Option } = Select;
 
@@ -14,9 +15,14 @@ const SettingsPage = () => {
   const [newName, setNewName] = useState<string>("");
   const [newThreshold, setNewThreshold] = useState<number | null>(null);
   const [newCooldown, setNewCooldown] = useState<number | null>(null);
+  const [newInfluxThreshold, setNewInfluxThreshold] = useState<number | null>(null); // New state for influx threshold
+  const [newTimeframe, setNewTimeframe] = useState<number | null>(null); // New state for timeframe
   const [savingName, setSavingName] = useState(false);
   const [savingThreshold, setSavingThreshold] = useState(false);
-  const [savingCooldown, setSavingCooldown] = useState(false); // Fixed missing state
+  const [savingCooldown, setSavingCooldown] = useState(false);
+  const { influxThreshold, influxTimeframe, setInfluxThreshold, setTimeframe} = useSettings();
+  const [savingInfluxThreshold, setSavingInfluxThreshold] = useState(false); 
+  const [savingTimeframe, setSavingTimeframe] = useState(false); 
 
   const { data, loading, error, refetch } = useGetCoordinates();
   const { updateCoordinates } = useUpdateCoordinates();
@@ -26,8 +32,12 @@ const SettingsPage = () => {
     setSelectedArea(area || null);
     setNewName("");
     setNewThreshold(area?.Threshold || null);
-    setNewCooldown(area?.CooldownTime || null); // Initialize cooldown value
+    setNewCooldown(area?.CooldownTime || null);
+    setNewInfluxThreshold(null); // Reset influx threshold
+    setNewTimeframe(null); // Reset timeframe
   };
+
+  
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewName(e.target.value);
@@ -41,22 +51,17 @@ const SettingsPage = () => {
     setNewCooldown(value);
   };
 
+
   const handleSaveName = async () => {
     if (selectedArea && newName.trim()) {
       setSavingName(true);
       try {
-        // Perform the name update
         await updateCoordinates(selectedArea.ID, { Name: newName });
-
-        // Update the `data` to reflect the new name in the dropdown
-        const updatedData = data?.map(area =>
+        const updatedData = data?.map((area) =>
           area.ID === selectedArea.ID ? { ...area, Name: newName } : area
         );
-
-        // Update the selectedArea with the new name immediately
         const updatedArea = updatedData?.find((area) => area.ID === selectedArea.ID);
-        setSelectedArea(updatedArea || null); // This will update the selected value in the dropdown
-
+        setSelectedArea(updatedArea || null);
         message.success("Queue name updated successfully!");
         refetch();
       } catch (err) {
@@ -95,19 +100,43 @@ const SettingsPage = () => {
     }
   };
 
+  const handleSaveInfluxThreshold = async () => {
+    setSavingInfluxThreshold(true);
+    try {
+      // Simulate save logic (e.g., show toast or console log)
+      console.log(`Saved Influx Threshold: ${influxThreshold}`);
+    } catch (err) {
+      console.error("Failed to save influx threshold");
+    } finally {
+      setSavingInfluxThreshold(false);
+    }
+  };
+
+  const handleSaveTimeframe = async () => {
+    setSavingTimeframe(true);
+    try {
+      // Simulate save logic (e.g., show toast or console log)
+      console.log(`Saved Timeframe: ${influxTimeframe}`);
+    } catch (err) {
+      console.error("Failed to save timeframe");
+    } finally {
+      setSavingTimeframe(false);
+    }
+  };
+
   return (
-  <div className={styles.settingsPage}>
-    <div className={styles.settingsContainer}>
-      <h1 className={styles.header}>Settings</h1>
-      {/* Vänster kolumn */}
-      <div className={styles.userManagement}>
-        <Card title="Create a new user" className={styles.card}>
-          <CreateUser />
-        </Card>
-        <Card title="Delete user" className={styles.card}>
-          <DeleteUser />
-        </Card>
-      </div>
+    <div className={styles.settingsPage}>
+      <div className={styles.settingsContainer}>
+        <h1 className={styles.header}>Settings</h1>
+        {/* Vänster kolumn */}
+        <div className={styles.userManagement}>
+          <Card title="Create a new user" className={styles.card}>
+            <CreateUser />
+          </Card>
+          <Card title="Delete user" className={styles.card}>
+            <DeleteUser />
+          </Card>
+        </div>
 
         {/* Höger kolumn */}
         <div className={styles.queueSettings}>
@@ -123,7 +152,7 @@ const SettingsPage = () => {
                   placeholder="Select an area"
                   style={{ width: "100%" }}
                   onChange={handleAreaChange}
-                  value={selectedArea?.Name || undefined} // Use the updated selected name here
+                  value={selectedArea?.Name || undefined}
                 >
                   {data?.map((area) => (
                     <Option key={area.ID} value={area.Name}>
@@ -187,6 +216,45 @@ const SettingsPage = () => {
                 </div>
               </>
             )}
+          </Card>
+
+          <Card title="Entry point settings" className={styles.card}>
+            <div className={styles.inputGroup}>
+              <label>Change influx threshold</label>
+              <InputNumber
+                min={1}
+                max={500}
+                value={influxThreshold}
+                onChange={(value) => setInfluxThreshold(value || 0)}
+                placeholder="Enter influx threshold"
+                style={{ width: "100%" }}
+              />
+              <Button
+                onClick={handleSaveInfluxThreshold}
+                className={styles.button}
+                disabled={savingInfluxThreshold}
+              >
+                {savingInfluxThreshold ? "Saving..." : "Save Influx Threshold"}
+              </Button>
+            </div>
+            <div className={styles.inputGroup}>
+              <label>Change timeframe</label>
+              <InputNumber
+                min={1}
+                max={1440}
+                value={influxTimeframe}
+                onChange={(value) => setTimeframe(value || 0)}
+                placeholder="Enter timeframe in minutes"
+                style={{ width: "100%" }}
+              />
+              <Button
+                onClick={handleSaveTimeframe}
+                className={styles.button}
+                disabled={savingTimeframe}
+              >
+                {savingTimeframe ? "Saving..." : "Save Timeframe"}
+              </Button>
+            </div>
           </Card>
         </div>
       </div>

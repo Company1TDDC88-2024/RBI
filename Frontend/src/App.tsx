@@ -9,6 +9,7 @@ import LoginPage from "./Pages/LoginPage/LoginPage";
 import LiveDataPage from "./Pages/LiveData/LiveDataPage";
 import { AuthProvider, useAuth } from "./AuthContext"; 
 import useInactivityTimeout from "./Hooks/useIdleTimer"; 
+import { SettingsProvider } from "./Pages/Settings/InfluxSettingsContext";
 
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ element, adminOnly = false }: { element: JSX.Element, adminOnly?: boolean }) => {
@@ -40,18 +41,20 @@ function App() {
     <AuthProvider>
         <Router>
           <InactivityHandler />
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/test" element={<PrivateRoute element={<Test />} />} />
-              <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
-              <Route path="/history" element={<PrivateRoute element={<HistoryPage />} adminOnly={true} />} />
-              <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} adminOnly={true} />} />
-              <Route path="/livedata" element={<PrivateRoute element={<LiveDataPage />} />} />
-              <Route path="/settings" element={<PrivateRoute element={<SettingsPage />} adminOnly={true} />} />
-            </Routes>
-          </Layout>
+            <SettingsProvider>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/test" element={<PrivateRoute element={<Test />} />} />
+                  <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
+                  <Route path="/history" element={<PrivateRoute element={<HistoryPage />} adminOnly={true} />} />
+                  <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} adminOnly={true} />} />
+                  <Route path="/livedata" element={<PrivateRoute element={<LiveDataPage />} />} />
+                  <Route path="/settings" element={<PrivateRoute element={<SettingsPage />} adminOnly={true} />} />
+                </Routes>
+              </Layout>
+            </SettingsProvider>
         </Router>
     </AuthProvider>
   );
