@@ -1,51 +1,63 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
+interface User {
+  name: string;
+  email: string;
+}
+
 interface AuthContextType {
   isLoggedIn: boolean;
-  isAdmin: boolean; // Add isAdmin to track admin status
+  isAdmin: boolean;
   loading: boolean;
   checkLoginStatus: () => void;
   setIsLoggedIn: (status: boolean) => void;
-  setIsAdmin: (status: boolean) => void; // Function to set isAdmin
+  setIsAdmin: (status: boolean) => void;
   clearCookies: () => void;
+  user: User | null;  // Add user to the context
+  setUser: (user: User | null) => void;  // Add function to set user
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
-  isAdmin: false, // Default value for isAdmin
+  isAdmin: false,
   loading: true,
   checkLoginStatus: () => {},
   setIsLoggedIn: () => {},
   setIsAdmin: () => {},
   clearCookies: () => {},
+  user: null,  // Default to null
+  setUser: () => {},  // Default function
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // State to store admin status
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<User | null>(null);  // Initialize user state
   const [loading, setLoading] = useState(true);
 
   const checkLoginStatus = async () => {
     try {
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
-      const { logged_in, is_admin } = response.data;
-  
-      // Update state and localStorage based on the response
+      console.log("API Response:",response.data);
+      const { logged_in, is_admin, user } = response.data;
+
       setIsLoggedIn(logged_in);
       setIsAdmin(is_admin || false);
-      console.log("isAdmin", is_admin);
-      console.log("logged_in", logged_in);
+      setUser(user || {name:'N/A',email:'N/A'});  // Set the user data
       localStorage.setItem("isLoggedIn", logged_in);
       localStorage.setItem("isAdmin", is_admin || false);
+      localStorage.setItem("user", JSON.stringify(user));  // Store user in localStorage if needed
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
       setIsAdmin(false);
+      setUser(null);  // Reset user data on error
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
     } finally {
       setLoading(false);
     }
@@ -55,7 +67,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
     try {
       await axios.post("/login/logout", {}, { withCredentials: true });
       setIsLoggedIn(false);
-      setIsAdmin(false); // Clear admin status when logging out
+      setIsAdmin(false);
+      setUser(null);  // Clear user data on logout
     } catch (error) {
       console.error("Error clearing session cookie:", error);
     }
@@ -64,8 +77,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   useEffect(() => {
     const storedIsLoggedIn = JSON.parse(localStorage.getItem("isLoggedIn") || "false");
     const storedIsAdmin = JSON.parse(localStorage.getItem("isAdmin") || "false");
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    
     setIsLoggedIn(storedIsLoggedIn);
     setIsAdmin(storedIsAdmin);
+    setUser(storedUser);  // Set the user from localStorage if available
     checkLoginStatus();
   }, []);
 
@@ -79,6 +95,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
         setIsLoggedIn,
         setIsAdmin,
         clearCookies,
+        user,  // Provide user data in context
+        setUser,  // Provide setUser function in context
       }}
     >
       {children}

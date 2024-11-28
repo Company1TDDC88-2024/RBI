@@ -49,7 +49,11 @@ async def create_account(data, token) -> str:
     # Encrypt first_name, last_name, and email
     encrypted_first_name = cipher_suite.encrypt(data['first_name'].encode())
     encrypted_last_name = cipher_suite.encrypt(data['last_name'].encode())
+    encrypted_email = cipher_suite.encrypt(data['email'].encode())
     hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    print(f"Original email: {data['email']}")
+    #print(f"Encrypted email: {encrypted_email.decode()}")
+    print(f"Hashed email: {hashed_email}")
 
     # Check if the email already exists
     cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (hashed_email,))
@@ -75,7 +79,7 @@ async def create_account(data, token) -> str:
         cursor.execute("""
             INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
             VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token))
+        """, (encrypted_first_name, encrypted_last_name,encrypted_email, is_admin, stored_password, token))
 
         conn.commit()
         return "Account created successfully"
@@ -216,22 +220,73 @@ async def delete_account(email: str) -> str:
     finally:
         conn.close()
 
-async def is_logged_in_service(user_id: int) -> dict:
+async def get_user_data(user_id: int) -> dict:
     conn = await get_db_connection()
     if conn is None:
-        return {'logged_in': False, 'is_admin': False}  # Return false if connection fails
+        return {"error": "Failed to connect to the database"}
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT is_admin FROM \"User\" WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT first_name, last_name, email FROM \"User\" WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
-        if user:
-            is_admin = user.is_admin
-            return {'logged_in': True, 'is_admin': is_admin}
-        else:
-            return {'logged_in': True, 'is_admin': False}  # Return false if user not found
-    except pyodbc.Error as e:
-        print(f"Error fetching admin status: {e}")
-        return {'logged_in': True, 'is_admin': False}  # Return false on error
+
+        if not user:
+            return {"error": "User not found"}
+
+        # Decrypt fields
+        encrypted_first_name, encrypted_last_name, encrypted_email = user
+        decrypted_first_name = cipher_suite.decrypt(encrypted_first_name).decode()
+        decrypted_last_name = cipher_suite.decrypt(encrypted_last_name).decode()
+        decrypted_email = cipher_suite.decrypt(encrypted_email).decode()
+        #print(f"Encrypted email from DB: {encrypted_email}")
+        #print(f"Decrypted email: {decrypted_email}")
+        return {
+            "first_name": decrypted_first_name,
+            "last_name": decrypted_last_name,
+            "email": decrypted_email
+        }
+    except Exception as e:
+        print(f"Error decrypting user data: {e}")
+        return {"error": "Error decrypting user data"}
     finally:
         conn.close()
+
+
+
+async def is_logged_in_service(user_id: int) -> dict:
+    # Fetch decrypted user data
+    user_data = await get_user_data(user_id)
+    
+    # Check if user_data retrieval was successful
+    if "error" in user_data:
+        return {'logged_in': False, 'is_admin': False, 'user': None}  # Return false if an error occurred
+
+    # Add is_admin check directly
+    conn = await get_db_connection()
+    if conn is None:
+        return {'logged_in': False, 'is_admin': False, 'user': None}
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT is_admin FROM \"User\" WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        if result:
+            is_admin = result[0]
+            # Combine decrypted data with admin status
+            return {
+                'logged_in': True,
+                'is_admin': is_admin,
+                'user': {
+                    'name': f"{user_data['first_name']} {user_data['last_name']}",
+                    'email': user_data['email']
+                }
+            }
+        else:
+            return {'logged_in': False, 'is_admin': False, 'user': None}
+
+    except pyodbc.Error as e:
+        print(f"Error fetching admin status: {e}")
+        return {'logged_in': False, 'is_admin': False, 'user': None}
+    finally:
+        conn.close()
+
