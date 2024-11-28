@@ -33,7 +33,7 @@ const InactivityHandler = () => {
     navigate("/login");  // Redirect to login page after inactivity timeout
   };
 
-  useInactivityTimeout(300000, handleTimeout);  // Call inactivity timeout with 5-minute timeout
+  useInactivityTimeout(30000, handleTimeout);  // Call inactivity timeout with 5-minute timeout
 
   useEffect(() => {
     const handleTabClose = () => {
