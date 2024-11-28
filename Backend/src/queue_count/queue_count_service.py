@@ -50,12 +50,14 @@ async def upload_queue_alert(ROI_id, count, timestamp):
     if conn is None:
         return "Failed to connect to database"
     cursor = conn.cursor()
+
+    encrypted_count = cipher_suite.encrypt(str(count).encode())
     try:
         # Adding data to the "QueueCount" table
         cursor.execute("""
-            INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
+            INSERT INTO QueueCount_temp (NumberOfCustomers, Timestamp, ROI)
             VALUES (?, ?, ?)
-            """, (count, timestamp, ROI_id))
+            """, (encrypted_count, timestamp, ROI_id))
         conn.commit()
         print("Data uploaded successfully")
         return "Data uploaded successfully"
@@ -138,17 +140,27 @@ async def get_data_from_db():
     cursor = conn.cursor()
 
     try:
-        # Hämta all data från CustomerCount-tabellen
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount")
+        # Fetch data from QueueCount table
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount_temp")
         rows = cursor.fetchall()
         data = []
+
         for row in rows:
+            # Decrypt the 'NumberOfCustomers' field
+            encrypted_count = row[1]  # Assuming encrypted count is in the second column
+            try:
+                decrypted_count = cipher_suite.decrypt(encrypted_count).decode('utf-8')  # Decrypt and convert to string
+            except Exception as e:
+                print(f"Error decrypting NumberOfCustomers: {e}")
+                decrypted_count = None  # Handle decryption failure
+            
             data.append({
                 'ID': row[0],
-                'NumberOfCustomers': row[1],
+                'NumberOfCustomers': decrypted_count,
                 'Timestamp': row[2],
                 'ROI': row[3],
             })
+
         return data
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
@@ -188,8 +200,8 @@ async def play_sound(count, ROI, timestamp):
     #     print(f"Current time: {datetime.now()}")
     #     print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
+    await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
-        await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         sendAlertEmail()
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
