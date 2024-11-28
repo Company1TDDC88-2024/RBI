@@ -381,7 +381,7 @@ const HistoryPage = () => {
 
         <Col span={12}>
           <Card
-            title="Monthly Average Customer Count (Last 6 Months)"
+            title="Average Customers Per Day (Last 6 Months)"
             bordered={false}
             className={styles.dashboardCard}
           >
