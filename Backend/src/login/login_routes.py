@@ -159,17 +159,11 @@ async def is_logged_in():
     else:
         return jsonify({'logged_in': False, 'is_admin': False})
 
-# Get email
-@login_bp.route('/get_email', methods=['GET'])
-async def get_email():
-    if 'user_id' in session:
-        user_id = session['user_id']
-    else:
-        return jsonify({'status': 'error', 'message': "User not logged in"}), 401
-    
+@login_bp.route('/get_email/<user_id>', methods=['GET'])
+async def get_email(user_id):
     try:
-        # Call the function to get the user's email
-        email = await get_user_email(user_id)
+        # Retrieve the user's email using the user_id
+        email = await get_user_email(user_id)  # This should be an async function fetching the email from DB
         if email:
             return jsonify({'status': 'success', 'email': email}), 200
         else:

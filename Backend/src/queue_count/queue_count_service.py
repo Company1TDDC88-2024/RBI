@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, Response
+from flask import Blueprint, request, jsonify, session
 import pyodbc
 from src.database_connect import get_db_connection
 from src.login.login_routes import get_email
@@ -189,6 +190,7 @@ async def play_sound(count, ROI, timestamp):
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
         await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
+        sendAlertEmail()
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
         try:
@@ -213,39 +215,54 @@ async def check_threshold(threshold, count):
     else:
         return False
 
-    
-def sendAlertEmail():
+import requests
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
-    url = 'http://127.0.0.1:5555/api/login/get_email'  # Adjust URL if needed
-    
+def sendAlertEmail():
+    # Check if the user is logged in by accessing 'user_id' in the session
+    user_id = session.get('user_id')  # Get user_id from the session
+
+    if not user_id:
+        print("Error: User is not logged in.")
+        return  # Exit the function if user_id is not found
+
+    # If user_id is found, proceed with the email
+    print(f"User ID: {user_id}")
+
+    # URL for the API, passing user_id as part of the URL
+    url = f'http://127.0.0.1:5555/api/login/get_email/{user_id}'  # Pass user_id in the URL
+
     try:
+        # Make the GET request with the cookies
         response = requests.get(url)
+        
+        # Check if the response is successful
         if response.status_code == 200:
-            return response.json()  # Get the JSON response
+            email_data = response.json()
+            email_receiver = email_data.get('email')
+            
+            if email_receiver is None:
+                print("Error: No email found in the response.")
+            else:
+                print(f"Email: {email_receiver}")
         else:
             print(f"Error {response.status_code}: {response.text}")
-            return None
     except Exception as e:
         print(f"Error calling /get_email route: {e}")
-        return None
 
-
-   # global last_email_time
-    ##if last_email_time and datetime.now() - last_email_time < timedelta(minutes=5):
-    ##    print("Email not sent: 5-minute cooldown period not elapsed.")
-     #   return  # Exit the function if the cooldown period hasn't passed
-
-
-    # Email configuration
-    print("THE EMAIL RECEIVER IS: " + data)
+    # Log the email receiver
+    print("THE EMAIL RECEIVER IS: " + email_receiver)
+    
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
 
-    # Create the email content (INCLUDING Queue Label and Timestamp of the threshhold being executed)
+    # Create the email content (including Queue Label and Timestamp of the threshold being executed)
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
     body = (
-        #f"There is a Queue at {queue_label}"
         f"Time of this alert: {current_time}"
     )
 
@@ -262,9 +279,9 @@ def sendAlertEmail():
             server.login(email_sender, email_password)
             server.send_message(msg)
             print("Email sent successfully!")
-            #last_email_time = datetime.now()
     except Exception as e:
         print(f"Error occurred: {e}")
+
 
 # async def check_queue_time(count, ROI_id, threshold):
 #     if ROI_id not in timestamps_start:
@@ -289,7 +306,6 @@ def sendAlertEmail():
 
 
 async def get_queues_from_db():
-    sendAlertEmail()
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
