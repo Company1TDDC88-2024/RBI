@@ -14,7 +14,6 @@ import logging
 import os
 from dotenv import load_dotenv
 
-
 app = Flask(__name__)
 if(os.getenv('DEPLOYMENT') == "True"):
     port = 80
@@ -26,7 +25,7 @@ else:
 app.secret_key = secrets.token_hex(16)
 
 # Redis client, used for storing session data for the limiter
-redis_client = Redis(host='redis', port=6379)
+app.config['SESSION_REDIS'] = Redis(host='redis', port=6379)
 
 # Limiter for requests to prevent DDOS attacks
 limiter = Limiter(

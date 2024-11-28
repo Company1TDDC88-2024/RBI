@@ -94,7 +94,9 @@ const CreateUser: React.FC = () => {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
+            pattern="^[A-Za-zÅÄÖåäö\s-]+$"
           />
+
         </div>
 
         <div className={styles.inputGroup}>
@@ -105,6 +107,7 @@ const CreateUser: React.FC = () => {
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             required
+            pattern="^[A-Za-zÅÄÖåäö\s-]+$"
           />
         </div>
 
