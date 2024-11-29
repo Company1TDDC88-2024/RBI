@@ -2,15 +2,15 @@
 
 This project uses a proxy which is intended to run locally at the store of the customer. The Proxy requires some manual configuration with specifying the IP-addresses of the cameras & speakers, along with some additional information. This data should reside in a .env file in the root of /proxy directory by assigning values to these keys:
 
-<i>BACKEND_URL = http://xxxx:port
-CAMERA1_URL = http://ip-address/axis-cgi/mjpg/video.cgi
-CAMERA1_USERNAME = xxxx
-CAMERA1_PASSWORD = xxxx
-CAMERA2_URL = http://ip-address/axis-cgi/mjpg/video.cgi
-CAMERA2_USERNAME = xxxx
-CAMERA2_PASSWORD = xxxx
-SPEAKER_URL = http://ip-adress/axis-cgi/mediaclip.cgi?action=play&clip=
-SPEAKER_USERNAME = xxxx
+<i>BACKEND_URL = http://xxxx:port<br />
+CAMERA1_URL = http://ip-address/axis-cgi/mjpg/video.cgi<br />
+CAMERA1_USERNAME = xxxx<br />
+CAMERA1_PASSWORD = xxxx<br />
+CAMERA2_URL = http://ip-address/axis-cgi/mjpg/video.cgi<br />
+CAMERA2_USERNAME = xxxx<br />
+CAMERA2_PASSWORD = xxxx<br />
+SPEAKER_URL = http://ip-adress/axis-cgi/mediaclip.cgi?action=play&clip=<br />
+SPEAKER_USERNAME = xxxx<br />
 SPEAKER_PASSWORD = xxxx</i>
 
 ## Setup
