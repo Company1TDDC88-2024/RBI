@@ -241,7 +241,7 @@ const SettingsPage = () => {
               <label>Change Timeframe</label>
               <InputNumber
                 min={1}
-                max={1440}
+                max={1000000}
                 value={influxTimeframe}
                 onChange={(value) => setTimeframe(value || 0)}
                 placeholder="Enter timeframe in minutes"

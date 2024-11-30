@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Spin, Alert, Modal } from "antd";
+import { Card, Row, Col, Spin, Alert, notification } from "antd"; // Removed Modal and added notification
 import {
   BarChart,
   Bar,
@@ -29,7 +29,6 @@ const DashboardPage = () => {
   const [lastNonErrorTodayData, setLastNonErrorTodayData] = useState<any>(null);
   const [enteringCustomers, setEnteringCustomers] = useState<number>(0);
   const [fetchingError, setFetchingError] = useState<string | null>(null);
-  const [showThresholdModal, setShowThresholdModal] = useState(false);
   const { influxTimeframe, influxThreshold } = useSettings();
   const { enteringCustomerDuringTimeframe: enteringCustomerData, error, refetchEnteringCustomers } = useGetEnteringCustomersWithinTimeframe(influxTimeframe);
 
@@ -93,7 +92,7 @@ const DashboardPage = () => {
       refetchCustomerCount(monday.toISOString().split('T')[0], sunday.toISOString().split('T')[0]);
       refetchToday(todayDate);
       refetchQueue();
-      refetchEnteringCustomers()
+      refetchEnteringCustomers();
       setLastUpdated(moment().format("HH:mm:ss"));
       
       console.log("Data refetched");
@@ -118,15 +117,22 @@ const DashboardPage = () => {
     fetchAndSetEnteringCustomers();
   }, [influxTimeframe]);
 
-  // Show modal if entering customers exceed the threshold
+  // Show notification if entering customers exceed the threshold
   useEffect(() => {
     if (enteringCustomers >= influxThreshold) {
       console.log("Entering customers higher than or equal to threshold");
-      setShowThresholdModal(true);
+      
+      notification.warning({
+        message: "Threshold Exceeded",
+        description: `The number of entering customers (${enteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
+        icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
+        placement: "topRight",
+        duration: 5, // Duration in seconds
+      });
     }
   }, [enteringCustomers, influxThreshold]);
 
-  console.log(enteringCustomers)
+  console.log(enteringCustomers);
 
   useEffect(() => {
     if (customerCountData || todayData || queueData) {
@@ -146,7 +152,6 @@ const DashboardPage = () => {
       setLastNonErrorTodayData(todayData);
     }
   }, [todayData, errorToday]);
-  
 
   useEffect(() => {
     if (customerCountData) {
@@ -155,7 +160,7 @@ const DashboardPage = () => {
           .fill(0)
           .map((_, i) => ({
             day: moment(monday).add(i, "days").format("YYYY-MM-DD"),
-            NumberOfCustomers: 0,  // Changed label to "NoCustomers"
+            NumberOfCustomers: 0,
           }));
 
         data.forEach((item) => {
@@ -227,7 +232,7 @@ const DashboardPage = () => {
           };
           const { NumberOfCustomers } = queueCountsByROI[+roi] || { NumberOfCustomers: "-" };
           const isOverThreshold = NumberOfCustomers >= Threshold;
-  
+
           return (
             <Col
               key={roi}
@@ -256,7 +261,7 @@ const DashboardPage = () => {
                     />
                   )}
                 </div>
-  
+
                 {/* Info Sections */}
                 <Row gutter={[8, 8]} style={{ margin: "0" }}>
                   <Col span={12}>
@@ -281,8 +286,8 @@ const DashboardPage = () => {
                           margin: 0,
                           fontSize: "14px",
                           fontWeight: "bold",
-                          whiteSpace: "normal", // Allows text wrapping if necessary
-                          wordBreak: "break-word", // Ensures text doesn't overflow
+                          whiteSpace: "normal",
+                          wordBreak: "break-word",
                         }}
                       >
                         Current queue:
@@ -312,8 +317,8 @@ const DashboardPage = () => {
                           margin: 0,
                           fontSize: "14px",
                           fontWeight: "bold",
-                          whiteSpace: "normal", // Allows text wrapping if necessary
-                          wordBreak: "break-word", // Ensures text doesn't overflow
+                          whiteSpace: "normal",
+                          wordBreak: "break-word",
                         }}
                       >
                         Queue threshold:
@@ -329,40 +334,19 @@ const DashboardPage = () => {
       </Row>
     );
   };
-  console.log(influxThreshold)
+
+  console.log(influxThreshold);
 
   return (
     <div className={styles.dashboardContainer}>
       <h1>Overview</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
-  
-      {/* Show the modal if entering customers exceeds the threshold */}
-      <Modal
-        title={
-          <span>
-            <ExclamationCircleOutlined style={{ color: "red", marginRight: "8px" }} />
-            Threshold Exceeded
-          </span>
-        }
-        visible={showThresholdModal}
-        onOk={() => setShowThresholdModal(false)} // Close modal when user clicks OK
-        okText="OK"
-        cancelButtonProps={{ style: { display: "none" } }} // Hide Cancel button
-        onCancel={() => setShowThresholdModal(false)}
-      >
-        <p>
-          The number of entering customers ({enteringCustomers}) has exceeded the defined threshold of {influxThreshold}.
-        </p>
-        <p>
-          <strong>Time:</strong> {new Date(Date.now() - influxTimeframe * 60 * 1000).toLocaleString()}
-        </p>
-      </Modal>
-  
+
       {/* Wrapper Row for Queue Cards */}
       <Row gutter={[16, 16]} style={{ padding: "0 16px" }}>
         {renderQueueCards()}
       </Row>
-  
+
       {/* Wrapper Row for Graphs */}
       <Row gutter={[16, 16]} style={{ padding: "16px" }}>
         {/* Left: No. customers per hour */}
@@ -399,7 +383,7 @@ const DashboardPage = () => {
                 </Card>
               </Col>
             </Row>
-  
+
             <h3 style={{ textAlign: "center" }}>No. customers per hour</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={hourlyData}>
@@ -413,7 +397,7 @@ const DashboardPage = () => {
             </ResponsiveContainer>
           </Card>
         </Col>
-  
+
         {/* Right: No. customers per day this week */}
         <Col span={12}>
           <Card
@@ -431,7 +415,7 @@ const DashboardPage = () => {
                 {processedData.reduce((total, day) => total + day.NumberOfCustomers, 0)}
               </div>
             </Card>
-  
+
             <h3 style={{ textAlign: "center" }}>No. customers per day this week</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={processedData}>
