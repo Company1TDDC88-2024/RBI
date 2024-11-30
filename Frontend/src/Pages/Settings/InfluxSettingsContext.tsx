@@ -1,34 +1,46 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useInfluxSettings } from "../hooks/useInfluxSettings"; // Ensure the correct import path
+import { Spin } from "antd";
 
 interface SettingsContextType {
   influxThreshold: number;
   influxTimeframe: number;
-  setInfluxThreshold: (value: number) => void;
-  setTimeframe: (value: number) => void;
+  setInfluxThreshold: (value: number) => Promise<void>;
+  setTimeframe: (value: number) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [influxThreshold, setInfluxThresholdState] = useState<number>(
-    () => parseInt(localStorage.getItem("influxThreshold") || "50", 10) // Default to 50
-  );
-  const [influxTimeframe, setTimeframeState] = useState<number>(
-    () => parseInt(localStorage.getItem("influxTimeframe") || "60", 10) // Default to 60
-  );
+  const {
+    settings,
+    loading,
+    error,
+    updateInfluxThreshold,
+    updateInfluxTimeframe,
+  } = useInfluxSettings();
 
-  const setInfluxThreshold = (value: number) => {
-    setInfluxThresholdState(value);
-    localStorage.setItem("influxThreshold", value.toString());
-  };
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin tip="Loading settings..." />
+      </div>
+    );
+  }
 
-  const setTimeframe = (value: number) => {
-    setTimeframeState(value);
-    localStorage.setItem("influxTimeframe", value.toString());
-  };
+  if (error || !settings) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
-    <SettingsContext.Provider value={{ influxThreshold, influxTimeframe, setInfluxThreshold, setTimeframe }}>
+    <SettingsContext.Provider
+      value={{
+        influxThreshold: settings.influxThreshold,
+        influxTimeframe: settings.influxTimeframe,
+        setInfluxThreshold: updateInfluxThreshold,
+        setTimeframe: updateInfluxTimeframe,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

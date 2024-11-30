@@ -103,10 +103,10 @@ const SettingsPage = () => {
   const handleSaveInfluxThreshold = async () => {
     setSavingInfluxThreshold(true);
     try {
-      // Simulate save logic (e.g., show toast or console log)
-      console.log(`Saved Influx Threshold: ${influxThreshold}`);
+      await setInfluxThreshold(influxThreshold);
+      message.success("Influx Threshold updated successfully!");
     } catch (err) {
-      console.error("Failed to save influx threshold");
+      message.error("Failed to update influx threshold");
     } finally {
       setSavingInfluxThreshold(false);
     }
@@ -115,10 +115,10 @@ const SettingsPage = () => {
   const handleSaveTimeframe = async () => {
     setSavingTimeframe(true);
     try {
-      // Simulate save logic (e.g., show toast or console log)
-      console.log(`Saved Timeframe: ${influxTimeframe}`);
+      await setTimeframe(influxTimeframe);
+      message.success("Timeframe updated successfully!");
     } catch (err) {
-      console.error("Failed to save timeframe");
+      message.error("Failed to update timeframe");
     } finally {
       setSavingTimeframe(false);
     }
@@ -218,9 +218,9 @@ const SettingsPage = () => {
             )}
           </Card>
 
-          <Card title="Entry point settings" className={styles.card}>
+          <Card title="Entry Point Settings" className={styles.card}>
             <div className={styles.inputGroup}>
-              <label>Change influx threshold</label>
+              <label>Change Influx Threshold</label>
               <InputNumber
                 min={1}
                 max={500}
@@ -232,13 +232,13 @@ const SettingsPage = () => {
               <Button
                 onClick={handleSaveInfluxThreshold}
                 className={styles.button}
-                disabled={savingInfluxThreshold}
+                loading={savingInfluxThreshold}
               >
-                {savingInfluxThreshold ? "Saving..." : "Save Influx Threshold"}
+                Save Influx Threshold
               </Button>
             </div>
             <div className={styles.inputGroup}>
-              <label>Change timeframe</label>
+              <label>Change Timeframe</label>
               <InputNumber
                 min={1}
                 max={1440}
@@ -250,9 +250,9 @@ const SettingsPage = () => {
               <Button
                 onClick={handleSaveTimeframe}
                 className={styles.button}
-                disabled={savingTimeframe}
+                loading={savingTimeframe}
               >
-                {savingTimeframe ? "Saving..." : "Save Timeframe"}
+                Save Timeframe
               </Button>
             </div>
           </Card>
