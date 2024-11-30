@@ -69,25 +69,6 @@ const DashboardPage = () => {
     refetch: refetchQueue,
   } = useGetQueueCount();
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await refetchEnteringCustomers();
-  //       console.log("Total entering customers:", response.totalEnteringCustomers);
-  //       setEnteringCustomerData(response.totalEnteringCustomers); // Update state
-  //     } catch (err) {
-  //       console.error("Error fetching entering customers:", err);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [refetchEnteringCustomers]);
-
-  // Monitor threshold and show modal
-  
-  
-  
-
   const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
 
   const queueDataMap: Record<number, { Threshold: number; Name: string }> =
@@ -125,6 +106,7 @@ const DashboardPage = () => {
     try {
       const enteringCustomers = await refetchEnteringCustomers(); // Fetch data from the hook
       setEnteringCustomers(enteringCustomers); // Update local state
+      console.log("Entering customers:", enteringCustomers); // Log the number of entering customers
     } catch (err) {
       console.error("Error fetching entering customers:", err);
       setFetchingError("Failed to fetch entering customers.");
@@ -349,8 +331,6 @@ const DashboardPage = () => {
   };
   console.log(influxThreshold)
 
-
-
   return (
     <div className={styles.dashboardContainer}>
       <h1>Overview</h1>
@@ -358,26 +338,25 @@ const DashboardPage = () => {
   
       {/* Show the modal if entering customers exceeds the threshold */}
       <Modal
-  title={
-    <span>
-      <ExclamationCircleOutlined style={{ color: "red", marginRight: "8px" }} />
-      Threshold Exceeded
-    </span>
-  }
-  visible={showThresholdModal}
-  onOk={() => setShowThresholdModal(false)} // Close modal when user clicks OK
-  okText="OK"
-  cancelButtonProps={{ style: { display: "none" } }} // Hide Cancel button
-  onCancel={() => setShowThresholdModal(false)}
->
-  <p>
-    The number of entering customers ({enteringCustomers}) has exceeded the defined threshold of {influxThreshold}.
-  </p>
-  <p>
-    <strong>Time:</strong> {new Date(Date.now() - influxTimeframe * 60 * 1000).toLocaleString()}
-  </p>
-</Modal>
-
+        title={
+          <span>
+            <ExclamationCircleOutlined style={{ color: "red", marginRight: "8px" }} />
+            Threshold Exceeded
+          </span>
+        }
+        visible={showThresholdModal}
+        onOk={() => setShowThresholdModal(false)} // Close modal when user clicks OK
+        okText="OK"
+        cancelButtonProps={{ style: { display: "none" } }} // Hide Cancel button
+        onCancel={() => setShowThresholdModal(false)}
+      >
+        <p>
+          The number of entering customers ({enteringCustomers}) has exceeded the defined threshold of {influxThreshold}.
+        </p>
+        <p>
+          <strong>Time:</strong> {new Date(Date.now() - influxTimeframe * 60 * 1000).toLocaleString()}
+        </p>
+      </Modal>
   
       {/* Wrapper Row for Queue Cards */}
       <Row gutter={[16, 16]} style={{ padding: "0 16px" }}>
@@ -469,9 +448,6 @@ const DashboardPage = () => {
       </Row>
     </div>
   );
-  
-  
-     
 };
 
 export default DashboardPage;
