@@ -498,7 +498,7 @@ const DashboardPage = () => {
                   strokeWidth={3}
                   dot={false}  // Disable the dots on the line
                   strokeDasharray="5 5"  // Make the line dotted
-                  name="Average no. for today for the past 4 weeks"
+                  name="No. customers per hour this weekday (4-week average)"
                 />
               </ComposedChart>
             </ResponsiveContainer>
