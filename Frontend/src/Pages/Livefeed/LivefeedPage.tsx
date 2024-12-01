@@ -35,7 +35,7 @@ const LivefeedPage: React.FC = () => {
       <DateTimeDisplay lastUpdated={lastUpdated} />
       <Row gutter={16}>
         {/* First camera */}
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title="Camera 1" bordered={false} className={styles.livefeedCard}>
             {camera1Available ? (
               <CameraFeed
@@ -53,7 +53,7 @@ const LivefeedPage: React.FC = () => {
         </Col>
 
         {/* Second camera */}
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title="Camera 2" bordered={false} className={styles.livefeedCard}>
             {camera2Available ? (
               <CameraFeed
