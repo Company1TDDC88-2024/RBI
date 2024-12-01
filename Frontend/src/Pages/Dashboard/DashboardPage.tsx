@@ -112,6 +112,76 @@ const DashboardPage = () => {
     }
   };
 
+  ///// TESTER
+  const fiveWeeksAgo = new Date(today);
+  fiveWeeksAgo.setDate(today.getDate() - 34); // Subtract 35 days for 5 weeks ago
+  fiveWeeksAgo.setHours(0, 0, 0, 0);
+
+  const lastWeek = new Date(today);
+  lastWeek.setDate(today.getDate() - 6); // Subtract 7 to get last week
+  lastWeek.setHours(0, 0, 0, 0);
+
+  // Now call the hook with the new variables
+  const {
+    data: historicalData,
+    error: historicalDataError,
+    loading: historicalDataLoading,
+    refetch: refetchHistoricalData,
+  } = useGetCustomerCount(
+    fiveWeeksAgo.toISOString().split("T")[0],  // Convert Monday 5 weeks ago to string
+    lastWeek.toISOString().split("T")[0]  // Convert Sunday last week to string
+  );
+
+  useEffect(() => {
+    if (historicalData) {
+      const todayWeekday = moment(today).day();  // Get today's weekday (0: Sunday, 1: Monday, etc.)
+  
+      // Filter historicalData to keep only the data for the same weekdays as today
+      const filteredHistoricalData = historicalData.filter((item) => {
+        const itemWeekday = moment(item.Timestamp).day();
+        return itemWeekday === todayWeekday;  // Compare weekdays
+      });
+  
+      // Log filtered data to the console
+      console.log("Filtered Historical Data:", filteredHistoricalData);
+  
+      // Now you can process the hourly data as well
+      const processHourlyData = (data: any[]) => {
+        const result = Array(24)
+          .fill(0)
+          .map((_, i) => ({
+            hour: `${i}:00`,
+            NumberOfCustomers: 0,
+          }));
+  
+        data.forEach((item) => {
+          let hour = moment(item.Timestamp).startOf("hour").hour();
+  
+          // Move the hour one back (shift left by 1 hour)
+          hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (to handle midnight case)
+  
+          result[hour].NumberOfCustomers += item.EnteringCustomers || 0;  // Sum the customers
+        });
+  
+        return result;
+      };
+  
+      const hourlyData = processHourlyData(filteredHistoricalData);
+  
+      // Log the processed hourly data to the console
+      console.log("Hourly Data:", hourlyData);
+  
+      // Update state if needed
+      setProcessedData(filteredHistoricalData);
+      setHourlyData(hourlyData);
+    }
+  }, [historicalData, today]);
+  
+
+  ///////
+
+  
+  
   // Automatically fetch entering customers on component mount or when timeframe changes
   useEffect(() => {
     fetchAndSetEnteringCustomers();
@@ -131,8 +201,6 @@ const DashboardPage = () => {
       });
     }
   }, [enteringCustomers, influxThreshold]);
-
-  console.log(enteringCustomers);
 
   useEffect(() => {
     if (customerCountData || todayData || queueData) {
