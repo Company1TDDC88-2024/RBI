@@ -59,6 +59,7 @@ def send_verification(email_receiver, token):
 
 # Route to create an account
 @login_bp.route('/create_account', methods=['POST'])
+@login_required
 async def create_account_route():
     data = request.json
 

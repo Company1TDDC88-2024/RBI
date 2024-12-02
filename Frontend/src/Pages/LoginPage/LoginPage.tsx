@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useSignUp } from "./Hooks/useSignUp";
 import { useLogin } from "./Hooks/useLogin";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../AuthContext";
@@ -9,18 +8,11 @@ import { Spin } from 'antd';
 // Import the image
 import logo from '../Images/axis_communications_logo.png';
 
-
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [firstName, setFirstName] = useState<string>('');
-  const [lastName, setLastName] = useState<string>('');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isSignUp, setIsSignUp] = useState<boolean>(false);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const { signUp, error: signUpError, loading: signUpLoading, success } = useSignUp();
   const { login, error: loginError, loading: loginLoading } = useLogin();
   const navigate = useNavigate();
   const { checkLoginStatus } = useAuth();
@@ -39,92 +31,25 @@ const LoginPage: React.FC = () => {
       setEmailError(null);
     }
 
-    if (isSignUp) {
-      await signUp(firstName, lastName, email, password, isAdmin);
-
-      if (signUpError === "Account with this email already exists") {
-        setEmailError(signUpError);
-        return;
-      }
-    } else {
-      const loginSuccess = await login(email, password);
-      if (loginSuccess) {
-        await checkLoginStatus();
-        navigate("/dashboard");
-      }
+    const loginSuccess = await login(email, password);
+    if (loginSuccess) {
+      await checkLoginStatus();
+      navigate("/dashboard");
     }
   };
-
-  useEffect(() => {
-    if (success && !signUpError) {
-      setSuccessMessage('An email has been sent to ' + email + '. Click on the link to verify your account');
-      setIsSignUp(false);
-      setFirstName('');
-      setLastName('');
-      setEmail('');
-      setPassword('');
-      setIsAdmin(false);
-    }
-  }, [success, signUpError]);
 
   return (
     <div className={styles.container}>
       {/* Add the image above the login card */}
       <img src={logo} alt="Axis Communications Logo" className={styles.bannerImage} />
-      <div className={styles.separator}></div> {/* Add this line */}
+      <div className={styles.separator}></div>
 
       <div className={styles.card}>
-        <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+        <h2>Login</h2>
         <form className={styles.form} onSubmit={handleSubmit}>
-          {(signUpError || loginError) && (
-            <p className={styles.errorText}>
-              {signUpError ? String(signUpError) : loginError ? String(loginError) : null}
-            </p>
-          )}
-          {(signUpLoading || loginLoading) && <Spin tip="Loading..." />}
-          {successMessage && <p className={styles.successText}>{successMessage}</p>}
+          {loginError && <p className={styles.errorText}>{String(loginError)}</p>}
+          {loginLoading && <Spin tip="Loading..." />}
           {emailError && <p className={styles.errorText}>{emailError}</p>}
-
-          {isSignUp && (
-            <>
-              <div className={styles.inputGroup}>
-                <label htmlFor="firstName">First Name:</label>
-                <input
-                  type="text"
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Enter your first name"
-                  required
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="lastName">Last Name:</label>
-                <input
-                  type="text"
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Enter your last name"
-                  required
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="isAdmin">Admin User:</label>
-                <input
-                  type="checkbox"
-                  id="isAdmin"
-                  checked={isAdmin}
-                  onChange={(e) => setIsAdmin(e.target.checked)}
-                  className={styles.checkbox}
-                />
-              </div>
-            </>
-          )}
 
           <div className={styles.inputGroup}>
             <label htmlFor="email">Email:</label>
@@ -152,26 +77,8 @@ const LoginPage: React.FC = () => {
             />
           </div>
 
-          <button type="submit" className={styles.button}>{isSignUp ? 'Sign Up' : 'Login'}</button>
+          <button type="submit" className={styles.button}>Login</button>
         </form>
-
-        <p>
-          {isSignUp ? (
-            <>
-              Already have an account?{' '}
-              <span onClick={() => setIsSignUp(false)} className={styles.switchText}>
-                Log in
-              </span>
-            </>
-          ) : (
-            <>
-              Don’t have an account?{' '}
-              <span onClick={() => setIsSignUp(true)} className={styles.switchText}>
-                Sign up
-              </span>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );
