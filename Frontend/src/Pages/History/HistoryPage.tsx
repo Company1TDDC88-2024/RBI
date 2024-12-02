@@ -304,7 +304,7 @@ const HistoryPage = () => {
       </Row>
 
       <Row gutter={16}>
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title={getTitle("Number of customers")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
               <LineChart data={processedData || []}>
@@ -333,7 +333,7 @@ const HistoryPage = () => {
           </Card>
         </Col>
         
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title={getTitle("Number of queue alerts")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={processedQueueData || []}>
@@ -379,9 +379,9 @@ const HistoryPage = () => {
           </Card>
         </Col> */}
 
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card
-            title="Monthly Average Customer Count (Last 6 Months)"
+            title="Average Customers Per Day (Last 6 Months)"
             bordered={false}
             className={styles.dashboardCard}
           >

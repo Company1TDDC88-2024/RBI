@@ -28,3 +28,24 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     border: 1px solid #f0f0f0; /* Samma kant som Current queue och Queue threshold */
 }
+
+/* Media query for screens smaller than 768px (mobile devices) */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 0px; /* Reduce padding on mobile */
+    }
+
+    .dashboard-container h1 {
+        padding: 0px; /* Reduce padding on mobile */
+        font-size: 1.5em; /* Adjust font size for mobile */
+    }
+
+    .dashboard-container .ant-row {
+        margin-bottom: 12px; /* Reduce margin on mobile */
+    }
+
+    .fixed-height-card {
+        height: auto; /* Allow height to adjust based on content */
+        padding: 16px; /* Add padding for better spacing */
+    }
+}

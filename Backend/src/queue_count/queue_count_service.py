@@ -171,10 +171,11 @@ async def get_data_from_db():
 async def play_sound(count, ROI, timestamp):
     ROI_id = ROI[0]
     threshold = ROI[5]
+    name = ROI[7]
     clip_id = 39
     cooldown = ROI[8]
     cooldown_period = timedelta(minutes=cooldown)
-
+    
     if ROI_id == 1:
         clip_id = 39
     else:
@@ -227,13 +228,7 @@ async def check_threshold(threshold, count):
     else:
         return False
 
-import requests
-from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
-
-def sendAlertEmail():
+async def sendAlertEmail(name):
     # Check if the user is logged in by accessing 'user_id' in the session
     user_id = session.get('user_id')  # Get user_id from the session
 
@@ -275,7 +270,7 @@ def sendAlertEmail():
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
     body = (
-        f"Time of this alert: {current_time}"
+        f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
 
     # Create a multipart email

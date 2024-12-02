@@ -1,5 +1,3 @@
-// CreateUser.tsx
-
 import React, { useState } from 'react';
 import { useSignUp } from '../LoginPage/Hooks/useSignUp';
 import styles from './CreateUser.module.css';
@@ -65,18 +63,17 @@ const CreateUser: React.FC = () => {
       setMessage({ text: signUpError, type: 'error' });
     }
   }, [success, signUpError]);
-  
 
-  // React.useEffect(() => {
-  //   if (message.type) {
-  //     const timer = setTimeout(() => {
-  //       setMessage({ text: '', type: null }); // Rensa meddelandet efter 5 sekunder
-  //     }, 5000); // Timeout på 5000 ms (5 sekunder)
-  //     return () => clearTimeout(timer); // Rensa timeout vid unmount eller uppdatering
-  //   }
-  // }, [message]);
-  
-  
+  // Prevent numbers from being typed in the name fields
+    const handleNameChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Updated regex to allow letters, spaces, hyphens, '´' (acute accent), '~' (tilde), and other accented letters
+    if (/[^A-Za-zÅÄÖåäö\s-´~À-ÿ]/.test(value)) {
+      e.preventDefault(); // Prevent input if it contains invalid characters (like numbers)
+    } else {
+      setter(value);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -92,8 +89,10 @@ const CreateUser: React.FC = () => {
             type="text"
             id="firstName"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={handleNameChange(setFirstName)} // Use the new handler
             required
+            pattern="^[A-Za-zÅÄÖåäö\s-]+$"
+            title="First name must not contain numbers."
           />
         </div>
 
@@ -103,8 +102,10 @@ const CreateUser: React.FC = () => {
             type="text"
             id="lastName"
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            onChange={handleNameChange(setLastName)} // Use the new handler
             required
+            pattern="^[A-Za-zÅÄÖåäö\s-]+$"
+            title="Last name must not contain numbers."
           />
         </div>
 
