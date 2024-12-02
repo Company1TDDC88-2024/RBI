@@ -55,7 +55,7 @@ async def upload_queue_alert(ROI_id, count, timestamp):
     try:
         # Adding data to the "QueueCount" table
         cursor.execute("""
-            INSERT INTO QueueCount_temp (NumberOfCustomers, Timestamp, ROI)
+            INSERT INTO QueueCount (NumberOfCustomers, Timestamp, ROI)
             VALUES (?, ?, ?)
             """, (encrypted_count, timestamp, ROI_id))
         conn.commit()
@@ -141,7 +141,7 @@ async def get_data_from_db():
 
     try:
         # Fetch data from QueueCount table
-        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount_temp")
+        cursor.execute("SELECT ID, NumberOfCustomers, Timestamp, ROI FROM QueueCount")
         rows = cursor.fetchall()
         data = []
 
