@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";  
 import styles from "./DashboardPage.module.css";
-import DateTimeDisplay from "../DateTimeDisplay";
+import DateTimeDisplay from "../DateTimeDisplay.tsx";
 import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetCurrentQueues.ts";
 import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
@@ -308,7 +308,7 @@ const DashboardPage = () => {
 
   const renderQueueCards = () => {
     return (
-      <Row gutter={[16, 16]} style={{ width: "100%" }}>
+      <Row gutter={[16, 16]} style={{ width: "100%", margin: 0 }}>
         {Object.keys(queueCountsByROI).map((roi, index) => {
           const { Threshold, Name } = queueDataMap[+roi] || {
             Threshold: "-",
@@ -425,14 +425,14 @@ const DashboardPage = () => {
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
       {/* Wrapper Row for Queue Cards */}
-      <Row gutter={[16, 16]} style={{ padding: "0 16px" }}>
+      <Row gutter={[16, 16]} style={{ padding: "0 16px", margin: 0 }}>
         {renderQueueCards()}
       </Row>
 
       {/* Wrapper Row for Graphs */}
-      <Row gutter={[16, 16]} style={{ padding: "16px" }}>
+      <Row gutter={[16, 16]} style={{ padding: "16px", margin: 0 }}>
         {/* Left: No. customers per hour */}
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card
             bordered={false}
             style={{
@@ -441,7 +441,7 @@ const DashboardPage = () => {
             }}
           >
             <Row gutter={[16, 16]}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Card bordered={false} className={styles["fixed-height-card"]}>
                   <div style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
                     Current customer count:
@@ -454,7 +454,7 @@ const DashboardPage = () => {
                   </div>
                 </Card>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Card bordered={false} className={styles["fixed-height-card"]}>
                   <div style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
                     No. of customers today:
@@ -507,7 +507,7 @@ const DashboardPage = () => {
         </Col>
 
         {/* Right: No. customers per day this week */}
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card
             bordered={false}
             style={{

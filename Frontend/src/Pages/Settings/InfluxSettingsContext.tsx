@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from "react";
-import { useInfluxSettings } from "../hooks/useInfluxSettings"; // Ensure the correct import path
+import { useInfluxSettings } from "../Hooks/useInfluxSettings"; // Ensure the correct import path
 import { Spin } from "antd";
 
 interface SettingsContextType {

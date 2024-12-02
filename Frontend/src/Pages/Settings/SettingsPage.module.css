@@ -103,3 +103,32 @@
     font-size: 2rem; /* Adjust font size if needed */
   }
   
+/* Media query for screens smaller than 768px (mobile devices) */
+@media (max-width: 768px) {
+  .settingsPage {
+    padding: 12px;
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  .settingsContainer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header {
+    font-size: 1.5em;
+  }
+
+  .card {
+    margin-bottom: 12px;
+  }
+
+  .inputGroup {
+    margin-bottom: 12px;
+  }
+
+  .button {
+    margin-top: 4px;
+  }
+}

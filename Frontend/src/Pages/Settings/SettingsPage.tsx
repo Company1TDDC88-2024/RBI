@@ -20,9 +20,9 @@ const SettingsPage = () => {
   const [savingName, setSavingName] = useState(false);
   const [savingThreshold, setSavingThreshold] = useState(false);
   const [savingCooldown, setSavingCooldown] = useState(false);
-  const { influxThreshold, influxTimeframe, setInfluxThreshold, setTimeframe} = useSettings();
-  const [savingInfluxThreshold, setSavingInfluxThreshold] = useState(false); 
-  const [savingTimeframe, setSavingTimeframe] = useState(false); 
+  const { influxThreshold, influxTimeframe, setInfluxThreshold, setTimeframe } = useSettings();
+  const [savingInfluxThreshold, setSavingInfluxThreshold] = useState(false);
+  const [savingTimeframe, setSavingTimeframe] = useState(false);
 
   const { data, loading, error, refetch } = useGetCoordinates();
   const { updateCoordinates } = useUpdateCoordinates();
@@ -37,8 +37,6 @@ const SettingsPage = () => {
     setNewTimeframe(null); // Reset timeframe
   };
 
-  
-
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewName(e.target.value);
   };
@@ -47,22 +45,21 @@ const SettingsPage = () => {
     if (value === null || value === "") {
       setNewThreshold(null);
     } else if (typeof value === "number" && value >= 1 && value <= 100) {
-      setNewThreshold(value); 
+      setNewThreshold(value);
     } else {
-      setNewThreshold(newThreshold); 
+      setNewThreshold(newThreshold);
     }
   };
 
   const handleCooldownChange = (value: string | number | null) => {
     if (value === null || value === "") {
-      setNewCooldown(null); 
+      setNewCooldown(null);
     } else if (typeof value === "number" && value >= 1 && value <= 1000) {
-      setNewCooldown(value); 
+      setNewCooldown(value);
     } else {
-      setNewCooldown(newCooldown); 
+      setNewCooldown(newCooldown);
     }
   };
-
 
   const handleSaveName = async () => {
     if (selectedArea && newName.trim()) {
@@ -144,7 +141,7 @@ const SettingsPage = () => {
     <div className={styles.settingsPage}>
       <div className={styles.settingsContainer}>
         <h1 className={styles.header}>Settings</h1>
-        {/* Vänster kolumn */}
+        {/* Left column */}
         <div className={styles.userManagement}>
           <Card title="Create a new user" className={styles.card}>
             <CreateUser />
@@ -154,7 +151,7 @@ const SettingsPage = () => {
           </Card>
         </div>
 
-        {/* Höger kolumn */}
+        {/* Right column */}
         <div className={styles.queueSettings}>
           <Card title="Queue settings" className={styles.card}>
             <div className={styles.inputGroup}>
