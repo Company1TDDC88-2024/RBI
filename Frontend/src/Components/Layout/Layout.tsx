@@ -13,7 +13,7 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { isLoggedIn } = useAuth();
 
   const isMobile = useMediaQuery({ maxWidth: 768 }); // Använd useMediaQuery för att kolla om skärmen är mindre än 768px
-  const siderWidth = 200; // Define a consistent width for the sidebar
+  const siderWidth = isMobile ? 0 : 200; // Sätt sidomenyn till 0 om skärmen är mindre än 768px
 
   return (
     <AntLayout style={{ minHeight: "100vh" }}>
