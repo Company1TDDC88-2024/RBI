@@ -1,20 +1,23 @@
 import React from "react";
 import { Layout as AntLayout } from "antd";
 import SiderMenu from "../SiderMenu/SiderMenu";
+import SiderMenuMobile from "../SiderMenu/SiderMenuMobile";
 import styles from "./Layout.module.css";
 import { useAuth } from "../../AuthContext";
 import UserProfile from "../UserProfile/UserProfile"; // Import the UserProfile component
+import { useMediaQuery } from "react-responsive";
 
 const { Header, Content, Footer } = AntLayout;
 
 const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { isLoggedIn } = useAuth();
 
+  const isMobile = useMediaQuery({ maxWidth: 768 }); // Använd useMediaQuery för att kolla om skärmen är mindre än 768px
   const siderWidth = 200; // Define a consistent width for the sidebar
 
   return (
     <AntLayout style={{ minHeight: "100vh" }}>
-      {isLoggedIn && (
+      {isLoggedIn && (isMobile ? <SiderMenuMobile /> :
         <SiderMenu
           style={{
             position: "fixed",
@@ -39,17 +42,16 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
             justifyContent: "flex-end", // Align items to the right
             alignItems: "center",
             backgroundColor: "#001529", // Set header background to match the sidebar (blackish)
-            padding: "0 16px",
+            padding: "0",
           }}
         >
           {isLoggedIn && <UserProfile />}
         </Header>
-        <Content style={{ margin: "24px 16px" }}>
+        <Content style={{ margin: "0 16px" }}>
           <div
             className={styles.siteLayoutBackground}
             style={{ padding: 24, minHeight: 360 }}
-          >
-            {children}
+          > {children}
           </div>
         </Content>
         <Footer style={{ textAlign: "center" }}>

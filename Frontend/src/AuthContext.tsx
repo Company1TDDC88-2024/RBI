@@ -65,10 +65,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
 
   const clearCookies = async () => {
     try {
-      await axios.post("/login/logout", {}, { withCredentials: true });
-      setIsLoggedIn(false);
-      setIsAdmin(false);
-      setUser(null);  // Clear user data on logout
+      await axios.post("/login/logout", {}, { withCredentials: true }); // This sends a request to clear cookies server-side
+      setIsLoggedIn(false);  // Update local state
+      setIsAdmin(false);     // Clear admin status
+      localStorage.removeItem("isLoggedIn");  // Clean up local storage
+      localStorage.removeItem("isAdmin");
     } catch (error) {
       console.error("Error clearing session cookie:", error);
     }

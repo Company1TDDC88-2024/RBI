@@ -25,3 +25,6 @@ dist-ssr
 
 # Ignore package-lock.json
 package-lock.json
+
+# Ignore dump
+dump.rdb
