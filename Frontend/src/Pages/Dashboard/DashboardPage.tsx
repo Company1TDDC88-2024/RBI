@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Card, Row, Col, Spin, Alert, notification } from "antd"; // Removed Modal and added notification
 import {
   BarChart,
+  ComposedChart,
+  Line, 
   Bar,
   XAxis,
   YAxis,
@@ -112,6 +114,90 @@ const DashboardPage = () => {
     }
   };
 
+  ///// TESTER
+  type HourlyData = {
+    hour: string;
+    HistoricalNumberOfCustomers: number;
+  };
+  
+  const [hourlyAverageData, setHourlyAverageData] = useState<HourlyData[]>([]);
+
+  console.log(hourlyAverageData);
+
+
+  const fiveWeeksAgo = new Date(today);
+  fiveWeeksAgo.setDate(today.getDate() - 34); // Subtract 35 days for 5 weeks ago
+  fiveWeeksAgo.setHours(0, 0, 0, 0);
+
+  const lastWeek = new Date(today);
+  lastWeek.setDate(today.getDate() - 6); // Subtract 7 to get last week
+  lastWeek.setHours(0, 0, 0, 0);
+
+  // Now call the hook with the new variables
+  const {
+    data: historicalData,
+    error: historicalDataError,
+    loading: historicalDataLoading,
+    refetch: refetchHistoricalData,
+  } = useGetCustomerCount(
+    fiveWeeksAgo.toISOString().split("T")[0],  // Convert Monday 5 weeks ago to string
+    lastWeek.toISOString().split("T")[0]  // Convert Sunday last week to string
+  );
+
+  
+
+  // This useEffect will process the data for tomorrow and calculate the hourly average
+  useEffect(() => {
+    if (historicalData) {
+      const todayWeekday = moment(today).day();  // Get today's weekday
+  
+      // Filter historicalData to keep only the data for today's weekday
+      const filteredHistoricalData = historicalData.filter((item) => {
+        const itemWeekday = moment(item.Timestamp).day();
+        return itemWeekday === todayWeekday;  // Compare weekdays
+      });
+  
+      // Get unique days from filtered data
+      const uniqueDays = new Set(
+        filteredHistoricalData.map((item) => moment(item.Timestamp).format("YYYY-MM-DD"))
+      );
+      const uniqueDaysCount = uniqueDays.size;
+  
+      // Process hourly data
+      const processHistoricalHourlyData = (data) => {
+        // Initialize an array of 24 hours with HistoricalNumberOfCustomers set to 0
+        const result = Array(24).fill(0).map((_, i) => ({
+          hour: `${i}:00`,
+          HistoricalNumberOfCustomers: 0,
+        }));
+      
+        // Process the data and accumulate the number of customers for each hour
+        data.forEach((item) => {
+          let hour = moment(item.Timestamp).startOf("hour").hour();
+          hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (for midnight)
+      
+          // Accumulate the HistoricalNumberOfCustomers for each hour
+          result[hour].HistoricalNumberOfCustomers += item.EnteringCustomers || 0;
+        });
+      
+        // Log the result to verify the structure
+        console.log("Processed Hourly Data:", result);
+  
+        // Divide hourly count by the number of unique days
+        return result.map((item) => ({
+          ...item,
+          HistoricalNumberOfCustomers: item.HistoricalNumberOfCustomers / uniqueDaysCount,  // Divide by unique days
+        }));
+      };
+  
+      // Set the processed hourly data into the state
+      const hourlyData = processHistoricalHourlyData(filteredHistoricalData);
+      setHourlyAverageData(hourlyData); // Set the processed data
+  
+    }
+  }, [historicalData, today]);
+  
+    
   // Automatically fetch entering customers on component mount or when timeframe changes
   useEffect(() => {
     fetchAndSetEnteringCustomers();
@@ -131,8 +217,6 @@ const DashboardPage = () => {
       });
     }
   }, [enteringCustomers, influxThreshold]);
-
-  console.log(enteringCustomers);
 
   useEffect(() => {
     if (customerCountData || todayData || queueData) {
@@ -335,8 +419,6 @@ const DashboardPage = () => {
     );
   };
 
-  console.log(influxThreshold);
-
   return (
     <div className={styles.dashboardContainer}>
       <h1>Overview</h1>
@@ -386,15 +468,41 @@ const DashboardPage = () => {
 
             <h3 style={{ textAlign: "center" }}>No. customers per hour</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={hourlyData}>
+              <ComposedChart
+                data={hourlyData}
+                margin={{
+                  top: 20,
+                  right: 20,
+                  bottom: 20,
+                  left: 20,
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" />
-                <YAxis />
+                <YAxis domain={[0, Math.max(...hourlyData.map(d => d.NumberOfCustomers), ...hourlyAverageData.map(d => d.HistoricalNumberOfCustomers))]} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="NumberOfCustomers" fill="#0088FE" barSize={30} />
-              </BarChart>
+                
+                {/* Bar for NumberOfCustomers */}
+                <Bar dataKey="NumberOfCustomers" 
+                fill="#0088FE" barSize={30} 
+                name="Number of customers"
+                />
+                
+                {/* Dotted Line for HistoricalNumberOfCustomers with pastel red stroke */}
+                <Line
+                  type="monotone"
+                  data={hourlyAverageData}  // Pass the processed hourly average data
+                  dataKey="HistoricalNumberOfCustomers"
+                  stroke="#FF6F61"  // Pastel red stroke color
+                  strokeWidth={3}
+                  dot={false}  // Disable the dots on the line
+                  strokeDasharray="5 5"  // Make the line dotted
+                  name="4-week average for this weekday"
+                />
+              </ComposedChart>
             </ResponsiveContainer>
+
           </Card>
         </Col>
 
@@ -424,11 +532,16 @@ const DashboardPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="NumberOfCustomers" fill="#0088FE" barSize={30} />
+                <Bar dataKey="NumberOfCustomers" 
+                fill="#0088FE" 
+                barSize={30}
+                name="Number of customers" 
+                />
               </BarChart>
             </ResponsiveContainer>
           </Card>
         </Col>
+        
       </Row>
     </div>
   );
