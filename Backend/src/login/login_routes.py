@@ -165,6 +165,11 @@ async def is_logged_in():
     if 'user_id' in session:
         user_id = session['user_id']
         result = await is_logged_in_service(user_id)
+        if 'user' not in result:
+            result['user'] = {
+                'name': 'N/A',  # Fallback name
+                'email': 'N/A'  # Fallback email
+            }
         return jsonify(result)
     else:
         return jsonify({'logged_in': False, 'is_admin': False})

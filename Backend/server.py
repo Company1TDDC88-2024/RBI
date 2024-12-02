@@ -13,7 +13,6 @@ from src.customer_influx.customer_influx_routes import customer_influx_bp
 import secrets
 import logging
 import os
-from dotenv import load_dotenv
 
 app = Flask(__name__)
 if(os.getenv('DEPLOYMENT') == "True"):
@@ -29,12 +28,12 @@ app.secret_key = secrets.token_hex(16)
 app.config['SESSION_REDIS'] = Redis(host='redis', port=6379)
 
 # Limiter for requests to prevent DDOS attacks
-#limiter = Limiter(
-#    key_func=get_remote_address,
-#    app=app,
-#    storage_uri=redis_uri,
-#   default_limits=["1000 per minute"] # Limits: ["x requests per hour, y requests per minute"]
-#)
+limiter = Limiter(
+   key_func=get_remote_address,
+   app=app,
+   storage_uri=redis_uri,
+  default_limits=["1000 per minute"] # Limits: ["x requests per hour, y requests per minute"]
+)
 
 # Middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
