@@ -36,3 +36,5 @@ __pycache__/
 
 # Ignore package-lock.json
 package-lock.json
+
+dump.rdb
