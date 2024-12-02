@@ -159,10 +159,11 @@ async def get_data_from_db():
 async def play_sound(count, ROI, timestamp):
     ROI_id = ROI[0]
     threshold = ROI[5]
+    name = ROI[7]
     clip_id = 39
     cooldown = ROI[8]
     cooldown_period = timedelta(minutes=cooldown)
-
+    
     if ROI_id == 1:
         clip_id = 39
     else:
@@ -190,7 +191,7 @@ async def play_sound(count, ROI, timestamp):
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
         await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
-        sendAlertEmail()
+        await sendAlertEmail(name)
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
         try:
@@ -215,13 +216,7 @@ async def check_threshold(threshold, count):
     else:
         return False
 
-import requests
-from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
-
-def sendAlertEmail():
+async def sendAlertEmail(name):
     # Check if the user is logged in by accessing 'user_id' in the session
     user_id = session.get('user_id')  # Get user_id from the session
 
@@ -263,7 +258,7 @@ def sendAlertEmail():
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
     body = (
-        f"Time of this alert: {current_time}"
+        f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
 
     # Create a multipart email
