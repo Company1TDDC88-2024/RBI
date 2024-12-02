@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,CSSProperties } from "react";
 import { Layout, Menu, message, Badge } from "antd";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -12,7 +12,12 @@ import {
 import axios from "axios";
 import { useAuth } from "../../AuthContext";
 
+
+
 const { Sider } = Layout;
+interface SiderMenuProps {
+  style?: CSSProperties; // Add style prop
+}
 
 const SiderMenu: React.FC = () => {
   const navigate = useNavigate();
@@ -54,8 +59,18 @@ const SiderMenu: React.FC = () => {
     setSelectedKey(getMenuKey(currentPath));
   }, [location.pathname]);
 
+  const fixedSiderStyle = {
+    position: "fixed",
+    height: "100vh",
+    left: 0,
+    zIndex: 1000,
+    width: 200, // Adjust as per your layout width
+  };
+
+
+
   return (
-    <Sider collapsible>
+    <Sider style={fixedSiderStyle} collapsible>
       <div className="logo" />
       <Menu theme="dark" selectedKeys={[selectedKey]} mode="inline">
         <Menu.Item key="1" icon={<DashboardOutlined />}>

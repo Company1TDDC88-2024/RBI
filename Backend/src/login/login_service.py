@@ -217,6 +217,34 @@ async def delete_account(email: str) -> str:
         return "Error deleting account"
     finally:
         conn.close()
+async def get_user_email(user_id: int) -> dict:
+
+    conn = await get_db_connection()
+    if conn is None:
+        print("Failed to connect to database")
+        return None
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT email_encrypted FROM \"User\" WHERE user_id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+    except pyodbc.Error as e:
+        print(f"Error fetching email: {e}")
+        return None
+        
+    if user:
+        try:
+            email = str(cipher_suite.decrypt(user.email_encrypted).decode())
+            return email
+        except Exception as e:
+            print(f"Error decrypting email: {e}")
+            return None
+    else:
+        print("User not found")
+        return None
+
+
 
 async def get_user_data(user_id: int) -> dict:
     conn = await get_db_connection()
@@ -224,30 +252,35 @@ async def get_user_data(user_id: int) -> dict:
         return {"error": "Failed to connect to the database"}
 
     try:
+        # Fetch the email using get_user_email
+        email = await get_user_email(user_id)
+        if email is None:
+            return {"error": "Failed to fetch or decrypt email"}
+
         cursor = conn.cursor()
-        cursor.execute("SELECT first_name, last_name, email FROM \"User\" WHERE user_id = ?", (user_id,))
+        # Fetch first_name and last_name
+        cursor.execute("SELECT first_name, last_name FROM \"User\" WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
 
         if not user:
             return {"error": "User not found"}
 
         # Decrypt fields
-        encrypted_first_name, encrypted_last_name, encrypted_email = user
+        encrypted_first_name, encrypted_last_name = user
         decrypted_first_name = cipher_suite.decrypt(encrypted_first_name).decode()
         decrypted_last_name = cipher_suite.decrypt(encrypted_last_name).decode()
-        decrypted_email = cipher_suite.decrypt(encrypted_email).decode()
-        #print(f"Encrypted email from DB: {encrypted_email}")
-        #print(f"Decrypted email: {decrypted_email}")
+
         return {
             "first_name": decrypted_first_name,
             "last_name": decrypted_last_name,
-            "email": decrypted_email
+            "email": email
         }
     except Exception as e:
         print(f"Error decrypting user data: {e}")
         return {"error": "Error decrypting user data"}
     finally:
         conn.close()
+
 
 
 
@@ -287,31 +320,4 @@ async def is_logged_in_service(user_id: int) -> dict:
         return {'logged_in': False, 'is_admin': False, 'user': None}
     finally:
         conn.close()
-
-async def get_user_email(user_id: int) -> dict:
-
-    conn = await get_db_connection()
-    if conn is None:
-        print("Failed to connect to database")
-        return None
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT email_encrypted FROM \"User\" WHERE user_id = ?", (user_id,))
-        user = cursor.fetchone()
-        
-    except pyodbc.Error as e:
-        print(f"Error fetching email: {e}")
-        return None
-        
-    if user:
-        try:
-            email = str(cipher_suite.decrypt(user.email_encrypted).decode())
-            return email
-        except Exception as e:
-            print(f"Error decrypting email: {e}")
-            return None
-    else:
-        print("User not found")
-        return None
 

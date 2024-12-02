@@ -10,10 +10,28 @@ const { Header, Content, Footer } = AntLayout;
 const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { isLoggedIn } = useAuth();
 
+  const siderWidth = 200; // Define a consistent width for the sidebar
+
   return (
     <AntLayout style={{ minHeight: "100vh" }}>
-      {isLoggedIn && <SiderMenu />} {/* Show SiderMenu only if user is logged in */}
-      <AntLayout className={styles.siteLayout}>
+      {isLoggedIn && (
+        <SiderMenu
+          style={{
+            position: "fixed",
+            height: "100vh",
+            left: 0,
+            zIndex: 1000,
+            width: siderWidth,
+          }}
+        />
+      )}
+      <AntLayout
+        className={styles.siteLayout}
+        style={{
+          marginLeft: isLoggedIn ? siderWidth : 0, // Add left margin to account for the sidebar
+          transition: "margin-left 0.3s ease", // Smooth transition
+        }}
+      >
         <Header
           className={styles.siteLayoutBackground}
           style={{
@@ -24,10 +42,9 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
             padding: "0 16px",
           }}
         >
-          {/* Use UserProfile component */}
           {isLoggedIn && <UserProfile />}
         </Header>
-        <Content style={{ margin: "0 16px" }}>
+        <Content style={{ margin: "24px 16px" }}>
           <div
             className={styles.siteLayoutBackground}
             style={{ padding: 24, minHeight: 360 }}
