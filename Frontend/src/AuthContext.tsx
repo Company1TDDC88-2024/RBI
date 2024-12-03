@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
+interface User {
+  name: string;
+  email: string;
+}
+
 interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
@@ -9,6 +14,8 @@ interface AuthContextType {
   setIsLoggedIn: (status: boolean) => void;
   setIsAdmin: (status: boolean) => void;
   clearCookies: () => void;
+  user: User | null;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +26,8 @@ const AuthContext = createContext<AuthContextType>({
   setIsLoggedIn: () => {},
   setIsAdmin: () => {},
   clearCookies: () => {},
+  user: null,
+  setUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -26,23 +35,29 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkLoginStatus = async () => {
     try {
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
-      const { logged_in, is_admin } = response.data;
+      console.log("API Response:", response.data);
+      const { logged_in, is_admin, user } = response.data;
 
       setIsLoggedIn(logged_in);
       setIsAdmin(is_admin || false);
-      sessionStorage.setItem("isLoggedIn", JSON.stringify(logged_in)); // Store as JSON string
-      sessionStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
+      setUser(user || { name: 'N/A', email: 'N/A' });
+      localStorage.setItem("isLoggedIn", JSON.stringify(logged_in));
+      localStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
+      localStorage.setItem("user", JSON.stringify(user));
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
       setIsAdmin(false);
-      sessionStorage.removeItem("isLoggedIn");
-      sessionStorage.removeItem("isAdmin");
+      setUser(null);
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
     } finally {
       setLoading(false);
     }
@@ -53,22 +68,31 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       await axios.post("/login/logout", {}, { withCredentials: true });
       setIsLoggedIn(false);
       setIsAdmin(false);
-      sessionStorage.removeItem("isLoggedIn");
-      sessionStorage.removeItem("isAdmin");
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
     } catch (error) {
       console.error("Error clearing session cookie:", error);
     }
   };
 
   useEffect(() => {
-    // Initialize state from sessionStorage
-    const storedIsLoggedIn = JSON.parse(sessionStorage.getItem("isLoggedIn") || "false");
-    const storedIsAdmin = JSON.parse(sessionStorage.getItem("isAdmin") || "false");
+    const storedIsLoggedIn = localStorage.getItem("isLoggedIn");
+    const storedIsAdmin = localStorage.getItem("isAdmin");
+    const storedUser = localStorage.getItem("user");
 
-    setIsLoggedIn(storedIsLoggedIn);
-    setIsAdmin(storedIsAdmin);
+    if (storedIsLoggedIn && storedIsLoggedIn !== "undefined") {
+      setIsLoggedIn(JSON.parse(storedIsLoggedIn));
+    }
 
-    // Always verify login status on page load
+    if (storedIsAdmin && storedIsAdmin !== "undefined") {
+      setIsAdmin(JSON.parse(storedIsAdmin));
+    }
+
+    if (storedUser && storedUser !== "undefined") {
+      setUser(JSON.parse(storedUser));
+    }
+
     checkLoginStatus();
   }, []);
 
@@ -82,6 +106,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
         setIsLoggedIn,
         setIsAdmin,
         clearCookies,
+        user,
+        setUser,
       }}
     >
       {children}

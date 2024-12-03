@@ -24,7 +24,7 @@ const DateTimeDisplay: React.FC<DateTimeDisplayProps> = ({ lastUpdated }) => {
     return (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1em 0' }}>
             <div>
-                <span>Current Date: {currentDate}</span> | <span>Current Time: {currentTime}</span>
+                <span>Current Date: {currentDate}</span> | <span>{currentTime}</span>
             </div>
             <div>
                 Last Updated: {lastUpdated || 'Never'}

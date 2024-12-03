@@ -31,14 +31,14 @@ async def upload_data_to_db(data):
         "Timestamp": last_timestamp
     }
 
-    if bounding_boxes[-1]["left"] < 0.3:
+    if bounding_boxes[-1]["left"] < 0.2 and bounding_boxes[0]["right"] > 0.8:
         # Customer is exiting
         placeholder = {
             "EnteringCustomers": 0,
             "ExitingCustomers": 1,
             "Timestamp": last_timestamp
         }
-    elif bounding_boxes[-1]["right"] > 0.7:
+    elif bounding_boxes[-1]["right"] > 0.8 and bounding_boxes[0]["left"] < 0.2:
         # Customer is entering
         placeholder = {
             "EnteringCustomers": 1,
@@ -230,37 +230,54 @@ async def get_number_of_customers(start_timestamp, end_timestamp):
     cursor = conn.cursor()
 
     try:
+        incoming_datetimestart = datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        incoming_datetimeend = datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        # Debugging converted timestamps
+        print(f"Converted Timestamps: start={incoming_datetimestart}, end={incoming_datetimeend}")
+
         # Fetch all rows between start_timestamp and end_timestamp
         cursor.execute("""
-            SELECT TotalCustomers_temp 
+            SELECT TotalCustomers_temp,
+                   EnteringCustomers_temp 
             FROM CustomerCount_temp
             WHERE Timestamp >= ? AND Timestamp <= ?
-        """, (start_timestamp, end_timestamp))
+        """, (incoming_datetimestart, incoming_datetimeend))
         
         rows = cursor.fetchall()
-        if not rows:
-            return "No data found for the given time range"
 
         # Decrypt and calculate the total number of customers
         total_customers = 0
+        total_entering_customers = 0
         for row in rows:
             encrypted_total = row[0]
+            encrypted_entering = row[1]
+            
             try:
-                # Decrypt each TotalCustomers_temp value if it's not None
+                # Decrypt TotalCustomers_temp value
                 decrypted_total = int(cipher_suite.decrypt(encrypted_total).decode()) if encrypted_total else 0
                 total_customers += decrypted_total
+                
+                # Decrypt EnteringCustomers_temp value
+                decrypted_entering = int(cipher_suite.decrypt(encrypted_entering).decode()) if encrypted_entering else 0
+                total_entering_customers += decrypted_entering
+            
             except Exception as e:
-                print(f"Decryption error for TotalCustomers_temp: {e}")
+                print(f"Decryption error: {e}")
                 continue  # Skip rows with decryption errors
         
-        # Calculate the average number of customers
+        # Calculate the average number of customers 
         average_customers = total_customers / len(rows) if rows else 0
-        return int(average_customers)  # Return as an integer
+        
+        # Return a list of results
+        return [average_customers, total_entering_customers]
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
         return "Error fetching data"
     finally:
         conn.close()
+
+
 
 #ENCRYPTION DONE
 async def get_daily_data_from_db(date: datetime) -> Union[str, List[Dict[str, Union[int, str]]]]:
