@@ -20,7 +20,7 @@ import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers";
 import { useGetEnteringCustomersWithinTimeframe } from "../Hooks/useGetCustomersWithinTimestamp.ts";
 import { useSettings } from "../Settings/InfluxSettingsContext.tsx";
-import { ExclamationCircleFilled, ExclamationCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleFilled, ExclamationCircleOutlined, FilterFilled } from "@ant-design/icons";
 import moment from "moment";
 
 const DashboardPage = () => {
@@ -122,11 +122,11 @@ const DashboardPage = () => {
   
   const [hourlyAverageData, setHourlyAverageData] = useState<HourlyData[]>([]);
 
-  console.log(hourlyAverageData);
+  //console.log(hourlyAverageData);
 
 
   const fiveWeeksAgo = new Date(today);
-  fiveWeeksAgo.setDate(today.getDate() - 34); // Subtract 35 days for 5 weeks ago
+  fiveWeeksAgo.setDate(today.getDate() - 27); // Subtract 35 days for 5 weeks ago
   fiveWeeksAgo.setHours(0, 0, 0, 0);
 
   const lastWeek = new Date(today);
@@ -149,12 +149,12 @@ const DashboardPage = () => {
   // This useEffect will process the data for tomorrow and calculate the hourly average
   useEffect(() => {
     if (historicalData) {
-      const todayWeekday = moment(today).day();  // Get today's weekday
+      const todayWeekday = (moment(today).day() + 2) % 7; // Get today's weekday
   
       // Filter historicalData to keep only the data for today's weekday
       const filteredHistoricalData = historicalData.filter((item) => {
         const itemWeekday = moment(item.Timestamp).day();
-        return itemWeekday === todayWeekday;  // Compare weekdays
+        return itemWeekday === todayWeekday; // Compare weekdays
       });
   
       // Get unique days from filtered data
@@ -170,32 +170,54 @@ const DashboardPage = () => {
           hour: `${i}:00`,
           HistoricalNumberOfCustomers: 0,
         }));
-      
-        // Process the data and accumulate the number of customers for each hour
-        data.forEach((item) => {
-          let hour = moment(item.Timestamp).startOf("hour").hour();
-          hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (for midnight)
-      
-          // Accumulate the HistoricalNumberOfCustomers for each hour
-          result[hour].HistoricalNumberOfCustomers += item.EnteringCustomers || 0;
-        });
-      
-        // Log the result to verify the structure
-        console.log("Processed Hourly Data:", result);
   
-        // Divide hourly count by the number of unique days
+        // Group data by hour, collecting the first and last `TotalCustomers` for each hour
+        const groupedData = data.reduce((acc, item) => {
+          const hour = moment(item.Timestamp).startOf("hour").hour();
+          if (!acc[hour]) {
+            acc[hour] = { first: item, last: item }; // Initialize with the first item for the hour
+          } else {
+            // Update last item in the hour if the timestamp is later
+            if (moment(item.Timestamp).isAfter(acc[hour].last.Timestamp)) {
+              acc[hour].last = item;
+            }
+          }
+          return acc;
+        }, {});
+  
+        // Process the grouped data for each hour
+        Object.entries(groupedData).forEach(([hour, { first, last }]) => {
+          const hourIndex = parseInt(hour, 10);
+  
+          // Calculate the average of the first and last TotalCustomers
+          const averageCustomers = (first.TotalCustomers + last.TotalCustomers) / 2;
+  
+          // Add the calculated average to HistoricalNumberOfCustomers for this hour
+          result[hourIndex].HistoricalNumberOfCustomers += averageCustomers;
+  
+          // Log the first, last, and average TotalCustomers for the hour
+          console.log(`For hour ${hour}:00, first TotalCustomers: ${first.TotalCustomers}, last TotalCustomers: ${last.TotalCustomers}, average: ${averageCustomers}`);
+        });
+  
+        // Divide by the number of unique days and round up as needed
         return result.map((item) => ({
           ...item,
-          HistoricalNumberOfCustomers: item.HistoricalNumberOfCustomers / uniqueDaysCount,  // Divide by unique days
+          HistoricalNumberOfCustomers:
+            item.HistoricalNumberOfCustomers / uniqueDaysCount >= 0.5
+              ? Math.ceil(item.HistoricalNumberOfCustomers / uniqueDaysCount) // Round up
+              : Math.floor(item.HistoricalNumberOfCustomers / uniqueDaysCount), // Round down
         }));
       };
   
       // Set the processed hourly data into the state
       const hourlyData = processHistoricalHourlyData(filteredHistoricalData);
       setHourlyAverageData(hourlyData); // Set the processed data
-  
+      console.log(filteredHistoricalData);
     }
   }, [historicalData, today]);
+  
+  
+
   
     
   // Automatically fetch entering customers on component mount or when timeframe changes
