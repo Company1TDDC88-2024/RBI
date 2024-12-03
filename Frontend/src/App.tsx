@@ -51,48 +51,51 @@ const InactivityHandler = () => {
 
   useInactivityTimeout(300000, handleTimeout);  // Call inactivity timeout with 5-minute timeout
 
-  useEffect(() => {
-    const handleTabClose = () => {
-      clearCookies();  // Call clearCookies when tab is closed
-    };
-
-    window.addEventListener('beforeunload', handleTabClose);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleTabClose); // Cleanup listener on component unmount
-    };
-  }, [clearCookies]);
-
   return null;  // This component doesn't render anything
 };
 
 function App() {
   return (
     <AuthProvider>
+      <SettingsProvider> {/* Wrap the provider here */}
         <Router>
           <InactivityHandler />
           <Layout>
             <Routes>
-            <Route path="/" element={
-               <PrivateRoute
-                element={<Navigate to="/dashboard" replace />}
-                redirectTo="/login"
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute
+                    element={<Navigate to="/dashboard" replace />}
+                    redirectTo="/login"
+                  />
+                }
               />
-             }
-              />      
               <Route path="/login" element={<LoginPage />} />
               <Route path="/test" element={<PrivateRoute element={<Test />} />} />
               <Route path="/dashboard" element={<PrivateRoute element={<DashboardPage />} />} />
-              <Route path="/history" element={<PrivateRoute element={<HistoryPage />} adminOnly={true} />} />
-              <Route path="/livefeed" element={<PrivateRoute element={<LivefeedPage />} adminOnly={true} />} />
+              <Route
+                path="/history"
+                element={<PrivateRoute element={<HistoryPage />} adminOnly={true} />}
+              />
+              <Route
+                path="/livefeed"
+                element={<PrivateRoute element={<LivefeedPage />} adminOnly={true} />}
+              />
               <Route path="/livedata" element={<PrivateRoute element={<LiveDataPage />} />} />
-              <Route path="/settings" element={<PrivateRoute element={<SettingsPage />} adminOnly={true} />} />
+              <Route
+                path="/settings"
+                element={<PrivateRoute element={<SettingsPage />} adminOnly={true} />}
+              />
             </Routes>
           </Layout>
         </Router>
+      </SettingsProvider>
     </AuthProvider>
   );
 }
 
-
 export default App;
+
+
+
