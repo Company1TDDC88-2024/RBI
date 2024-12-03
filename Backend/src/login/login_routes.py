@@ -143,14 +143,9 @@ async def delete_route():
 @login_bp.route('/logout', methods=['POST'])
 @login_required
 async def logout_route():
-    # Log session contents before resetting
-    print(f"Session before logout: {session}")
 
     session.pop('user_id', None)
     session.pop('is_admin', None)
-
-    # Log session contents after reset
-    print(f"Session after logout: {session}")
 
     # Expire the session cookie
     response = jsonify({'message': 'Logout successful'})
