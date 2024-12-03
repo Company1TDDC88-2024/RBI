@@ -5,11 +5,11 @@ import {
   DashboardOutlined,
   HistoryOutlined,
   VideoCameraOutlined,
-  LogoutOutlined,
+  //LogoutOutlined,
   SettingOutlined
   
 } from "@ant-design/icons";
-import axios from "axios";
+//import axios from "axios";
 import { useAuth } from "../../AuthContext";
 
 
@@ -25,7 +25,7 @@ const SiderMenu: React.FC = () => {
   const { setIsLoggedIn, isAdmin } = useAuth();
   const [selectedKey, setSelectedKey] = useState('1');
 
-  const handleLogout = async () => {
+  /*const handleLogout = async () => {
     try {
       await axios.post("/login/logout", {}, { withCredentials: true });
       message.success("Logout successful!");
@@ -35,7 +35,7 @@ const SiderMenu: React.FC = () => {
       console.error("Error during logout:", error);
       message.error("Failed to log out.");
     }
-  };
+  };*/
 
   const getMenuKey = (path) => {
     switch (path) {
@@ -95,9 +95,7 @@ const SiderMenu: React.FC = () => {
             <Link to="/settings">Settings</Link>
           </Menu.Item>
         )}
-        <Menu.Item key="4" icon={<LogoutOutlined />} onClick={handleLogout}>
-          Logout
-        </Menu.Item>
+        
       </Menu>
     </Sider>
   );
