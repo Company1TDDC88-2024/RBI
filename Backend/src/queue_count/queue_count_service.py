@@ -229,65 +229,76 @@ async def check_threshold(threshold, count):
         return False
 
 async def sendAlertEmail(name):
-    # Check if the user is logged in by accessing 'user_id' in the session
-    user_id = session.get('user_id')  # Get user_id from the session
+    user_id = session.get('user_id')  
 
     if not user_id:
         print("Error: User is not logged in.")
-        return  # Exit the function if user_id is not found
+        return  
 
-    # If user_id is found, proceed with the email
     print(f"User ID: {user_id}")
 
-    # URL for the API, passing user_id as part of the URL
-    url = f'http://127.0.0.1:5555/api/login/get_email/{user_id}'  # Pass user_id in the URL
+    conn = await get_db_connection()
+    if conn is None:
+        print("Failed to connect to the database.")
+        return
 
     try:
-        # Make the GET request with the cookies
-        response = requests.get(url)
-        
-        # Check if the response is successful
-        if response.status_code == 200:
-            email_data = response.json()
-            email_receiver = email_data.get('email')
-            
-            if email_receiver is None:
-                print("Error: No email found in the response.")
-            else:
-                print(f"Email: {email_receiver}")
-        else:
-            print(f"Error {response.status_code}: {response.text}")
-    except Exception as e:
-        print(f"Error calling /get_email route: {e}")
+        cursor = conn.cursor()
 
-    # Log the email receiver
-    print("THE EMAIL RECEIVER IS: " + email_receiver)
-    
+        # Query to fetch admin emails
+        query = "SELECT email_encrypted FROM \"User\" WHERE is_admin = ?"
+        cursor.execute(query, (1,))
+        result = cursor.fetchall()
+
+        if result:
+            admin_emails = []
+            for row in result:
+                # Access encrypted_email using index
+                encrypted_email = row[0]  # First column in the result
+                try:
+                    decrypted_email = cipher_suite.decrypt(encrypted_email).decode() 
+                    admin_emails.append(decrypted_email)
+                except Exception as decryption_error:
+                    print(f"Decryption failed for email: {encrypted_email}, error: {decryption_error}")
+
+            print(f"Admin Emails: {admin_emails}")
+        else:
+            print("No admin users found.")
+            return
+    except Exception as e:
+        print(f"Error retrieving or decrypting admin emails: {e}")
+        return
+    finally:
+        conn.close()
+
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
 
-    # Create the email content (including Queue Label and Timestamp of the threshold being executed)
     subject = "Queue Alert!"
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
     body = (
+        #f"The queue in area of interest:"
         f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
-
-    # Create a multipart email
-    msg = MIMEMultipart()
-    msg['From'] = email_sender
-    msg['To'] = email_receiver
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
 
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()  # Secure the connection
             server.login(email_sender, email_password)
-            server.send_message(msg)
-            print("Email sent successfully!")
+
+            for admin_email in admin_emails:
+            # Create a new message for each recipient
+                msg = MIMEMultipart()
+                msg['From'] = email_sender
+                msg['To'] = admin_email
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'plain'))
+
+                server.send_message(msg)
+                print(f"Email sent successfully to {admin_email}!")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"Error occurred while sending emails: {e}")
+
 
 
 # async def check_queue_time(count, ROI_id, threshold):
@@ -313,6 +324,7 @@ async def sendAlertEmail(name):
 
 
 async def get_queues_from_db():
+    #await sendAlertEmail()
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
