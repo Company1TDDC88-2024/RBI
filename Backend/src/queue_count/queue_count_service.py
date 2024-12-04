@@ -217,6 +217,7 @@ async def check_threshold(threshold, count):
         return False
 
 async def sendAlertEmail(name):
+#async def sendAlertEmail():
     user_id = session.get('user_id')  
 
     if not user_id:
@@ -233,9 +234,8 @@ async def sendAlertEmail(name):
     try:
         cursor = conn.cursor()
 
-        # Query to fetch admin emails
-        query = "SELECT email_encrypted FROM \"User\" WHERE is_admin = ?"
-        cursor.execute(query, (1,))
+        query = "SELECT email_encrypted FROM \"User\""
+        cursor.execute(query)
         result = cursor.fetchall()
 
         if result:
@@ -265,8 +265,8 @@ async def sendAlertEmail(name):
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
     body = (
-        #f"The queue in area of interest:"
-        f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
+        f"DANGER DANGER THERE IS A QUEUE - ALL PERSONEL TO THE REGISTERS, GO!"
+        #f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
 
     try:
