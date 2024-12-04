@@ -114,16 +114,13 @@ const DashboardPage = () => {
     }
   };
 
-  ///// TESTER
+
   type HourlyData = {
     hour: string;
     HistoricalNumberOfCustomers: number;
   };
   
   const [hourlyAverageData, setHourlyAverageData] = useState<HourlyData[]>([]);
-
-  //console.log(hourlyAverageData);
-
 
   const fiveWeeksAgo = new Date(today);
   fiveWeeksAgo.setDate(today.getDate() - 27); // Subtract 35 days for 5 weeks ago
@@ -142,14 +139,12 @@ const DashboardPage = () => {
   } = useGetCustomerCount(
     fiveWeeksAgo.toISOString().split("T")[0],  // Convert Monday 5 weeks ago to string
     lastWeek.toISOString().split("T")[0]  // Convert Sunday last week to string
-  );
-
-  
+  ); 
 
   // This useEffect will process the data for tomorrow and calculate the hourly average
   useEffect(() => {
     if (historicalData) {
-      const todayWeekday = (moment(today).day() + 2) % 7; // Get today's weekday
+      const todayWeekday = (moment(today).day()) % 7; // Get today's weekday
   
       // Filter historicalData to keep only the data for today's weekday
       const filteredHistoricalData = historicalData.filter((item) => {
@@ -196,7 +191,7 @@ const DashboardPage = () => {
           result[hourIndex].HistoricalNumberOfCustomers += averageCustomers;
   
           // Log the first, last, and average TotalCustomers for the hour
-          console.log(`For hour ${hour}:00, first TotalCustomers: ${first.TotalCustomers}, last TotalCustomers: ${last.TotalCustomers}, average: ${averageCustomers}`);
+          //console.log(`For hour ${hour}:00, first TotalCustomers: ${first.TotalCustomers}, last TotalCustomers: ${last.TotalCustomers}, average: ${averageCustomers}`);
         });
   
         // Divide by the number of unique days and round up as needed
@@ -212,7 +207,6 @@ const DashboardPage = () => {
       // Set the processed hourly data into the state
       const hourlyData = processHistoricalHourlyData(filteredHistoricalData);
       setHourlyAverageData(hourlyData); // Set the processed data
-      console.log(filteredHistoricalData);
     }
   }, [historicalData, today]);
   
