@@ -47,17 +47,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       setIsLoggedIn(logged_in);
       setIsAdmin(is_admin || false);
       setUser(user || { name: 'N/A', email: 'N/A' });
-      localStorage.setItem("isLoggedIn", JSON.stringify(logged_in));
-      localStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
-      localStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("isLoggedIn", JSON.stringify(logged_in));
+      sessionStorage.setItem("isAdmin", JSON.stringify(is_admin || false));
+      sessionStorage.setItem("user", JSON.stringify(user));
     } catch (error) {
       console.error("Error checking login status:", error);
       setIsLoggedIn(false);
       setIsAdmin(false);
       setUser(null);
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("isAdmin");
-      localStorage.removeItem("user");
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("isAdmin");
+      sessionStorage.removeItem("user");
     } finally {
       setLoading(false);
     }
@@ -68,18 +68,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       await axios.post("/login/logout", {}, { withCredentials: true });
       setIsLoggedIn(false);
       setIsAdmin(false);
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("isAdmin");
-      localStorage.removeItem("user");
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem("isAdmin");
+      sessionStorage.removeItem("user");
     } catch (error) {
       console.error("Error clearing session cookie:", error);
     }
   };
 
   useEffect(() => {
-    const storedIsLoggedIn = localStorage.getItem("isLoggedIn");
-    const storedIsAdmin = localStorage.getItem("isAdmin");
-    const storedUser = localStorage.getItem("user");
+    const storedIsLoggedIn = sessionStorage.getItem("isLoggedIn");
+    const storedIsAdmin = sessionStorage.getItem("isAdmin");
+    const storedUser = sessionStorage.getItem("user");
 
     if (storedIsLoggedIn && storedIsLoggedIn !== "undefined") {
       setIsLoggedIn(JSON.parse(storedIsLoggedIn));
