@@ -126,17 +126,25 @@ const HistoryPage = () => {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
 
-        // Aggregate TotalCustomers by the formatted key
+        // Initialize the key if it doesn't exist
         if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
+            result[key] = { Timestamp: key, TotalCustomers: 0, Count: 0 };
         }
 
+        // Aggregate TotalCustomers and count entries by the formatted key
         result[key].TotalCustomers += item.TotalCustomers;
+        result[key].Count += 1;
+    });
+
+    // Calculate the average TotalCustomers for each key
+    Object.values(result).forEach(entry => {
+        entry.TotalCustomers = entry.TotalCustomers / entry.Count;
+        delete entry.Count; // Remove the count property as it's no longer needed
     });
 
     // Return the results sorted by timestamp
     return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-};
+  };
 
   const processQueueData = (cameraQueueData, frequency, dates, selectedWeekday, threshold = 1) => {
     const result = {};
