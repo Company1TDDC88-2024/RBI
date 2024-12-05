@@ -99,7 +99,7 @@ async def upload_data_to_db(data):
     #Check that we dont upload too often, there might be an issue with 2 cameras here.
     global last_upload_time
     # Check if the last upload was within the last x seconds
-    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=2):
+    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=1):
         return "Upload skipped to avoid frequent uploads"
     last_upload_time = datetime.now()
 
@@ -201,8 +201,8 @@ async def play_sound(count, ROI, timestamp):
     #     print(f"Current time: {datetime.now()}")
     #     print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
-    await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
+        await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         sendAlertEmail()
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         timestamps_roi[ROI_id] = datetime.now()
