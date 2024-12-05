@@ -90,6 +90,7 @@ async def upload_function_fast(i, ROIs, counts, timestamp):
 
     await play_sound(counts[i], ROIs[i], timestamp)
 
+
 async def upload_data_to_db(data):
     #Get the timestamp from camera to correct format for DB
     incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -203,8 +204,8 @@ async def play_sound(count, ROI, timestamp):
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
         await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
-        sendAlertEmail()
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
+        await sendAlertEmail(name)
         timestamps_roi[ROI_id] = datetime.now()
         try:
             response = requests.get(target_url)
@@ -230,13 +231,13 @@ async def check_threshold(threshold, count):
 
 async def sendAlertEmail(name):
 #async def sendAlertEmail():
-    user_id = session.get('user_id')  
+    #user_id = session.get('user_id')  
 
-    if not user_id:
-        print("Error: User is not logged in.")
-        return  
+    #if not user_id:
+     #   print("Error: User is not logged in.")
+      #  return  
 
-    print(f"User ID: {user_id}")
+    #print(f"User ID: {user_id}")
 
     conn = await get_db_connection()
     if conn is None:
@@ -277,8 +278,8 @@ async def sendAlertEmail(name):
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
     body = (
-        f"DANGER DANGER THERE IS A QUEUE - ALL PERSONEL TO THE REGISTERS, GO!"
-        #f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
+        #f"DANGER DANGER THERE IS A QUEUE - ALL PERSONEL TO THE REGISTERS, GO!"
+        f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
 
     try:
