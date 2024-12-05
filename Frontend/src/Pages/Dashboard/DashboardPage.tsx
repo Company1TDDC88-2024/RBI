@@ -416,7 +416,7 @@ const DashboardPage = () => {
         <Alert
           message="Error"
           description={
-            customerCountError?.message || errorToday?.message || errorQueue?.message || historicalDataError?.message || "An error occurred while fetching data."
+            customerCountError?.message || errorToday?.message || errorQueue?.message || historicalDataError?.message || "An error occurred while fetching data. Displaying last available data"
           }
           type="error"
           showIcon
