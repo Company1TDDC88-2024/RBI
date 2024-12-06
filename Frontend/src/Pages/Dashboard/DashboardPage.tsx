@@ -97,7 +97,6 @@ const DashboardPage = () => {
       refetchEnteringCustomers();
       setLastUpdated(moment().format("HH:mm:ss"));
       
-      console.log("Data refetched");
     }, 10000);
 
     return () => clearInterval(interval);
@@ -107,13 +106,12 @@ const DashboardPage = () => {
     try {
       const enteringCustomers = await refetchEnteringCustomers(); // Fetch data from the hook
       setEnteringCustomers(enteringCustomers); // Update local state
-      console.log("Entering customers:", enteringCustomers); // Log the number of entering customers
+
     } catch (err) {
       console.error("Error fetching entering customers:", err);
       setFetchingError("Failed to fetch entering customers.");
     }
   };
-
 
   type HourlyData = {
     hour: string;
@@ -191,7 +189,7 @@ const DashboardPage = () => {
           result[hourIndex].HistoricalNumberOfCustomers += averageCustomers;
   
           // Log the first, last, and average TotalCustomers for the hour
-          //console.log(`For hour ${hour}:00, first TotalCustomers: ${first.TotalCustomers}, last TotalCustomers: ${last.TotalCustomers}, average: ${averageCustomers}`);
+        
         });
   
         // Divide by the number of unique days and round up as needed
@@ -222,7 +220,6 @@ const DashboardPage = () => {
   // Show notification if entering customers exceed the threshold
   useEffect(() => {
     if (enteringCustomers >= influxThreshold) {
-      console.log("Entering customers higher than or equal to threshold");
       
       notification.warning({
         message: "Threshold Exceeded",
