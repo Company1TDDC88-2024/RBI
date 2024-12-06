@@ -22,10 +22,10 @@ const HistoryPage = () => {
   const selectedDate = todaysDate.toISOString().split("T")[0];
 
   const [dates, setDates] = useState(() => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(1); // Set to current month
-      return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3); // Set to last 3 months
+    return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
   });
   
   const [frequency, setFrequency] = useState(() => {
@@ -47,7 +47,7 @@ const HistoryPage = () => {
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setDate(1);
+    startDate.setMonth(startDate.getMonth() - 3);
     setDates([startDate.toISOString().split("T")[0], endDate]);
   }, [currentDate]);
 
@@ -140,18 +140,11 @@ const HistoryPage = () => {
 
         // Initialize the key if it doesn't exist
         if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0, Count: 0 };
+            result[key] = { Timestamp: key, EnteringCustomers: 0 };
         }
 
-        // Aggregate TotalCustomers and count entries by the formatted key
-        result[key].TotalCustomers += item.TotalCustomers;
-        result[key].Count += 1;
-    });
-
-    // Calculate the average TotalCustomers for each key
-    Object.values(result).forEach(entry => {
-        entry.TotalCustomers = entry.TotalCustomers / entry.Count;
-        delete entry.Count; // Remove the count property as it's no longer needed
+        // Aggregate EnteringCustomers by the formatted key
+        result[key].EnteringCustomers += item.EnteringCustomers;
     });
 
     // Return the results sorted by timestamp
@@ -226,6 +219,11 @@ const HistoryPage = () => {
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading||expectedCustomerCountLoading) {
     return <Spin tip="Loading..." />;
+  }
+
+  const error = customerCountError || cameraQueueDataError || dailyCustomerError||expectedCustomerCountError;
+  if (error) {
+    return <Alert message="Error" description={error.message} type="error" showIcon />;
   }
 
   return (
@@ -314,19 +312,20 @@ const HistoryPage = () => {
           </Select>
         </Col>
         <Col>
-          <Button 
-            onClick={() => {
-              const endDate = new Date();
-              const startDate = new Date();
-              startDate.setMonth(startDate.getMonth() - 1); // Set to last month
-              setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
-              setFrequency('1month');
-              setSelectedWeekday(null);
-              setRangePickerValue(null); // Reset RangePicker value
-            }}
-          >
-            Reset Filters
-          </Button>
+        <Button 
+          onClick={() => {
+            const endDate = new Date();
+            endDate.setHours(23, 59, 59, 999); // Set to end of the day
+            const startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 3); // Set to last 3 months
+            setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
+            setFrequency('1month');
+            setSelectedWeekday(null);
+            setRangePickerValue(null); // Reset RangePicker value
+          }}
+        >
+          Reset Filters
+        </Button>
         </Col>
       </Row>
 
@@ -350,7 +349,7 @@ const HistoryPage = () => {
                 <Legend />
                 <Line 
                   type="monotone" 
-                  dataKey="TotalCustomers" 
+                  dataKey="EnteringCustomers" 
                   stroke="#8884d8" 
                   activeDot={{ r: 8 }} 
                   name="Total number of customers" 

@@ -264,7 +264,6 @@ const DashboardPage = () => {
           .forEach((item) => {
             let hour = moment(item.Timestamp).startOf("hour").hour();  
       
-            hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0
             result[hour].NumberOfCustomers += item.EnteringCustomers || 0;
           });
       
