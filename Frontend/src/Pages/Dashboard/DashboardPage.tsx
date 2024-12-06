@@ -23,14 +23,18 @@ import { useSettings } from "../Settings/InfluxSettingsContext.tsx";
 import { ExclamationCircleFilled, ExclamationCircleOutlined, FilterFilled } from "@ant-design/icons";
 import moment from "moment";
 
+//Test
+
 const DashboardPage = () => {
   const [processedData, setProcessedData] = useState<any[]>([]);
   const [hourlyData, setHourlyData] = useState<any[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string>("Never");
   const [lastNonErrorQueueData, setLastNonErrorQueueData] = useState<any>(null);
   const [lastNonErrorTodayData, setLastNonErrorTodayData] = useState<any>(null);
+  const [lastNonErrorCustomerCountData, setLastNonErrorCustomerCountData] = useState<any>(null);
   const [enteringCustomers, setEnteringCustomers] = useState<number>(0);
   const [fetchingError, setFetchingError] = useState<string | null>(null);
+  const [showError, setShowError] = useState<boolean>(false); // Added state for error handling
   const { influxTimeframe, influxThreshold } = useSettings();
   const { enteringCustomerDuringTimeframe: enteringCustomerData, error, refetchEnteringCustomers } = useGetEnteringCustomersWithinTimeframe(influxTimeframe);
 
@@ -100,7 +104,7 @@ const DashboardPage = () => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [refetchCustomerCount, refetchQueue, monday, sunday, todayDate, refetchToday, enteringCustomerData]);
+  }, [refetchCustomerCount, refetchQueue, monday, sunday, todayDate, refetchToday, refetchEnteringCustomers]);
 
   const fetchAndSetEnteringCustomers = async () => {
     try {
@@ -128,7 +132,6 @@ const DashboardPage = () => {
   lastWeek.setDate(today.getDate() - 6); // Subtract 7 to get last week
   lastWeek.setHours(0, 0, 0, 0);
 
-  // Now call the hook with the new variables
   const {
     data: historicalData,
     error: historicalDataError,
@@ -144,21 +147,17 @@ const DashboardPage = () => {
     if (historicalData) {
       const todayWeekday = (moment(today).day() + 1) % 7; // Get today's weekday
   
-      // Filter historicalData to keep only the data for today's weekday
       const filteredHistoricalData = historicalData.filter((item) => {
         const itemWeekday = moment(item.Timestamp).day();
         return itemWeekday === todayWeekday; // Compare weekdays
       });
   
-      // Get unique days from filtered data
       const uniqueDays = new Set(
         filteredHistoricalData.map((item) => moment(item.Timestamp).format("YYYY-MM-DD"))
       );
       const uniqueDaysCount = uniqueDays.size;
   
-      // Process hourly data
-      const processHistoricalHourlyData = (data) => {
-        // Initialize an array of 24 hours with HistoricalNumberOfCustomers set to 0
+      const processHistoricalHourlyData = (data: any[]) => {
         const result = Array(24).fill(0).map((_, i) => ({
           hour: `${i}:00`,
           HistoricalNumberOfCustomers: 0,
@@ -202,12 +201,8 @@ const DashboardPage = () => {
         }));
       };
   
-      // Set the processed hourly data into the state
       const hourlyData = processHistoricalHourlyData(filteredHistoricalData);
-      setHourlyAverageData(hourlyData); // Set the processed data
-
-      console.log(filteredHistoricalData);
-
+      setHourlyAverageData(hourlyData);
     }
   }, [historicalData, today]);
     
@@ -216,7 +211,6 @@ const DashboardPage = () => {
     fetchAndSetEnteringCustomers();
   }, [influxTimeframe]);
 
-  // Show notification if entering customers exceed the threshold
   useEffect(() => {
     if (enteringCustomers >= influxThreshold) {
       
@@ -236,7 +230,6 @@ const DashboardPage = () => {
     }
   }, [customerCountData, todayData, queueData]);
 
-
   useEffect(() => {
     if (queueData && !errorQueue) {
       setLastNonErrorQueueData(queueData);
@@ -248,6 +241,12 @@ const DashboardPage = () => {
       setLastNonErrorTodayData(todayData);
     }
   }, [todayData, errorToday]);
+
+  useEffect(() => {
+    if (customerCountData && !customerCountError) {
+      setLastNonErrorCustomerCountData(customerCountData);
+    }
+  }, [customerCountData, customerCountError]);
 
   useEffect(() => {
     if (customerCountData) {
@@ -285,15 +284,12 @@ const DashboardPage = () => {
           .forEach((item) => {
             let hour = moment(item.Timestamp).startOf("hour").hour();  
       
-            // Move the hour one back (shift left by 1 hour)
-            hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (to handle midnight case)
-            
-            result[hour].NumberOfCustomers += item.EnteringCustomers || 0;  // Sum the customers
+            hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0
+            result[hour].NumberOfCustomers += item.EnteringCustomers || 0;
           });
       
         return result;
       };
-      
 
       setHourlyData(processHourlyData(customerCountData.filter((item) => {
         return moment(item.Timestamp).isSame(today, "day");
@@ -301,21 +297,20 @@ const DashboardPage = () => {
     }
   }, [customerCountData, monday, sunday, today]);
 
-  if (customerCountLoading || loadingToday || loadingQueue || loadingCoordinates) {
-    return <Spin tip="Loading..." />;
-  }
+  // Combined error state
+  const combinedError = customerCountError || errorToday || errorQueue || historicalDataError;
 
-  if (customerCountError || errorToday || errorQueue) {
-    return (
-      <Alert
-        message="Error"
-        description={
-          customerCountError?.message || errorQueue?.message || "An error occurred."
-        }
-        type="error"
-        showIcon
-      />
-    );
+  // useEffect to handle combined errors
+  useEffect(() => {
+    if (combinedError) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+  }, [combinedError]);
+
+  if (customerCountLoading || loadingToday || loadingQueue || loadingCoordinates || historicalDataLoading) {
+    return <Spin tip="Loading..." />;
   }
 
   const renderQueueCards = () => {
@@ -436,6 +431,19 @@ const DashboardPage = () => {
       <h1>Overview</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
+      {/* Error Alert */}
+      {showError && (
+        <Alert
+          message="Error"
+          description={
+            customerCountError?.message || errorToday?.message || errorQueue?.message || historicalDataError?.message || "An error occurred while fetching data. Displaying last available data"
+          }
+          type="error"
+          showIcon
+          style={{ marginBottom: "16px" }}
+        />
+      )}
+
       {/* Wrapper Row for Queue Cards */}
       <Row gutter={[16, 16]} style={{ padding: "0 16px", margin: 0 }}>
         {renderQueueCards()}
@@ -491,20 +499,25 @@ const DashboardPage = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" />
-                <YAxis />
+                <YAxis domain={[0, Math.max(
+                  ...hourlyData.map(d => d.NumberOfCustomers),
+                  ...hourlyAverageData.map(d => d.HistoricalNumberOfCustomers)
+                )]} />
                 <Tooltip />
                 <Legend />
                 
                 {/* Bar for NumberOfCustomers */}
-                <Bar dataKey="NumberOfCustomers" 
-                fill="#0088FE" barSize={30} 
-                name="Number of customers"
+                <Bar 
+                  dataKey="NumberOfCustomers" 
+                  fill="#0088FE" 
+                  barSize={30} 
+                  name="Number of customers"
                 />
                 
                 {/* Dotted Line for HistoricalNumberOfCustomers with pastel red stroke */}
                 <Line
                   type="monotone"
-                  data={hourlyAverageData}  // Pass the processed hourly average data
+                  data={hourlyAverageData}
                   dataKey="HistoricalNumberOfCustomers"
                   stroke="#FF6F61"  // Pastel red stroke color
                   strokeWidth={3}
@@ -544,10 +557,11 @@ const DashboardPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="NumberOfCustomers" 
-                fill="#0088FE" 
-                barSize={30}
-                name="Number of customers" 
+                <Bar 
+                  dataKey="NumberOfCustomers" 
+                  fill="#0088FE" 
+                  barSize={30}
+                  name="Number of customers" 
                 />
               </BarChart>
             </ResponsiveContainer>

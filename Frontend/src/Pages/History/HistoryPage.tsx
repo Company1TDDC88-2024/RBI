@@ -42,6 +42,7 @@ const HistoryPage = () => {
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
   const [rangePickerValue, setRangePickerValue] = useState(null);
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
@@ -60,6 +61,17 @@ const HistoryPage = () => {
   const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
   const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
 
+  // Combined error state
+  const combinedError = customerCountError || cameraQueueDataError || dailyCustomerError || expectedCustomerCountError || monthlyAverageError;
+
+  // useEffect to handle combined errors
+  useEffect(() => {
+    if (combinedError) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+  }, [combinedError]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -126,17 +138,25 @@ const HistoryPage = () => {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
 
-        // Aggregate TotalCustomers by the formatted key
+        // Initialize the key if it doesn't exist
         if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
+            result[key] = { Timestamp: key, TotalCustomers: 0, Count: 0 };
         }
 
+        // Aggregate TotalCustomers and count entries by the formatted key
         result[key].TotalCustomers += item.TotalCustomers;
+        result[key].Count += 1;
+    });
+
+    // Calculate the average TotalCustomers for each key
+    Object.values(result).forEach(entry => {
+        entry.TotalCustomers = entry.TotalCustomers / entry.Count;
+        delete entry.Count; // Remove the count property as it's no longer needed
     });
 
     // Return the results sorted by timestamp
     return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-};
+  };
 
   const processQueueData = (cameraQueueData, frequency, dates, selectedWeekday, threshold = 1) => {
     const result = {};
@@ -208,15 +228,22 @@ const HistoryPage = () => {
     return <Spin tip="Loading..." />;
   }
 
-  const error = customerCountError || cameraQueueDataError || dailyCustomerError||expectedCustomerCountError;
-  if (error) {
-    return <Alert message="Error" description={error.message} type="error" showIcon />;
-  }
-
   return (
     <div className={styles.dashboardContainer}>
       <h1>Historical Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
+
+      {showError && (
+        <Alert
+          message="Error"
+          description={
+            combinedError?.message || "An error occurred while fetching data."
+          }
+          type="error"
+          showIcon
+          style={{ marginBottom: "16px" }}
+        />
+      )}
 
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>

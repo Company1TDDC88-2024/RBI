@@ -90,6 +90,7 @@ async def upload_function_fast(i, ROIs, counts, timestamp):
 
     await play_sound(counts[i], ROIs[i], timestamp)
 
+
 async def upload_data_to_db(data):
     #Get the timestamp from camera to correct format for DB
     incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -99,7 +100,7 @@ async def upload_data_to_db(data):
     #Check that we dont upload too often, there might be an issue with 2 cameras here.
     global last_upload_time
     # Check if the last upload was within the last x seconds
-    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=2):
+    if last_upload_time and (datetime.now() - last_upload_time) < timedelta(seconds=1):
         return "Upload skipped to avoid frequent uploads"
     last_upload_time = datetime.now()
 
@@ -201,10 +202,10 @@ async def play_sound(count, ROI, timestamp):
     #     print(f"Current time: {datetime.now()}")
     #     print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
-    await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
-        sendAlertEmail()
+        await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
+        await sendAlertEmail(name)
         timestamps_roi[ROI_id] = datetime.now()
         try:
             response = requests.get(target_url)
@@ -229,65 +230,76 @@ async def check_threshold(threshold, count):
         return False
 
 async def sendAlertEmail(name):
-    # Check if the user is logged in by accessing 'user_id' in the session
-    user_id = session.get('user_id')  # Get user_id from the session
+#async def sendAlertEmail():
+    #user_id = session.get('user_id')  
 
-    if not user_id:
-        print("Error: User is not logged in.")
-        return  # Exit the function if user_id is not found
+    #if not user_id:
+     #   print("Error: User is not logged in.")
+      #  return  
 
-    # If user_id is found, proceed with the email
-    print(f"User ID: {user_id}")
+    #print(f"User ID: {user_id}")
 
-    # URL for the API, passing user_id as part of the URL
-    url = f'http://127.0.0.1:5555/api/login/get_email/{user_id}'  # Pass user_id in the URL
+    conn = await get_db_connection()
+    if conn is None:
+        print("Failed to connect to the database.")
+        return
 
     try:
-        # Make the GET request with the cookies
-        response = requests.get(url)
-        
-        # Check if the response is successful
-        if response.status_code == 200:
-            email_data = response.json()
-            email_receiver = email_data.get('email')
-            
-            if email_receiver is None:
-                print("Error: No email found in the response.")
-            else:
-                print(f"Email: {email_receiver}")
-        else:
-            print(f"Error {response.status_code}: {response.text}")
-    except Exception as e:
-        print(f"Error calling /get_email route: {e}")
+        cursor = conn.cursor()
 
-    # Log the email receiver
-    print("THE EMAIL RECEIVER IS: " + email_receiver)
-    
+        query = "SELECT email_encrypted FROM \"User\""
+        cursor.execute(query)
+        result = cursor.fetchall()
+
+        if result:
+            admin_emails = []
+            for row in result:
+                # Access encrypted_email using index
+                encrypted_email = row[0]  # First column in the result
+                try:
+                    decrypted_email = cipher_suite.decrypt(encrypted_email).decode() 
+                    admin_emails.append(decrypted_email)
+                except Exception as decryption_error:
+                    print(f"Decryption failed for email: {encrypted_email}, error: {decryption_error}")
+
+            print(f"Admin Emails: {admin_emails}")
+        else:
+            print("No admin users found.")
+            return
+    except Exception as e:
+        print(f"Error retrieving or decrypting admin emails: {e}")
+        return
+    finally:
+        conn.close()
+
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
 
-    # Create the email content (including Queue Label and Timestamp of the threshold being executed)
     subject = "Queue Alert!"
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Format the current time
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
     body = (
+        #f"DANGER DANGER THERE IS A QUEUE - ALL PERSONEL TO THE REGISTERS, GO!"
         f"The queue in area of interest: {name} has surpassed the threshold. Time of this alert: {current_time}"
     )
-
-    # Create a multipart email
-    msg = MIMEMultipart()
-    msg['From'] = email_sender
-    msg['To'] = email_receiver
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
 
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()  # Secure the connection
             server.login(email_sender, email_password)
-            server.send_message(msg)
-            print("Email sent successfully!")
+
+            for admin_email in admin_emails:
+            # Create a new message for each recipient
+                msg = MIMEMultipart()
+                msg['From'] = email_sender
+                msg['To'] = admin_email
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'plain'))
+
+                server.send_message(msg)
+                print(f"Email sent successfully to {admin_email}!")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"Error occurred while sending emails: {e}")
+
 
 
 # async def check_queue_time(count, ROI_id, threshold):
@@ -313,6 +325,7 @@ async def sendAlertEmail(name):
 
 
 async def get_queues_from_db():
+    #await sendAlertEmail()
     conn = await get_db_connection()
     if conn is None:
         return "Failed to connect to database"
