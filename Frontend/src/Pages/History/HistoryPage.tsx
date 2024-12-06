@@ -378,33 +378,16 @@ const HistoryPage = () => {
               <Legend />
 
               {/* Define a separate line for each of the four ROIs */}
-              <Line type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
+              <Line name="Checkout 1" type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
+              <Line name="Checkout 2" type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
+              <Line name="Checkout 3" type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
+              <Line name="Checkout 4" type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
             </LineChart>
           </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
       <Row gutter={16}>
-        {/* <Col span={12}>
-          <Card
-            title="Expected Customer Count (Last Year)"
-            bordered={false}
-            className={styles.dashboardCard}
-          >
-            {expectedCustomerCountData && expectedCustomerCountData.length > 0 ? (
-              <div>
-                Expected Customer Count for {selectedDate}:{" "}
-                {expectedCustomerCountData.reduce((sum, item) => sum + item.TotalCustomers, 0)}
-              </div>
-            ) : (
-              <div>No data available for the selected date last year</div>
-            )}
-          </Card>
-        </Col> */}
-
         <Col xs={24} md={12}>
           <Card
             title="Average Customers Per Day (Last 6 Months)"
