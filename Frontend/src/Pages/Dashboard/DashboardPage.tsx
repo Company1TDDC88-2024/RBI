@@ -145,7 +145,7 @@ const DashboardPage = () => {
   // This useEffect will process the data for tomorrow and calculate the hourly average
   useEffect(() => {
     if (historicalData) {
-      const todayWeekday = (moment(today).day() + 1) % 7; // Get today's weekday
+      const todayWeekday = (moment(today).day()) % 7; // Get today's weekday
   
       const filteredHistoricalData = historicalData.filter((item) => {
         const itemWeekday = moment(item.Timestamp).day();
