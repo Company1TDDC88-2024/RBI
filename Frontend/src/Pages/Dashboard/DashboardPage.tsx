@@ -142,7 +142,7 @@ const DashboardPage = () => {
   // This useEffect will process the data for tomorrow and calculate the hourly average
   useEffect(() => {
     if (historicalData) {
-      const todayWeekday = (moment(today).day()) % 7; // Get today's weekday
+      const todayWeekday = (moment(today).day() + 1) % 7; // Get today's weekday
   
       // Filter historicalData to keep only the data for today's weekday
       const filteredHistoricalData = historicalData.filter((item) => {
@@ -205,12 +205,11 @@ const DashboardPage = () => {
       // Set the processed hourly data into the state
       const hourlyData = processHistoricalHourlyData(filteredHistoricalData);
       setHourlyAverageData(hourlyData); // Set the processed data
+
+      console.log(filteredHistoricalData);
+
     }
   }, [historicalData, today]);
-  
-  
-
-  
     
   // Automatically fetch entering customers on component mount or when timeframe changes
   useEffect(() => {
@@ -492,7 +491,7 @@ const DashboardPage = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" />
-                <YAxis domain={[0, Math.max(...hourlyData.map(d => d.NumberOfCustomers), ...hourlyAverageData.map(d => d.HistoricalNumberOfCustomers))]} />
+                <YAxis />
                 <Tooltip />
                 <Legend />
                 
