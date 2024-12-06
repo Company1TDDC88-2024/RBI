@@ -20,7 +20,7 @@ import { useGetCoordinates } from "../Hooks/useGetCoordinates.ts";
 import { useGetDailyCustomers } from "../Hooks/useGetDailyCustomers";
 import { useGetEnteringCustomersWithinTimeframe } from "../Hooks/useGetCustomersWithinTimestamp.ts";
 import { useSettings } from "../Settings/InfluxSettingsContext.tsx";
-import { ExclamationCircleFilled, ExclamationCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleFilled, ExclamationCircleOutlined, FilterFilled } from "@ant-design/icons";
 import moment from "moment";
 
 //Test
@@ -101,7 +101,6 @@ const DashboardPage = () => {
       refetchEnteringCustomers();
       setLastUpdated(moment().format("HH:mm:ss"));
       
-      console.log("Data refetched");
     }, 10000);
 
     return () => clearInterval(interval);
@@ -111,14 +110,13 @@ const DashboardPage = () => {
     try {
       const enteringCustomers = await refetchEnteringCustomers(); // Fetch data from the hook
       setEnteringCustomers(enteringCustomers); // Update local state
-      console.log("Entering customers:", enteringCustomers); // Log the number of entering customers
+
     } catch (err) {
       console.error("Error fetching entering customers:", err);
       setFetchingError("Failed to fetch entering customers.");
     }
   };
 
-  ///// TESTER
   type HourlyData = {
     hour: string;
     HistoricalNumberOfCustomers: number;
@@ -126,10 +124,8 @@ const DashboardPage = () => {
   
   const [hourlyAverageData, setHourlyAverageData] = useState<HourlyData[]>([]);
 
-  console.log(hourlyAverageData);
-
   const fiveWeeksAgo = new Date(today);
-  fiveWeeksAgo.setDate(today.getDate() - 34); // Subtract 35 days for 5 weeks ago
+  fiveWeeksAgo.setDate(today.getDate() - 27); // Subtract 35 days for 5 weeks ago
   fiveWeeksAgo.setHours(0, 0, 0, 0);
 
   const lastWeek = new Date(today);
@@ -142,17 +138,18 @@ const DashboardPage = () => {
     loading: historicalDataLoading,
     refetch: refetchHistoricalData,
   } = useGetCustomerCount(
-    fiveWeeksAgo.toISOString().split("T")[0],
-    lastWeek.toISOString().split("T")[0]
-  );
+    fiveWeeksAgo.toISOString().split("T")[0],  // Convert Monday 5 weeks ago to string
+    lastWeek.toISOString().split("T")[0]  // Convert Sunday last week to string
+  ); 
 
+  // This useEffect will process the data for tomorrow and calculate the hourly average
   useEffect(() => {
     if (historicalData) {
-      const todayWeekday = moment(today).day();  // Get today's weekday
+      const todayWeekday = (moment(today).day() + 1) % 7; // Get today's weekday
   
       const filteredHistoricalData = historicalData.filter((item) => {
         const itemWeekday = moment(item.Timestamp).day();
-        return itemWeekday === todayWeekday;
+        return itemWeekday === todayWeekday; // Compare weekdays
       });
   
       const uniqueDays = new Set(
@@ -165,19 +162,42 @@ const DashboardPage = () => {
           hour: `${i}:00`,
           HistoricalNumberOfCustomers: 0,
         }));
-      
-        data.forEach((item) => {
-          let hour = moment(item.Timestamp).startOf("hour").hour();
-          hour = (hour - 1 + 24) % 24;  // Wrap around if hour is 0 (for midnight)
-      
-          result[hour].HistoricalNumberOfCustomers += item.EnteringCustomers || 0;
-        });
-      
-        console.log("Processed Hourly Data:", result);
   
+        // Group data by hour, collecting the first and last `TotalCustomers` for each hour
+        const groupedData = data.reduce((acc, item) => {
+          const hour = moment(item.Timestamp).startOf("hour").hour();
+          if (!acc[hour]) {
+            acc[hour] = { first: item, last: item }; // Initialize with the first item for the hour
+          } else {
+            // Update last item in the hour if the timestamp is later
+            if (moment(item.Timestamp).isAfter(acc[hour].last.Timestamp)) {
+              acc[hour].last = item;
+            }
+          }
+          return acc;
+        }, {});
+  
+        // Process the grouped data for each hour
+        Object.entries(groupedData).forEach(([hour, { first, last }]) => {
+          const hourIndex = parseInt(hour, 10);
+  
+          // Calculate the average of the first and last TotalCustomers
+          const averageCustomers = (first.TotalCustomers + last.TotalCustomers) / 2;
+  
+          // Add the calculated average to HistoricalNumberOfCustomers for this hour
+          result[hourIndex].HistoricalNumberOfCustomers += averageCustomers;
+  
+          // Log the first, last, and average TotalCustomers for the hour
+        
+        });
+  
+        // Divide by the number of unique days and round up as needed
         return result.map((item) => ({
           ...item,
-          HistoricalNumberOfCustomers: item.HistoricalNumberOfCustomers / uniqueDaysCount,
+          HistoricalNumberOfCustomers:
+            item.HistoricalNumberOfCustomers / uniqueDaysCount >= 0.5
+              ? Math.ceil(item.HistoricalNumberOfCustomers / uniqueDaysCount) // Round up
+              : Math.floor(item.HistoricalNumberOfCustomers / uniqueDaysCount), // Round down
         }));
       };
   
@@ -185,14 +205,14 @@ const DashboardPage = () => {
       setHourlyAverageData(hourlyData);
     }
   }, [historicalData, today]);
-
+    
+  // Automatically fetch entering customers on component mount or when timeframe changes
   useEffect(() => {
     fetchAndSetEnteringCustomers();
   }, [influxTimeframe]);
 
   useEffect(() => {
     if (enteringCustomers >= influxThreshold) {
-      console.log("Entering customers higher than or equal to threshold");
       
       notification.warning({
         message: "Threshold Exceeded",
