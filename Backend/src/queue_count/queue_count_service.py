@@ -252,15 +252,15 @@ async def sendAlertEmail(name):
         result = cursor.fetchall()
 
         if result:
-            admin_emails = []
-            for row in result:
-                # Access encrypted_email using index
-                encrypted_email = row[0]  # First column in the result
-                try:
-                    decrypted_email = cipher_suite.decrypt(encrypted_email).decode() 
-                    admin_emails.append(decrypted_email)
-                except Exception as decryption_error:
-                    print(f"Decryption failed for email: {encrypted_email}, error: {decryption_error}")
+            admin_emails = ["lovhe600@student.liu.se"] #EMPTY THIS AND UNCOMMENT THE LOOP BELOW TO SEND TO ALL ADMINS
+            # for row in result:
+            #     # Access encrypted_email using index
+            #     encrypted_email = row[0]  # First column in the result
+            #     try:
+            #         decrypted_email = cipher_suite.decrypt(encrypted_email).decode() 
+            #         admin_emails.append(decrypted_email)
+            #     except Exception as decryption_error:
+            #         print(f"Decryption failed for email: {encrypted_email}, error: {decryption_error}")
 
             print(f"Admin Emails: {admin_emails}")
         else:
