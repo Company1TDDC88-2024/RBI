@@ -332,69 +332,79 @@ const HistoryPage = () => {
       <Row gutter={16}>
         <Col xs={24} md={12}>
           <Card title={getTitle("Number of customers")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedData || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="Timestamp" 
-                  tickFormatter={timestamp => {
-                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
-                    return moment(timestamp).format('MMM YYYY');
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="EnteringCustomers" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                  name="Total number of customers" 
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {customerCountLoading ? (
+              <Spin tip="Loading..." />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={processedData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="Timestamp" 
+                    tickFormatter={timestamp => {
+                      if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                      if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                      if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
+                      return moment(timestamp).format('MMM YYYY');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="EnteringCustomers" 
+                    stroke="#8884d8" 
+                    activeDot={{ r: 8 }} 
+                    name="Total number of customers" 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </Col>
         
         <Col xs={24} md={12}>
           <Card title={getTitle("Number of queue alerts")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={processedQueueData || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="Timestamp" 
-                tickFormatter={timestamp => {
-                  if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                  if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                  if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
-                  return moment(timestamp).format('MMM YYYY');
-                }}
-              />
-              <YAxis />
-              <Tooltip />
-              <Legend />
+            {cameraQueueDataLoading ? (
+              <Spin tip="Loading..." />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={processedQueueData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="Timestamp" 
+                    tickFormatter={timestamp => {
+                      if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                      if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                      if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
+                      return moment(timestamp).format('MMM YYYY');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
 
-              {/* Define a separate line for each of the four ROIs */}
-              <Line name="Checkout 1" type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
-              <Line name="Checkout 2" type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
-              <Line name="Checkout 3" type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
-              <Line name="Checkout 4" type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
-            </LineChart>
-          </ResponsiveContainer>
+                  {/* Define a separate line for each of the four ROIs */}
+                  <Line name="Checkout 1" type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
+                  <Line name="Checkout 2" type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
+                  <Line name="Checkout 3" type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
+                  <Line name="Checkout 4" type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </Col>
       </Row>
       <Row gutter={16}>
         <Col xs={24} md={12}>
           <Card
-            title="Average Customers Per Day (Last 6 Months)"
+            title="Average number of daily customers last 6 months"
             bordered={false}
             className={styles.dashboardCard}
           >
-            {monthlyAverageData && monthlyAverageData.length > 0 ? (
+            {monthlyAverageLoading ? (
+              <Spin tip="Loading..." />
+            ) : monthlyAverageData && monthlyAverageData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyAverageData}>
                   <CartesianGrid strokeDasharray="3 3" />
