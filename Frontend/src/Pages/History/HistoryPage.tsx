@@ -24,7 +24,8 @@ const HistoryPage = () => {
   const [dates, setDates] = useState(() => {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3); // Set to last 3 months
+    startDate.setDate(2); // Set to the first day of the month
+    startDate.setMonth(startDate.getMonth() - 2); // Set to last 3 months
     return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
   });
   
@@ -47,8 +48,10 @@ const HistoryPage = () => {
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
+    startDate.setDate(2);
+    startDate.setMonth(startDate.getMonth() - 2);
     setDates([startDate.toISOString().split("T")[0], endDate]);
+    console.log('START DATE', startDate.toISOString().split("T")[0]);
   }, [currentDate]);
 
   useEffect(() => {
@@ -317,7 +320,8 @@ const HistoryPage = () => {
             const endDate = new Date();
             endDate.setHours(23, 59, 59, 999); // Set to end of the day
             const startDate = new Date();
-            startDate.setMonth(startDate.getMonth() - 3); // Set to last 3 months
+            startDate.setDate(2); // Set to the first day of the month
+            startDate.setMonth(startDate.getMonth() - 2); // Set to last 3 months
             setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
             setFrequency('1month');
             setSelectedWeekday(null);
