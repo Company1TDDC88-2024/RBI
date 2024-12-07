@@ -39,7 +39,7 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
             if (!acc[monthKey]) {
               acc[monthKey] = { total: 0 };
             }
-            acc[monthKey].total += item.TotalCustomers;
+            acc[monthKey].total += item.EnteringCustomers; // Sum up EnteringCustomers
             return acc;
           }, {});
 
