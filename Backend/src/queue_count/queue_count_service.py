@@ -262,7 +262,7 @@ async def sendAlertEmail(name):
         result = cursor.fetchall()
 
         if result:
-            admin_emails = ["marli209@student.liu.se"] #EMPTY THIS AND UNCOMMENT THE LOOP BELOW TO SEND TO ALL ADMINS
+            admin_emails = ["lovhe600@student.liu.se"] #EMPTY THIS AND UNCOMMENT THE LOOP BELOW TO SEND TO ALL ADMINS
             # for row in result:
             #     # Access encrypted_email using index
             #     encrypted_email = row[0]  # First column in the result
