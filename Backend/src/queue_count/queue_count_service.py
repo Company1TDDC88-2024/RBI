@@ -9,10 +9,12 @@ import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
+import os
 
 from cryptography.fernet import Fernet
 
-key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
+key = os.getenv('ENCRYPTION_KEY')
+key = key.encode()
 cipher_suite = Fernet(key)
 
 # Dictionary to store the last timestamp for each ROI
@@ -20,6 +22,7 @@ timestamps_roi = {}
 timestamps_start = {}
 last_upload_time = None
 count_prev: int
+easteregg_counter = 1
 
 #temp
 bol_check = True
@@ -91,7 +94,10 @@ async def upload_function_fast(i, ROIs, counts, timestamp):
     await play_sound(counts[i], ROIs[i], timestamp)
 
 
-async def upload_data_to_db(data):
+async def upload_data_to_db(data, empty):
+    if empty:
+        global easteregg_counter
+        easteregg_counter = 1
     #Get the timestamp from camera to correct format for DB
     incoming_datetime = datetime.strptime(data['timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")
     #Get the camera_id of the camera
@@ -170,17 +176,13 @@ async def get_data_from_db():
         conn.close()
 
 async def play_sound(count, ROI, timestamp):
+    global timestamp_for_easteregg
     ROI_id = ROI[0]
     threshold = ROI[5]
     name = ROI[7]
     clip_id = 39
     cooldown = ROI[8]
-    cooldown_period = timedelta(minutes=cooldown)
-    
-    if ROI_id == 1:
-        clip_id = 39
-    else:
-        clip_id = 38
+    cooldown_period = timedelta(seconds=cooldown)
 
     if ROI_id not in timestamps_roi:
         timestamps_roi[ROI_id] = datetime.now() - cooldown_period
@@ -203,6 +205,14 @@ async def play_sound(count, ROI, timestamp):
     #     print(f"Time difference for ROI {ROI_id}: {datetime.now() - timestamps_start[ROI_id]}")
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
+        global easteregg_counter
+        print("EASTER EGG: " + str(easteregg_counter))
+        
+        if easteregg_counter%3 == 0:
+            clip_id = 1
+        else:
+            clip_id = 0
+            easteregg_counter += 1
         await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         await sendAlertEmail(name)
@@ -272,8 +282,8 @@ async def sendAlertEmail(name):
     finally:
         conn.close()
 
-    email_sender = "company1.customer@gmail.com"
-    email_password = "rpmu qrel qczc jmhd"
+    email_sender = os.getenv('EMAIL_ADDRESS')
+    email_password = os.getenv('EMAIL_PASSWORD')
 
     subject = "Queue Alert!"
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 

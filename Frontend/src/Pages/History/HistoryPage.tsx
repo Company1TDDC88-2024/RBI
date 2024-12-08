@@ -51,7 +51,6 @@ const HistoryPage = () => {
     startDate.setDate(2);
     startDate.setMonth(startDate.getMonth() - 2);
     setDates([startDate.toISOString().split("T")[0], endDate]);
-    console.log('START DATE', startDate.toISOString().split("T")[0]);
   }, [currentDate]);
 
   useEffect(() => {

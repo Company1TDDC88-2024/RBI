@@ -31,7 +31,6 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
         });
 
         if (response.status === 200) {
-          console.log("Raw API Response:", response.data);
 
           // Aggregate data by month
           const monthlyData = response.data.reduce((acc: any, item: any) => {
@@ -43,8 +42,6 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
             return acc;
           }, {});
 
-          console.log("Aggregated Monthly Data:", monthlyData);
-
           // Calculate average customers per day for each month
           const monthlyAverage = Object.entries(monthlyData).map(([month, values]) => {
             const daysInMonth = moment(month, "YYYY-MM").daysInMonth(); // Calculate number of days in the month
@@ -53,8 +50,6 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
               averageCustomers: Math.round(values.total / daysInMonth), // Divide total by days in month
             };
           }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-
-          console.log("Monthly Average Data:", monthlyAverage);
 
           setData(monthlyAverage);
         }
