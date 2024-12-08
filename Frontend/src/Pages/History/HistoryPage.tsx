@@ -9,6 +9,7 @@ import { useGetMonthlyAverageCustomerCount } from '../Hooks/useGetMonthlyAverage
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
+import { useGetCoordinates } from "../Hooks/useGetCoordinates";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -62,7 +63,19 @@ const HistoryPage = () => {
   const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading, refetch: refetchCameraQueueData } = useGetQueueCount();
   const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
   const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
+  const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
 
+  const queueDataMap: Record<number, { Name: string }> =
+    coordinatesData?.reduce((acc, { ID, Name }) => {
+      acc[ID] = { Name };
+      return acc;
+    }, {} as Record<number, { Name: string }>) || {};
+
+  const graphColors = ['#8884d8', '#B77F2A', '#2C6B46', '#8B2C3C'];
+
+  console.log("queueDataMap", queueDataMap);
+
+  console.log("CAMERA QUEUE DATA", cameraQueueData);
   // Combined error state
   const combinedError = customerCountError || cameraQueueDataError || dailyCustomerError || expectedCustomerCountError || monthlyAverageError;
 
@@ -386,12 +399,16 @@ const HistoryPage = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-
-                  {/* Define a separate line for each of the four ROIs */}
-                  <Line name="Checkout 1" type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
-                  <Line name="Checkout 2" type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
-                  <Line name="Checkout 3" type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
-                  <Line name="Checkout 4" type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
+                  {Object.entries(queueDataMap).map(([id, { Name }], index) => (
+                    <Line 
+                      key={id}
+                      type="monotone" 
+                      dataKey={`ROI_${id}`} 
+                      stroke={graphColors[index]}
+                      activeDot={{ r: 8 }} 
+                      name={Name} 
+                    />
+                  ))}
                 </LineChart>
               </ResponsiveContainer>
             )}
