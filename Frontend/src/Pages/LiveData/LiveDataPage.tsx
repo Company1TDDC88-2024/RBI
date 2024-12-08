@@ -47,7 +47,6 @@ const LiveDataPage = () => {
             refetchLastYear(prevYearDate);
             refetchQueue();
             setLastUpdated(moment().format('HH:mm:ss'));
-            console.log('Data refetched');
         }, 30000); // 30 seconds
 
         return () => clearInterval(interval); // Cleanup interval on component unmount
@@ -94,7 +93,6 @@ const LiveDataPage = () => {
     useEffect(() => {
         if (error) {
             setShowError(true);
-            console.log("Error occurred:", error);
         }
     }, [error]);
 

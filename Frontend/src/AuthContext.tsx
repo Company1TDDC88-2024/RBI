@@ -41,7 +41,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   const checkLoginStatus = async () => {
     try {
       const response = await axios.get("/login/is_logged_in", { withCredentials: true });
-      console.log("API Response:", response.data);
       const { logged_in, is_admin, user } = response.data;
 
       setIsLoggedIn(logged_in);

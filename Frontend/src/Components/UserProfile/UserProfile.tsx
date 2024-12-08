@@ -30,7 +30,6 @@ const UserProfile: React.FC = () => {
     }
   };
   const handleCloseDropdown = () => {
-    console.log("Dropdown closed");
     // Additional logic for closing the dropdown can be added if necessary
   };
 

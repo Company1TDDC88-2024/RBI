@@ -48,7 +48,7 @@ const DashboardPage = () => {
   });
   const [sunday] = useState(() => {
     const date = new Date(monday);
-    date.setDate(monday.getDate() + 6);
+    date.setDate(monday.getDate() + 7);
     date.setHours(23, 59, 59, 999);
     return date;
   });
@@ -283,7 +283,6 @@ const DashboardPage = () => {
           .filter((item) => moment(item.Timestamp).isSame(today, "day"))
           .forEach((item) => {
             let hour = moment(item.Timestamp).startOf("hour").hour();  
-      
             result[hour].NumberOfCustomers += item.EnteringCustomers || 0;
           });
       
@@ -479,7 +478,7 @@ const DashboardPage = () => {
                     No. of customers today:
                   </div>
                   <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-                    {hourlyData.reduce((total, hour) => total + hour.NumberOfCustomers, 0)}
+                    {todayData ? todayData.totalEnteringCustomers : "-"}
                   </div>
                 </Card>
               </Col>
