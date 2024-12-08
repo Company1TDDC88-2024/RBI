@@ -50,7 +50,11 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
             left: 0,
           }}
         >
-          {isLoggedIn && <UserProfile />}
+          {isLoggedIn && (
+            <div style={{ marginRight: "16px", cursor: "pointer" }}>
+              <UserProfile />
+            </div>
+          )}
         </Header>
         <Content style={{ margin: "0 16px" }}>
           <div
