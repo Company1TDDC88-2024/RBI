@@ -13,6 +13,7 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { isLoggedIn } = useAuth();
 
   const isMobile = useMediaQuery({ maxWidth: 768 }); // Använd useMediaQuery för att kolla om skärmen är mindre än 768px
+  const topMargin = 50;
   const siderWidth = isMobile ? 0 : 200; // Sätt sidomenyn till 0 om skärmen är mindre än 768px
 
   return (
@@ -38,11 +39,15 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
         <Header
           className={styles.siteLayoutBackground}
           style={{
+            position: "absolute",
+            width: "100vw",
             display: "flex",
             justifyContent: "flex-end", // Align items to the right
             alignItems: "center",
             backgroundColor: "#001529", // Set header background to match the sidebar (blackish)
             padding: "0",
+            zIndex: 999,
+            left: 0,
           }}
         >
           {isLoggedIn && <UserProfile />}
@@ -50,7 +55,7 @@ const Layout: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
         <Content style={{ margin: "0 16px" }}>
           <div
             className={styles.siteLayoutBackground}
-            style={{ padding: 24, minHeight: 360 }}
+            style={{ padding: 24, minHeight: 360, marginTop: topMargin}}
           > {children}
           </div>
         </Content>

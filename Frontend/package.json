@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "concurrently \"vite --force\" \"cd .. && redis-server\" \"cd ../Backend && poetry run flask --app server run --port=5555 --reload\"",
+    "start": "concurrently \"vite --force\" \"cd .. && redis-server\"",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
