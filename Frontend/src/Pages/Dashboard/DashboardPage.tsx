@@ -212,17 +212,20 @@ const DashboardPage = () => {
   }, [influxTimeframe]);
 
   useEffect(() => {
-    if (enteringCustomers >= influxThreshold) {
-      
-      notification.warning({
-        message: "Threshold Exceeded",
-        description: `The number of entering customers (${enteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
-        icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
-        placement: "topRight",
-        duration: 5, // Duration in seconds
-      });
-    }
-  }, [enteringCustomers, influxThreshold]);
+    const interval = setInterval(() => {
+      if (enteringCustomers >= influxThreshold) {
+        notification.warning({
+          message: "Threshold Exceeded",
+          description: `The number of entering customers (${enteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
+          icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
+          placement: "topRight",
+          duration: 30, // Duration in seconds
+        });
+      }
+    }, 30000); // 30 seconds
+  
+    return () => clearInterval(interval); // Clear interval on component unmount
+  }, [enteringCustomers]);
 
   useEffect(() => {
     if (customerCountData || todayData || queueData) {

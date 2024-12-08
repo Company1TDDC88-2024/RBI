@@ -9,3 +9,11 @@ h1 {
     font-size: 2.5rem;
     color: #333; /* Dark grey text */
 }
+
+.ant-input-number {
+    margin-bottom: 10px !important;
+}
+
+.ant-input {
+    margin-bottom: 10px !important;
+}
