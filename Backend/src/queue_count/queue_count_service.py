@@ -176,7 +176,6 @@ async def get_data_from_db():
         conn.close()
 
 async def play_sound(count, ROI, timestamp):
-    global timestamp_for_easteregg
     ROI_id = ROI[0]
     threshold = ROI[5]
     name = ROI[7]
@@ -194,6 +193,10 @@ async def play_sound(count, ROI, timestamp):
 
     number_of_customers = count
 
+    #This should fix the issue with the 10 second delay only working the first time
+    #if not check_threshold(threshold, number_of_customers):
+    #    timestamps_start[ROI_id] = datetime.now()
+
     # if (ROI_id == 1):
     #     print(f"NUMBER OF CUSTOMERS IN ROI {ROI_id}: {number_of_customers}")
     #     print(f"Threshold for ROI {ROI_id}: {threshold}")
@@ -206,13 +209,12 @@ async def play_sound(count, ROI, timestamp):
 
     if await check_threshold(threshold, number_of_customers) and (datetime.now() - timestamps_roi[ROI_id]) > cooldown_period and datetime.now() - timestamps_start[ROI_id] > timedelta(seconds=10):
         global easteregg_counter
-        print("EASTER EGG: " + str(easteregg_counter))
         
         if easteregg_counter%3 == 0:
             clip_id = 1
         else:
             clip_id = 0
-            easteregg_counter += 1
+        easteregg_counter += 1
         await upload_queue_alert(ROI_id, count, timestamp) #this should be called whenever we make sound, unsure if correct position
         target_url = f"http://localhost:4000/forward_to_speaker?sound_id={str(clip_id)}"
         await sendAlertEmail(name)
@@ -240,14 +242,6 @@ async def check_threshold(threshold, count):
         return False
 
 async def sendAlertEmail(name):
-#async def sendAlertEmail():
-    #user_id = session.get('user_id')  
-
-    #if not user_id:
-     #   print("Error: User is not logged in.")
-      #  return  
-
-    #print(f"User ID: {user_id}")
 
     conn = await get_db_connection()
     if conn is None:
@@ -309,30 +303,6 @@ async def sendAlertEmail(name):
                 print(f"Email sent successfully to {admin_email}!")
     except Exception as e:
         print(f"Error occurred while sending emails: {e}")
-
-
-
-# async def check_queue_time(count, ROI_id, threshold):
-#     if ROI_id not in timestamps_start:
-#         timestamps_start[ROI_id] = datetime.now()
-#         print(f"Initialized timestamp for ROI {ROI_id} at {timestamps_start[ROI_id]}")
-
-#     current_time = datetime.now()
-#     time_difference = current_time - timestamps_start[ROI_id]
-
-#     print(f"Timestamp in start list for ROI {ROI_id}: {timestamps_start[ROI_id]}")
-#     print(f"Current time: {current_time}")
-#     print(f"Time difference for ROI {ROI_id}: {time_difference}")
-
-#     if count >= threshold and time_difference > timedelta(seconds=20):
-#         timestamps_start[ROI_id] = current_time
-#         print(f"Queue time check passed for ROI {ROI_id}. Updated timestamp to {timestamps_start[ROI_id]}")
-#         return True
-#     else:
-#         print(f"Queue time check failed for ROI {ROI_id}. Count: {count}, Threshold: {threshold}, Time difference: {time_difference}")
-#         return False
-    
-
 
 async def get_queues_from_db():
     #await sendAlertEmail()

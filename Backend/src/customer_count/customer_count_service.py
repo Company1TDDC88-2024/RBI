@@ -3,12 +3,13 @@ from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
-
+import os
 from datetime import datetime
 import pyodbc
 from cryptography.fernet import Fernet
 
-key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
+key = os.getenv('ENCRYPTION_KEY')
+key = key.encode()
 cipher_suite = Fernet(key)
 
 # ENCRYPTION DONE
