@@ -212,22 +212,6 @@ const DashboardPage = () => {
   }, [influxTimeframe]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (enteringCustomers >= influxThreshold) {
-        notification.warning({
-          message: "Threshold Exceeded",
-          description: `The number of entering customers (${enteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
-          icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
-          placement: "topRight",
-          duration: 30, // Duration in seconds
-        });
-      }
-    }, 30000); // 30 seconds
-  
-    return () => clearInterval(interval); // Clear interval on component unmount
-  }, [enteringCustomers]);
-
-  useEffect(() => {
     if (customerCountData || todayData || queueData) {
       setLastUpdated(moment().format('HH:mm:ss'));
     }
@@ -297,6 +281,33 @@ const DashboardPage = () => {
       })));
     }
   }, [customerCountData, monday, sunday, today]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (customerCountData) {
+        const now = new Date();
+        const timeframeStart = new Date(now.getTime() - influxThreshold * 60000); // Convert minutes to milliseconds
+        
+        const totalEnteringCustomers = customerCountData
+          .filter(item => new Date(item.Timestamp) >= timeframeStart)
+          .reduce((sum, item) => sum + item.EnteringCustomers, 0);
+
+        console.log("Total Entering Customers: ", totalEnteringCustomers);
+  
+        if (totalEnteringCustomers >= influxThreshold) {
+          notification.warning({
+            message: "Threshold Exceeded",
+            description: `The number of entering customers (${totalEnteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
+            icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
+            placement: "topRight",
+            duration: 8, // Duration in seconds
+          });
+        }
+      }
+    }, 10000);
+  
+    return () => clearInterval(interval); // Clear interval on component unmount
+  }, [customerCountData, influxThreshold]);
 
   // Combined error state
   const combinedError = customerCountError || errorToday || errorQueue || historicalDataError;
