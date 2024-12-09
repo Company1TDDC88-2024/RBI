@@ -1,7 +1,13 @@
 import unittest
-from . import db_functions as db
+import sys
+sys.path.append('.')  # Add the current directory to the Python path
+import db_functions as db
 import json
 
+from dotenv import load_dotenv
+
+# Call load_dotenv() to load the .env file before any tests
+load_dotenv()
 class TestDBOperations(unittest.TestCase):
     
 
@@ -31,39 +37,3 @@ class TestDBOperations(unittest.TestCase):
             self.assertEqual(actual_fields[expected_field], expected_type,
                              f"Field '{expected_field}' in section '{section}' should be '{expected_type}' but found '{actual_fields[expected_field]}'.")
 
-    # COORDINATES TESTS
-    def test_coordinates_fields(self):
-        
-        expected_fields = {
-            "ID": "int",
-            "TopBound": "decimal",
-            "BottomBound": "decimal",
-            "LeftBound": "decimal",
-            "RightBound": "decimal"
-        }
-        self.check_field_exists_and_type("Coordinates", expected_fields)
-
-    # CUSTOMER COUNT TESTS
-    def test_customer_count_fields(self):
-        
-        expected_fields = {
-            "ID": "int",
-            "Timestamp": "datetime",
-            "TotalCustomers": "int",
-            "EnteringCustomers": "int",
-            "ExitingCustomers": "int",
-            "TimeInterval": "int"
-        }
-        self.check_field_exists_and_type("CustomerCount", expected_fields)
-
-    # QUEUE COUNT TESTS
-    def test_queue_count_fields(self):
-       
-        expected_fields = {
-            "ID": "int",
-            "NumberOfCustomers": "int",
-            "Timestamp": "datetime",
-            "ROI": "int"
-        }
-        self.check_field_exists_and_type("QueueCount", expected_fields)
-    

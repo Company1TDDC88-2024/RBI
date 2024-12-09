@@ -54,10 +54,19 @@ build_backend:
         - buildah build-using-dockerfile --tag "$BACKEND_IMAGE" . # Build the backend image
         - buildah push "$BACKEND_IMAGE" # Push the image to Docker Hub
 
-#test:
-#stage: test
-#script:
-#- Execute tests depending on what tool we are using and path to file with all the tests
+test:
+    stage: test
+    image: python:3.12-slim # Use Python image that has pytest installed
+    before_script:
+        - cd Backend
+        - pip install poetry # Ensure poetry is installed
+        - poetry install # Install dependencies
+        - pip install python-dotenv # Install dotenv to load .env file
+        - export $(cat .env | xargs) # Load environment variables from .env (if necessary)
+    script:
+        - cd AutoTesting
+        - pytest --maxfail=1 --disable-warnings -q # Run the tests and stop after first failure
+    allow_failure: false # Ensure the pipeline stops if tests fail
 
 test_database_connection:
     stage: test
