@@ -63,6 +63,7 @@ test:
         - poetry install # Install dependencies
         - pip install python-dotenv # Install dotenv to load .env file
         - pip install pytest # Install pytest
+        - pip install pytest-html
         - export $(cat .env | xargs) # Load environment variables from .env (if necessary)
     script:
         - cd AutoTesting
