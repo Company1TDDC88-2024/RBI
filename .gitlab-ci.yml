@@ -60,6 +60,7 @@ test:
     before_script:
         - cd Backend
         - pip install poetry # Ensure poetry is installed
+        - apt-get update && apt-get install -y unixodbc-dev
         - poetry install # Install dependencies
         - pip install python-dotenv # Install dotenv to load .env file
         - pip install pytest # Install pytest
