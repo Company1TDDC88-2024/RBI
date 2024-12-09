@@ -69,7 +69,7 @@ test:
         - export $(cat .env | xargs) # Load environment variables from .env (if necessary)
     script:
         - cd AutoTesting
-        - pytest --maxfail=1 --disable-warnings -q # Run the tests and stop after first failure
+        - poetry run pytest --maxfail=1 --disable-warnings -q
     allow_failure: false # Ensure the pipeline stops if tests fail
 
 test_database_connection:
