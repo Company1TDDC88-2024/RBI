@@ -301,8 +301,8 @@ const DashboardPage = () => {
         if (totalEnteringCustomers >= influxThreshold && !notificationVisible && !notificationClosed) {
           setNotificationVisible(true);
           notification.warning({
-            message: "Threshold Exceeded",
-            description: `The number of entering customers (${totalEnteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
+            message: "Many customers entering",
+            description: ` `,
             icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
             placement: "topRight",
             duration: 55, // Duration in seconds

@@ -253,7 +253,7 @@ const SettingsPage = () => {
               </Button>
             </div>
             <div className={styles.inputGroup}>
-              <label>Change Timeframe</label>
+              <label>Change Timeframe (Minutes) </label>
               <InputNumber
                 min={1}
                 max={1000000}
