@@ -15,7 +15,7 @@ SPEAKER_PASSWORD = xxxx</i>
 
 ## Setup
 
-The first thing needed is to install all the packages which are used by the Proxy. This is done by running this command in the terminal while instead the Proxy directory (/Proxy).
+The first thing needed is to install all the packages which are used by the Proxy. This is done by running this command in the terminal while inside of the Proxy directory (/Proxy).
 
 ```bash
 pip install
