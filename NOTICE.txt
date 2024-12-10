@@ -1,0 +1,14 @@
+RETAIL BUSINESS INTELLIGENCE
+Copyright 2024 Company1
+ 
+This product includes software developed by
+Company1
+ 
+----------------
+This software includes the following third-party components:
+ 
+aacap-native-sdk
+Copyright 2024 Axis Communications
+Licensed under the Apache License, Version 2.0
+https://github.com/AxisCommunications/acap-native-sdk
+ 
