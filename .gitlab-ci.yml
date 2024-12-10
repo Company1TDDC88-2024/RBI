@@ -68,7 +68,6 @@ test:
         - pip install pyodbc
         - export $(cat .env | xargs) # Load environment variables from .env (if necessary)
     script:
-        - poetry shell
         - cd AutoTesting
         - poetry run pytest --maxfail=1 --disable-warnings -q
     allow_failure: false # Ensure the pipeline stops if tests fail
