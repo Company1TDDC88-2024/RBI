@@ -299,10 +299,12 @@ const DashboardPage = () => {
         console.log("Total Entering Customers: ", totalEnteringCustomers);
   
         if (totalEnteringCustomers >= influxThreshold && !notificationVisible && !notificationClosed) {
+          const timestamp = now.toLocaleString();
           setNotificationVisible(true);
           notification.warning({
+            key: "influxWarning", // Unique key to prevent duplicate notifications
             message: "Many customers entering",
-            description: ` `,
+            description: `Notification Time: ${timestamp}`,
             icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
             placement: "topRight",
             duration: 55, // Duration in seconds
@@ -312,7 +314,7 @@ const DashboardPage = () => {
               setTimeout(() => {
                 setNotificationVisible(false);
                 setNotificationClosed(false);
-              }, 55000); // 20000 milliseconds = 20 seconds
+              }, 10000); // 20000 milliseconds = 20 seconds
             },
           });
         }

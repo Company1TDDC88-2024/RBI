@@ -237,7 +237,7 @@ const SettingsPage = () => {
             <div className={styles.inputGroup}>
               <label>Change Influx Threshold</label>
               <InputNumber
-                min={1}
+                min={0}
                 max={500}
                 value={influxThreshold}
                 onChange={(value) => setInfluxThreshold(value || 0)}
