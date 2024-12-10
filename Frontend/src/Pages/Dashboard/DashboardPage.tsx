@@ -314,7 +314,7 @@ const DashboardPage = () => {
               setTimeout(() => {
                 setNotificationVisible(false);
                 setNotificationClosed(false);
-              }, 10000); // 20000 milliseconds = 20 seconds
+              }, 55000); // 20000 milliseconds = 20 seconds
             },
           });
         }
