@@ -7,7 +7,6 @@ ENV PYTHONUNBUFFERED=1
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
 
-#test
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg
@@ -67,6 +66,9 @@ RUN apt-get update \
     && rm msodbcsql18_18.2.2.1-1_amd64.deb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Update pip to the latest version
+RUN pip install --no-cache-dir --upgrade pip
 
 # Set environment variable for Flask
 ENV FLASK_APP=server.py
