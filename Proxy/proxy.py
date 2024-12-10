@@ -14,7 +14,7 @@ def index():
     return "ACAP Proxy Server is Running"
 
 # Route to receive data from the camera
-@app.route('/customer_count/upload', methods=['POST'])
+@app.route('/api/customer_count/upload', methods=['POST'])
 def forward_customer_count():
 
     data = request.json
@@ -32,11 +32,31 @@ def forward_customer_count():
     except requests.exceptions.RequestException as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
     
-@app.route('/queue_count/upload', methods=['POST'])
+@app.route('/api/queue_count/upload', methods=['POST'])
 def forward_queue_count():
-    
+    print("Forwarding queue count data")
+
     data = request.json
     target_url = os.environ.get('BACKEND_URL') + '/queue_count/upload'
+
+    try:
+        # Forward the data to the target URL
+        response = requests.post(target_url, json=data)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            return jsonify({'status': 'success', 'message': 'Data forwarded successfully'}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to forward data'}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+@app.route('/api/queue_count/upload_empty', methods=['POST'])
+def forward_queue_count_empty():
+    print("Forwarding queue count data")
+
+    data = request.json
+    target_url = os.environ.get('BACKEND_URL') + '/queue_count/upload_empty'
 
     try:
         # Forward the data to the target URL

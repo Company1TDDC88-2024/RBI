@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
 
+#test
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc unixodbc-dev curl apt-transport-https gnupg
@@ -48,7 +49,7 @@ FROM python:3.10
 ENV PATH="/root/.local/bin:$PATH"
 ENV ACCEPT_EULA=Y
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DEPLOYMENT=True
+ENV DEPLOYMENT="True"
 ENV BACKEND_URL="https://tddc88-company1-ht24.kubernetes-public.it.liu.se/api"
 
 # Set the working directory

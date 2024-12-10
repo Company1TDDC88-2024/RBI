@@ -3,12 +3,13 @@ from datetime import datetime, timedelta
 from src.database_connect import get_db_connection
 from datetime import datetime
 from typing import List, Dict, Union, Optional
-
+import os
 from datetime import datetime
 import pyodbc
 from cryptography.fernet import Fernet
 
-key = b'3wqWt9HPKvl0MGA6TL5x18As--2L6mdoZsPRTzSkE3A=' 
+key = os.getenv('ENCRYPTION_KEY')
+key = key.encode()
 cipher_suite = Fernet(key)
 
 # ENCRYPTION DONE
@@ -31,14 +32,14 @@ async def upload_data_to_db(data):
         "Timestamp": last_timestamp
     }
 
-    if bounding_boxes[-1]["left"] < 0.3:
+    if bounding_boxes[-1]["left"] < 0.2 and bounding_boxes[0]["right"] > 0.8:
         # Customer is exiting
         placeholder = {
             "EnteringCustomers": 0,
             "ExitingCustomers": 1,
             "Timestamp": last_timestamp
         }
-    elif bounding_boxes[-1]["right"] > 0.7:
+    elif bounding_boxes[-1]["right"] > 0.8 and bounding_boxes[0]["left"] < 0.2:
         # Customer is entering
         placeholder = {
             "EnteringCustomers": 1,
@@ -116,21 +117,28 @@ async def upload_data_to_db(data):
     finally:
         conn.close()
 
-# ENCRYPTION DONE
-async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Union[str, List[Dict[str, Union[int, str]]]]:
-    conn = await get_db_connection()
+async def get_data_from_db(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
+) -> Union[str, List[Dict[str, Union[int, str]]]]:
+    conn = await get_db_connection()  # Ensure this is an async function
     if conn is None:
         return "Failed to connect to database"
 
-    cursor = conn.cursor()
-
     try:
-        # Fecth all data from CustomerCount table, if no start_date or end_date is provided
-        query = ("SELECT ID, TotalCustomers, Timestamp FROM CustomerCount")
+        # Open a cursor for executing the query
+        cursor = conn.cursor()
+
+        # Base query to fetch data
+        query = """
+        SELECT ID, TotalCustomers_temp, EnteringCustomers_temp, Timestamp 
+        FROM CustomerCount_temp
+        """
         params = []
 
+        # Add date filtering logic
         if start_date and end_date:
-            # If start_date and end_date are the same or only one day apart, adjust end_date to the end of the day
+            # Adjust end_date to include the full day
             if start_date.date() == end_date.date() or (end_date - start_date).days == 1:
                 end_date = end_date + timedelta(days=1) - timedelta(microseconds=1)
             query += " WHERE Timestamp BETWEEN ? AND ?"
@@ -143,21 +151,76 @@ async def get_data_from_db(start_date: Optional[datetime] = None, end_date: Opti
             query += " WHERE Timestamp <= ?"
             params.append(end_date)
 
+        # Execute the query with the parameters
         cursor.execute(query, params)
         rows = cursor.fetchall()
+
+        # Process and decrypt the data
         data = []
+        existing_dates = set()
         for row in rows:
+            encrypted_total = row[1]
+            encrypted_entering = row[2]
+            try:
+                decrypted_total = (
+                    int(cipher_suite.decrypt(encrypted_total).decode())
+                    if encrypted_total
+                    else 0
+                )
+            except Exception as e:
+                print(f"Decryption error for TotalCustomers_temp (ID={row[0]}): {e}")
+                decrypted_total = None
+
+            try:
+                decrypted_entering = (
+                    int(cipher_suite.decrypt(encrypted_entering).decode())
+                    if encrypted_entering
+                    else 0
+                )
+            except Exception as e:
+                print(f"Decryption error for EnteringCustomers_temp (ID={row[0]}): {e}")
+                decrypted_entering = None
+
+            # Record the date for this row
+            date_only = row[3].date()
+            existing_dates.add(date_only)
+
+            # Add the decrypted data to the result list
             data.append({
                 'ID': row[0],
-                'TotalCustomers': row[1],
-                'Timestamp': row[2],
+                'TotalCustomers': decrypted_total,
+                'EnteringCustomers': decrypted_entering,
+                'Timestamp': row[3],
             })
+
+        # Add missing dates with TotalCustomers = 0
+        if start_date and end_date:
+            current_date = start_date.date()
+            end_date_only = end_date.date()
+
+            while current_date <= end_date_only:
+                if current_date not in existing_dates:
+                    data.append({
+                        'ID': None,  # No ID for missing dates, dont need to have one 
+                        'TotalCustomers': 0,
+                        'EnteringCustomers': 0,
+                        'Timestamp': datetime.combine(current_date, datetime.min.time()),
+                    })
+                current_date += timedelta(days=1)
+
+        # Sort data by timestamp
+        data.sort(key=lambda x: x['Timestamp'])
+
         return data
+
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
         return "Error fetching data"
+
     finally:
+        # Ensure the connection is closed
         conn.close()
+
 
 #ENCRYPTION DONE
 async def get_number_of_customers(start_timestamp, end_timestamp):
@@ -168,37 +231,54 @@ async def get_number_of_customers(start_timestamp, end_timestamp):
     cursor = conn.cursor()
 
     try:
+        incoming_datetimestart = datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        incoming_datetimeend = datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        # Debugging converted timestamps
+        print(f"Converted Timestamps: start={incoming_datetimestart}, end={incoming_datetimeend}")
+
         # Fetch all rows between start_timestamp and end_timestamp
         cursor.execute("""
-            SELECT TotalCustomers_temp 
+            SELECT TotalCustomers_temp,
+                   EnteringCustomers_temp 
             FROM CustomerCount_temp
             WHERE Timestamp >= ? AND Timestamp <= ?
-        """, (start_timestamp, end_timestamp))
+        """, (incoming_datetimestart, incoming_datetimeend))
         
         rows = cursor.fetchall()
-        if not rows:
-            return "No data found for the given time range"
 
         # Decrypt and calculate the total number of customers
         total_customers = 0
+        total_entering_customers = 0
         for row in rows:
             encrypted_total = row[0]
+            encrypted_entering = row[1]
+            
             try:
-                # Decrypt each TotalCustomers_temp value if it's not None
+                # Decrypt TotalCustomers_temp value
                 decrypted_total = int(cipher_suite.decrypt(encrypted_total).decode()) if encrypted_total else 0
                 total_customers += decrypted_total
+                
+                # Decrypt EnteringCustomers_temp value
+                decrypted_entering = int(cipher_suite.decrypt(encrypted_entering).decode()) if encrypted_entering else 0
+                total_entering_customers += decrypted_entering
+            
             except Exception as e:
-                print(f"Decryption error for TotalCustomers_temp: {e}")
+                print(f"Decryption error: {e}")
                 continue  # Skip rows with decryption errors
         
-        # Calculate the average number of customers
+        # Calculate the average number of customers 
         average_customers = total_customers / len(rows) if rows else 0
-        return int(average_customers)  # Return as an integer
+        
+        # Return a list of results
+        return [average_customers, total_entering_customers]
     except pyodbc.Error as e:
         print(f"Error fetching data: {e}")
         return "Error fetching data"
     finally:
         conn.close()
+
+
 
 #ENCRYPTION DONE
 async def get_daily_data_from_db(date: datetime) -> Union[str, List[Dict[str, Union[int, str]]]]:

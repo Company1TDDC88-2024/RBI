@@ -54,7 +54,7 @@ async def get_data():
     if end_date:
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
-
+    
     data = await get_data_from_db(start_date, end_date)
     if isinstance(data, str):
         return jsonify({'message': data}), 500
@@ -62,21 +62,29 @@ async def get_data():
 
 # ENCRYPTION DONE
 # Route för att hämta genomsnittligt antal kunder mellan två tidsstämplar
-@customer_count_bp.route('/get_customers', methods=['POST'])
+@customer_count_bp.route('/get_customers', methods=['GET'])
 @login_required
 async def get_customers():
-    data = request.json
-    start_timestamp = data.get('start_timestamp')
-    end_timestamp = data.get('end_timestamp')
-    
+    # Use request.args.get() to access query parameters
+    start_timestamp = request.args.get('startTimestamp')
+    end_timestamp = request.args.get('endTimestamp')
+
     if not start_timestamp or not end_timestamp:
         return jsonify({'message': 'Missing start_timestamp or end_timestamp'}), 400
 
     result = await get_number_of_customers(start_timestamp, end_timestamp)
-    if isinstance(result, str):  # Hantera felmeddelande från servicefunktionen
-        return jsonify({'message': result}), 500
     
-    return jsonify({'average_customers': result}), 200
+    if isinstance(result, str):  # Handle error messages returned by the service function
+        return jsonify({'message': result}), 500
+    print('entering: ' + str(result[1]))
+    # Return both average customers and entering customers as a list
+    return jsonify({
+        'average_customers': result[0],
+        'entering_customers': result[1]  # The result is returned as a list [average_customers, total_entering_customers]
+    }), 200
+
+
+
 
 
 #ENCRYPTION DONE

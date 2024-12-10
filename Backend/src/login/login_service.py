@@ -49,8 +49,10 @@ async def create_account(data, token) -> str:
     # Encrypt first_name, last_name, and email
     encrypted_first_name = cipher_suite.encrypt(data['first_name'].encode())
     encrypted_last_name = cipher_suite.encrypt(data['last_name'].encode())
-    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    encrypted_email = cipher_suite.encrypt(data['email'].encode())
 
+    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    
     # Check if the email already exists
     cursor.execute("SELECT email FROM \"User\" WHERE email = ?", (hashed_email,))
     existing_user = cursor.fetchone()
@@ -73,9 +75,9 @@ async def create_account(data, token) -> str:
     try:
         # Insert the new user into the database
         cursor.execute("""
-            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count)
-            VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token))
+            INSERT INTO "User" (first_name, last_name, email, is_admin, password_hash, token, verified, wrong_password_count, email_encrypted)
+            VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
+        """, (encrypted_first_name, encrypted_last_name, hashed_email, is_admin, stored_password, token, encrypted_email,))
 
         conn.commit()
         return "Account created successfully"
@@ -102,14 +104,14 @@ async def login_user(data) -> Union[str, dict]:
         """, (email_hash,))
         user = cursor.fetchone()
 
+        # Unpack user details
+        verified, wrong_password_count, stored_password, user_id, is_admin = user
+
         if not user:
             if wrong_password_count >= 5:
                 return "Too many failed login attempts"
             else:
                 return "Invalid email or password"
-
-        # Unpack user details
-        verified, wrong_password_count, stored_password, user_id, is_admin = user
 
         # Extract salt and hashed password from the stored_password
         salt_hex, stored_hash = stored_password.split('$')
@@ -215,23 +217,107 @@ async def delete_account(email: str) -> str:
         return "Error deleting account"
     finally:
         conn.close()
+async def get_user_email(user_id: int) -> dict:
 
-async def is_logged_in_service(user_id: int) -> dict:
     conn = await get_db_connection()
     if conn is None:
-        return {'logged_in': False, 'is_admin': False}  # Return false if connection fails
+        print("Failed to connect to database")
+        return None
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT is_admin FROM \"User\" WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT email_encrypted FROM \"User\" WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
-        if user:
-            is_admin = user.is_admin
-            return {'logged_in': True, 'is_admin': is_admin}
-        else:
-            return {'logged_in': True, 'is_admin': False}  # Return false if user not found
+        
     except pyodbc.Error as e:
-        print(f"Error fetching admin status: {e}")
-        return {'logged_in': True, 'is_admin': False}  # Return false on error
+        print(f"Error fetching email: {e}")
+        return None
+        
+    if user:
+        try:
+            email = str(cipher_suite.decrypt(user.email_encrypted).decode())
+            return email
+        except Exception as e:
+            print(f"Error decrypting email: {e}")
+            return None
+    else:
+        print("User not found")
+        return None
+
+
+
+async def get_user_data(user_id: int) -> dict:
+    conn = await get_db_connection()
+    if conn is None:
+        return {"error": "Failed to connect to the database"}
+
+    try:
+        # Fetch the email using get_user_email
+        email = await get_user_email(user_id)
+        if email is None:
+            return {"error": "Failed to fetch or decrypt email"}
+
+        cursor = conn.cursor()
+        # Fetch first_name and last_name
+        cursor.execute("SELECT first_name, last_name FROM \"User\" WHERE user_id = ?", (user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return {"error": "User not found"}
+
+        # Decrypt fields
+        encrypted_first_name, encrypted_last_name = user
+        decrypted_first_name = cipher_suite.decrypt(encrypted_first_name).decode()
+        decrypted_last_name = cipher_suite.decrypt(encrypted_last_name).decode()
+
+        return {
+            "first_name": decrypted_first_name,
+            "last_name": decrypted_last_name,
+            "email": email
+        }
+    except Exception as e:
+        print(f"Error decrypting user data: {e}")
+        return {"error": "Error decrypting user data"}
     finally:
         conn.close()
+
+
+
+
+async def is_logged_in_service(user_id: int) -> dict:
+    # Fetch decrypted user data
+    user_data = await get_user_data(user_id)
+    
+    # Check if user_data retrieval was successful
+    if "error" in user_data:
+        return {'logged_in': False, 'is_admin': False, 'user': None}  # Return false if an error occurred
+
+    # Add is_admin check directly
+    conn = await get_db_connection()
+    if conn is None:
+        return {'logged_in': False, 'is_admin': False, 'user': None}
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT is_admin FROM \"User\" WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        if result:
+            is_admin = result[0]
+            # Combine decrypted data with admin status
+            return {
+                'logged_in': True,
+                'is_admin': is_admin,
+                'user': {
+                    'name': f"{user_data['first_name']} {user_data['last_name']}",
+                    'email': user_data['email']
+                }
+            }
+        else:
+            return {'logged_in': False, 'is_admin': False, 'user': None}
+
+    except pyodbc.Error as e:
+        print(f"Error fetching admin status: {e}")
+        return {'logged_in': False, 'is_admin': False, 'user': None}
+    finally:
+        conn.close()
+

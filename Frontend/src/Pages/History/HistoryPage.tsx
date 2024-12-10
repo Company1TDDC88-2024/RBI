@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Button, Card, Row, Col, Spin, Alert, DatePicker } from "antd";
+import { Button, Card, Row, Col, Spin, Alert, DatePicker, Select } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useGetCustomerCount } from "../Hooks/useGetCustomerCount";
 import { useGetQueueCount } from "../Hooks/useGetQueueCount";
@@ -10,34 +9,25 @@ import { useGetMonthlyAverageCustomerCount } from '../Hooks/useGetMonthlyAverage
 import styles from "./HistoryPage.module.css";
 import DateTimeDisplay from '../DateTimeDisplay';
 import moment from 'moment';
+import { useGetCoordinates } from "../Hooks/useGetCoordinates";
 
 const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const HistoryPage = () => {
   const currentDate = new Date().toISOString().split("T")[0];
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7);
   const formattedStartDate = startDate.toISOString().split("T")[0];
   const todaysDate = new Date();  // Get today's date
-  console.log("date from history:",todaysDate);
-  todaysDate.setFullYear(todaysDate.getFullYear() - 1); 
-  console.log("Adjusted current date to last year:", todaysDate); // Adjust the year to last year
+  todaysDate.setFullYear(todaysDate.getFullYear() - 1); // Adjust the year to last year
   const selectedDate = todaysDate.toISOString().split("T")[0];
-  console.log("Formatted selected date:", selectedDate); 
-
 
   const [dates, setDates] = useState(() => {
-    const savedDates = localStorage.getItem('dates');
-    if (savedDates) {
-      return JSON.parse(savedDates);
-    } else {
-      // Default to the current month for both start and end dates
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth()); // Set to last month
-    
-      return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
-    }
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(2); // Set to the first day of the month
+    startDate.setMonth(startDate.getMonth() - 2); // Set to last 3 months
+    return [startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]];
   });
   
   const [frequency, setFrequency] = useState(() => {
@@ -49,14 +39,18 @@ const HistoryPage = () => {
     }
   });
 
+  const [selectedWeekday, setSelectedWeekday] = useState(null);
   const [processedData, setProcessedData] = useState([]);
   const [processedQueueData, setProcessedQueueData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState('Never');
+  const [rangePickerValue, setRangePickerValue] = useState(null);
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     const endDate = new Date().toISOString().split("T")[0];
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7);
+    startDate.setDate(2);
+    startDate.setMonth(startDate.getMonth() - 2);
     setDates([startDate.toISOString().split("T")[0], endDate]);
   }, [currentDate]);
 
@@ -69,7 +63,30 @@ const HistoryPage = () => {
   const { data: cameraQueueData, error: cameraQueueDataError, loading: cameraQueueDataLoading, refetch: refetchCameraQueueData } = useGetQueueCount();
   const { data: monthlyAverageData, loading: monthlyAverageLoading, error: monthlyAverageError } = useGetMonthlyAverageCustomerCount(6);
   const { data: expectedCustomerCountData, error: expectedCustomerCountError, loading: expectedCustomerCountLoading } = useGetExpectedCustomerCount(selectedDate);
+  const { data: coordinatesData, loading: loadingCoordinates } = useGetCoordinates();
 
+  const queueDataMap: Record<number, { Name: string }> =
+    coordinatesData?.reduce((acc, { ID, Name }) => {
+      acc[ID] = { Name };
+      return acc;
+    }, {} as Record<number, { Name: string }>) || {};
+
+  const graphColors = ['#8884d8', '#B77F2A', '#2C6B46', '#8B2C3C'];
+
+  console.log("queueDataMap", queueDataMap);
+
+  console.log("CAMERA QUEUE DATA", cameraQueueData);
+  // Combined error state
+  const combinedError = customerCountError || cameraQueueDataError || dailyCustomerError || expectedCustomerCountError || monthlyAverageError;
+
+  // useEffect to handle combined errors
+  useEffect(() => {
+    if (combinedError) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+  }, [combinedError]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -77,7 +94,6 @@ const HistoryPage = () => {
         refetchDailyCustomer(currentDate);
         refetchCameraQueueData();
         setLastUpdated(moment().format('HH:mm:ss'));
-        console.log('Data refetched');
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval); // Cleanup interval on component unmount
@@ -107,7 +123,7 @@ const HistoryPage = () => {
 };
 
   // Process data to aggregate based on frequency within the selected date range
-  const processData = (customerCountData, frequency, dates) => {
+  const processData = (customerCountData, frequency, dates, selectedWeekday) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
@@ -129,24 +145,28 @@ const HistoryPage = () => {
         if (frequency === '1hour') {
             key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
+            if (selectedWeekday !== null && timestamp.getDay() !== selectedWeekday) return;
             key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        } else if (frequency === '1week') {
+            key = moment(timestamp).format('YYYY-[W]WW'); // Group by week
         } else if (frequency === '1month') {
             key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
 
-        // Aggregate TotalCustomers by the formatted key
+        // Initialize the key if it doesn't exist
         if (!result[key]) {
-            result[key] = { Timestamp: key, TotalCustomers: 0 };
+            result[key] = { Timestamp: key, EnteringCustomers: 0 };
         }
 
-        result[key].TotalCustomers += item.TotalCustomers;
+        // Aggregate EnteringCustomers by the formatted key
+        result[key].EnteringCustomers += item.EnteringCustomers;
     });
 
     // Return the results sorted by timestamp
     return Object.values(result).sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-};
+  };
 
-  const processQueueData = (cameraQueueData, frequency, dates, threshold = 1) => {
+  const processQueueData = (cameraQueueData, frequency, dates, selectedWeekday, threshold = 1) => {
     const result = {};
     const startDate = new Date(dates[0]);
     const endDate = new Date(dates[1]);
@@ -161,6 +181,7 @@ const HistoryPage = () => {
       if (timestamp >= startDate && timestamp <= endDate) {
         // Skip items that do not meet the ROI criteria or have customers below the threshold
         if (![1, 4, 5, 6].includes(item.ROI) || item.NumberOfCustomers < threshold) return;
+        if (selectedWeekday !== null && timestamp.getDay() !== selectedWeekday) return;
   
         let key;
   
@@ -169,6 +190,8 @@ const HistoryPage = () => {
           key = moment(timestamp).format('YYYY-MM-DD HH:00'); // Group by hour
         } else if (frequency === '1day') {
           key = moment(timestamp).format('YYYY-MM-DD'); // Group by day
+        } else if (frequency === '1week') {
+          key = moment(timestamp).format('YYYY-[W]WW'); // Group by week
         } else if (frequency === '1month') {
           key = moment(timestamp).format('YYYY-MM'); // Group by month
         }
@@ -188,18 +211,25 @@ const HistoryPage = () => {
     return frequency === '1month' ? groupedData : groupedData;
   };
   
-  
+  const getTitle = (baseTitle) => {
+    if (frequency === '1hour') return `${baseTitle} per hour`;
+    if (frequency === '1day') return `${baseTitle} per day`;
+    if (frequency === '1week') return `${baseTitle} per week`;
+    if (frequency === '1month') return `${baseTitle} per month`;
+    return baseTitle;
+  };
+
   useEffect(() => {
     if (customerCountData) {
-      setProcessedData(processData(customerCountData, frequency, dates));
+      setProcessedData(processData(customerCountData, frequency, dates, selectedWeekday));
     }
-  }, [customerCountData, frequency, dates]);
+  }, [customerCountData, frequency, dates, selectedWeekday]);
 
   useEffect(() => {
     if (cameraQueueData) {
-      setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates));
+      setProcessedQueueData(processQueueData(cameraQueueData, frequency, dates, selectedWeekday));
     }
-  }, [cameraQueueData, frequency, dates]);
+  }, [cameraQueueData, frequency, dates, selectedWeekday]);
   
 
   if (cameraQueueDataLoading || dailyCustomerLoading || customerCountLoading||expectedCustomerCountLoading) {
@@ -216,115 +246,185 @@ const HistoryPage = () => {
       <h1>Historical Data</h1>
       <DateTimeDisplay lastUpdated={lastUpdated} />
 
+      {showError && (
+        <Alert
+          message="Error"
+          description={
+            combinedError?.message || "An error occurred while fetching data."
+          }
+          type="error"
+          showIcon
+          style={{ marginBottom: "16px" }}
+        />
+      )}
+
       <Row gutter={16} align="middle" style={{ marginBottom: '20px' }}>
         <Col>
-          <RangePicker onChange={onDateChange} />
+          <RangePicker 
+            onChange={(dates, dateStrings) => {
+              onDateChange(dates, dateStrings);
+              setRangePickerValue(dates);
+            }}
+            value={rangePickerValue}
+          />
         </Col>
         <Col>
-          <Button 
-            onClick={() => setFrequency('1hour')} 
+        <Button 
+            onClick={() => {
+              setFrequency('1hour');
+              setSelectedWeekday(null);
+            }} 
             type={frequency === '1hour' ? 'primary' : 'default'}
             style={{ marginRight: '10px' }}
           >
             Per Hour
           </Button>
           <Button 
-            onClick={() => setFrequency('1day')} 
+            onClick={() => {
+              setFrequency('1day');
+              setSelectedWeekday(null);
+            }}
             type={frequency === '1day' ? 'primary' : 'default'}
             style={{ marginRight: '10px' }}
           >
             Per Day
           </Button>
           <Button 
-            onClick={() => setFrequency('1month')} 
+            onClick={() => {
+              setFrequency('1week');
+              setSelectedWeekday(null);
+            }}
+            type={frequency === '1week' ? 'primary' : 'default'}
+            style={{ marginRight: '10px' }}
+          >
+            Per Week
+          </Button>
+          <Button 
+            onClick={() => {
+              setFrequency('1month');
+              setSelectedWeekday(null);
+            }} 
             type={frequency === '1month' ? 'primary' : 'default'}
           >
             Per Month
           </Button>
         </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col span={12}>
-          <Card title="Number of customers" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={processedData || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="Timestamp" 
-                  tickFormatter={timestamp => {
-                    if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                    if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                    return moment(timestamp).format('MMM YYYY');
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="TotalCustomers" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                  name="Total number of customers" 
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        
-        <Col span={12}>
-          <Card title="Number of queue alerts per ROI" bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={processedQueueData || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="Timestamp" 
-                tickFormatter={timestamp => {
-                  if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
-                  if (frequency === '1day') return moment(timestamp).format('DD MMM');
-                  return moment(timestamp).format('MMM YYYY');
-                }}
-              />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-
-              {/* Define a separate line for each of the four ROIs */}
-              <Line type="monotone" dataKey="ROI_1" stroke="#8884d8" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_4" stroke="#B77F2A" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_5" stroke="#2C6B46" activeDot={{ r: 8 }}/>
-              <Line type="monotone" dataKey="ROI_6" stroke="#8B2C3C" activeDot={{ r: 8 }}/>
-            </LineChart>
-          </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
-      <Row gutter={16}>
-        <Col span={12}>
-          <Card
-            title="Expected Customer Count (Last Year)"
-            bordered={false}
-            className={styles.dashboardCard}
+        <Col>
+          <Select
+            disabled={frequency !== '1day'}
+            placeholder="Select weekday"
+            onChange={value => setSelectedWeekday(value)}
+            value={selectedWeekday}
+            style={{ width: 145 }}
           >
-            {expectedCustomerCountData && expectedCustomerCountData.length > 0 ? (
-              <div>
-                Expected Customer Count for {selectedDate}:{" "}
-                {expectedCustomerCountData.reduce((sum, item) => sum + item.TotalCustomers, 0)}
-              </div>
+            <Option value={1}>Monday</Option>
+            <Option value={2}>Tuesday</Option>
+            <Option value={3}>Wednesday</Option>
+            <Option value={4}>Thursday</Option>
+            <Option value={5}>Friday</Option>
+            <Option value={6}>Saturday</Option>
+            <Option value={0}>Sunday</Option>
+          </Select>
+        </Col>
+        <Col>
+        <Button 
+          onClick={() => {
+            const endDate = new Date();
+            endDate.setHours(23, 59, 59, 999); // Set to end of the day
+            const startDate = new Date();
+            startDate.setDate(2); // Set to the first day of the month
+            startDate.setMonth(startDate.getMonth() - 2); // Set to last 3 months
+            setDates([startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]]);
+            setFrequency('1month');
+            setSelectedWeekday(null);
+            setRangePickerValue(null); // Reset RangePicker value
+          }}
+        >
+          Reset Filters
+        </Button>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Card title={getTitle("Number of customers")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            {customerCountLoading ? (
+              <Spin tip="Loading..." />
             ) : (
-              <div>No data available for the selected date last year</div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={processedData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="Timestamp" 
+                    tickFormatter={timestamp => {
+                      if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                      if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                      if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
+                      return moment(timestamp).format('MMM YYYY');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="EnteringCustomers" 
+                    stroke="#8884d8" 
+                    activeDot={{ r: 8 }} 
+                    name="Total number of customers" 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             )}
           </Card>
         </Col>
-
-        <Col span={12}>
+        
+        <Col xs={24} md={12}>
+          <Card title={getTitle("Number of queue alerts")} bordered={false} className={styles.dashboardCard} style={{ marginBottom: '15px' }}>
+            {cameraQueueDataLoading ? (
+              <Spin tip="Loading..." />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={processedQueueData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="Timestamp" 
+                    tickFormatter={timestamp => {
+                      if (frequency === '1hour') return moment(timestamp).format('HH:00, DD MMM');
+                      if (frequency === '1day') return moment(timestamp).format('DD MMM');
+                      if (frequency === '1week') return `Week ${moment(timestamp).week()}`;
+                      return moment(timestamp).format('MMM YYYY');
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  {Object.entries(queueDataMap).map(([id, { Name }], index) => (
+                    <Line 
+                      key={id}
+                      type="monotone" 
+                      dataKey={`ROI_${id}`} 
+                      stroke={graphColors[index]}
+                      activeDot={{ r: 8 }} 
+                      name={Name} 
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </Card>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
           <Card
-            title="Monthly Average Customer Count (Last 6 Months)"
+            title="Average number of daily customers last 6 months"
             bordered={false}
             className={styles.dashboardCard}
           >
-            {monthlyAverageData && monthlyAverageData.length > 0 ? (
+            {monthlyAverageLoading ? (
+              <Spin tip="Loading..." />
+            ) : monthlyAverageData && monthlyAverageData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyAverageData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -357,5 +457,3 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
-
-

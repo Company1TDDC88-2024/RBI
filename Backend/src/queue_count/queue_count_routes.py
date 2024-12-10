@@ -34,7 +34,7 @@ async def upload_data():
         if not all(key in bounding_box for key in bounding_box_keys):
             return jsonify({'message': 'Missing one or more bounding box fields in one or more observations'}), 400
 
-    result = await upload_data_to_db(data)
+    result = await upload_data_to_db(data, empty=False)
     return jsonify({'message': result}), 200
 
 
@@ -67,7 +67,7 @@ async def upload_empty_data():
 
     data["observations"].append(mock_observation)
 
-    result = await upload_data_to_db(data)
+    result = await upload_data_to_db(data, empty=True)
     return jsonify({'message': result}), 200
     
 

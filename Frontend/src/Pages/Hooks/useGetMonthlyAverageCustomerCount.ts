@@ -25,29 +25,31 @@ const useGetMonthlyAverageCustomerCount = (months: number) => {
         const response = await axios.get("/customer_count/get", {
           params: {
             startDate: startDate.toISOString().split("T")[0],
-            endDate: endDate.toISOString().split("T")[0]
+            endDate: endDate.toISOString().split("T")[0],
           },
-          withCredentials: true
+          withCredentials: true,
         });
 
         if (response.status === 200) {
-          console.log("Raw API Response",response.data);
+
+          // Aggregate data by month
           const monthlyData = response.data.reduce((acc: any, item: any) => {
             const monthKey = moment(item.Timestamp).format("YYYY-MM"); // Format as "YYYY-MM"
             if (!acc[monthKey]) {
-              acc[monthKey] = { total: 0, count: 0 };
+              acc[monthKey] = { total: 0 };
             }
-            acc[monthKey].total += item.TotalCustomers;
-            acc[monthKey].count += 1;
+            acc[monthKey].total += item.EnteringCustomers; // Sum up EnteringCustomers
             return acc;
           }, {});
-          console.log("Aggregated Monthly Data:", monthlyData);
 
-          const monthlyAverage = Object.entries(monthlyData).map(([month, values]) => ({
-            month,
-            averageCustomers: Math.round(values.total / values.count) // Round off the average
-          })).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-          console.log("Monthly Average Data:", monthlyAverage);
+          // Calculate average customers per day for each month
+          const monthlyAverage = Object.entries(monthlyData).map(([month, values]) => {
+            const daysInMonth = moment(month, "YYYY-MM").daysInMonth(); // Calculate number of days in the month
+            return {
+              month,
+              averageCustomers: Math.round(values.total / daysInMonth), // Divide total by days in month
+            };
+          }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
           setData(monthlyAverage);
         }

@@ -31,6 +31,7 @@ export const useSignUp = (): IUseSignUpReturn => {
 
             if (response.status === 200) {
                 setSuccess(true);  
+                setError(null);
             }
         } catch (err: any) {
             setSuccess(false);  

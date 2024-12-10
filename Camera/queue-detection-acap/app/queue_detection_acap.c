@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <jansson.h>
 #include <curl/curl.h>
+#include <time.h>
 
 #include <mdb/connection.h>
 #include <mdb/error.h>
@@ -39,7 +40,9 @@ typedef struct channel_identifier
     char *source;
 } channel_identifier_t;
 
-void send_json_to_server(const char *json_strm, int isempty);
+struct timespec start_time, current_time;
+
+void send_json_to_server(const char *json_strm, int is_empty);
 
 static void on_connection_error(mdb_error_t *error, void *user_data)
 {
@@ -48,19 +51,23 @@ static void on_connection_error(mdb_error_t *error, void *user_data)
     abort();
 }
 
-void send_json_to_server(const char *json_str, int isempty) {
+void send_json_to_server(const char *json_str, int is_empty)
+{
     CURL *curl = curl_easy_init();
 
-    if (curl) {
-        if (isempty == 0){   
+    if (curl)
+    {
+        if (is_empty == 0)
+        {
             // Replace <BACKEND_IP> with the backend's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/queue_count/upload");
         }
-        else if (isempty == 1){
+        else if (is_empty == 1)
+        {
             // Replace <BACKEND_IP> with the backend's actual IP address
             curl_easy_setopt(curl, CURLOPT_URL, "<BACKEND_IP>:5555/api/queue_count/upload_empty");
         }
-        
+
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str);
 
         struct curl_slist *headers = NULL;
@@ -68,7 +75,8 @@ void send_json_to_server(const char *json_str, int isempty) {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         CURLcode res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
+        if (res != CURLE_OK)
+        {
             syslog(LOG_INFO, "cURL error");
         }
 
@@ -87,7 +95,7 @@ static void process_detections(const char *payload_data, size_t size)
 
     json_t *output_json = json_object();
 
-    //Adding timestamp and camera_id to the output JSON, camera_id is hardcoded
+    // Adding timestamp and camera_id to the output JSON, camera_id is hardcoded
     json_object_set_new(output_json, "timestamp", json_string(timestamp));
     json_object_set_new(output_json, "camera_id", json_integer(1));
 
@@ -114,22 +122,30 @@ static void process_detections(const char *payload_data, size_t size)
         }
     }
 
-    if (json_array_size(filtered_observations) > 0)
-    {
-        json_object_set_new(output_json, "observations", filtered_observations);
-    }
+    json_object_set_new(output_json, "observations", filtered_observations);
 
     char *json_str = json_dumps(output_json, 0);
 
-    if (json_array_size(filtered_observations) > 0)
-    {
-        send_json_to_server(json_str, 0);
+    const int interval_ms = 1000;
+    long elapsed_ms = 0;
+
+    clock_gettime(CLOCK_MONOTONIC, &current_time);
+
+    elapsed_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_nsec - start_time.tv_nsec) / 1000000;
+
+    if (elapsed_ms >= interval_ms) {            
+        start_time = current_time;
+        
+        if (json_array_size(filtered_observations) > 0)
+        {
+            send_json_to_server(json_str, 0);
+        }
+        else
+        {
+            send_json_to_server(json_str, 1);
+        }
     }
-    else
-    {
-        send_json_to_server(json_str, 1);
-    }
-    
+
     free(json_str);
     json_decref(output_json);
     json_decref(root);
@@ -168,6 +184,7 @@ int main(int argc, char **argv)
     (void)argc;
     (void)argv;
     syslog(LOG_INFO, "Subscriber started...");
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
 
     // For com.axis.analytics_scene_description.v0.beta source corresponds to the
     // video channel number.

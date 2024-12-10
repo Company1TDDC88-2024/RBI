@@ -1,13 +1,24 @@
-from flask import Blueprint, request, jsonify, session
-from .login_service import create_account, login_user, verify_user, delete_account, is_logged_in_service
+from flask import Blueprint, request, jsonify, session, current_app
+from .login_service import create_account, login_user, verify_user, delete_account, is_logged_in_service, get_user_email
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets  # For generating unique tokens
 from functools import wraps
 import logging
-from flask import Flask, redirect, request
 import os
+
+def configure_app(app):
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_PERMANENT'] = False  # Non-permanent session expires on browser close
+
+# Blueprint for login
+login_bp = Blueprint('login', __name__)
+
+@login_bp.before_app_request
+def setup_session():
+    configure_app(current_app)
 
 def login_required(f):
     @wraps(f)
@@ -22,7 +33,6 @@ def send_verification(email_receiver, token):
     email_sender = "company1.customer@gmail.com"
     email_password = "rpmu qrel qczc jmhd"
     url = os.getenv('BACKEND_URL')
-
 
     # Create the verification link
     verification_link = f"{url}/login/verify/{token}"
@@ -47,11 +57,9 @@ def send_verification(email_receiver, token):
     except Exception as e:
         print(f"Error occurred: {e}")
 
-# Blueprint for login
-login_bp = Blueprint('login', __name__)
-
 # Route to create an account
 @login_bp.route('/create_account', methods=['POST'])
+@login_required
 async def create_account_route():
     data = request.json
 
@@ -102,8 +110,10 @@ async def login_route():
             session['user_id'] = result['user_id']
             session['is_admin'] = result['is_admin']
 
-            print("Admin status in session:", session.get('is_admin'))
-            return jsonify({'message': 'Login successful', 'session_id': session['user_id']})
+            # Ensure session cookie attributes are explicitly defined
+            response = jsonify({'message': 'Login successful', 'session_id': session['user_id']})
+    
+            return response
  
         return jsonify({'message': result}), 401  # Return error message if login failed
     
@@ -134,14 +144,9 @@ async def delete_route():
 @login_bp.route('/logout', methods=['POST'])
 @login_required
 async def logout_route():
-    # Log session contents before resetting
-    logging.info(f"Session before logout: {session}")
 
-    # Remove 'user_id' from session
     session.pop('user_id', None)
-
-    # Log session contents after reset
-    logging.info(f"Session after logout: {session}")
+    session.pop('is_admin', None)
 
     # Expire the session cookie
     response = jsonify({'message': 'Logout successful'})
@@ -155,6 +160,24 @@ async def is_logged_in():
     if 'user_id' in session:
         user_id = session['user_id']
         result = await is_logged_in_service(user_id)
+        if 'user' not in result:
+            result['user'] = {
+                'name': 'N/A',  # Fallback name
+                'email': 'N/A'  # Fallback email
+            }
         return jsonify(result)
     else:
         return jsonify({'logged_in': False, 'is_admin': False})
+
+@login_bp.route('/get_email/<user_id>', methods=['GET'])
+async def get_email(user_id):
+    try:
+        # Retrieve the user's email using the user_id
+        email = await get_user_email(user_id)  # This should be an async function fetching the email from DB
+        if email:
+            return jsonify({'status': 'success', 'email': email}), 200
+        else:
+            return jsonify({'status': 'error', 'message': "Email not found"}), 404
+    except Exception as e:
+        print(f"Error fetching email: {e}")
+        return jsonify({'status': 'error', 'message': "Internal server error"}), 500
