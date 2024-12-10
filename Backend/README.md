@@ -1,7 +1,7 @@
 # Basics about the backend
 
-This backend uses python and the flask (micro)framework. It also uses Poetry, a dependency manager for python.
-The reason for using Poetry is to remove the need for developers to create special environments when developing, and also remove the need to tasks of handling different versions of dependencies between systems. All of this, Poetry will handle for you.
+The backend uses python and the flask (micro)framework. It also uses Poetry, a dependency manager for python.
+The reason for using Poetry is to remove the need for developers to create special environments when developing and to have a dependency manager. Using pip, problems arises where the developer would manually have to update requirements.txt to list all dependencies used. This could be solved using pip freeze > requirements.txt, but then there is still the potential risk of different versions of the dependencies. Poetry handles all of this for you, so less manual work is required from the developer.
 
 ## Setting up Poetry
 
@@ -97,7 +97,7 @@ After Poetry is installed, you want to add the path to the Poetry script file in
 -   You will then want to click on _Path_ in Environment variables for <user>
 -   Click on _New_ and paste in the path that was shown in the terminal when Poetry was installed.
 
-To insure everything is correct, try typing this command and see if it displays a version (you might need to close and reopen the terminal)
+To ensure everything is correct, try typing this command and see if it displays a version (you might need to close and reopen the terminal)
 
 ```bash
 poetry --version
@@ -121,7 +121,7 @@ If we don't want to install a new dependency, and just want to run the project. 
 poetry install
 ```
 
-This command will install all the dependencies in the `pyproject.toml` file, just like how npm install works. This has to be run the first time you want to run the backend (or everytime you reinstall poetry or create a new venv manually). You will also need to run this file if someone else in the project has installed a dependency on a branch, that you dont have. For example, if you are going into main after you are done with working in your own branch, and someone has installed a new dependency on main, you will then need to run poetry install. If you are unsure, just try to run the backend. If you get an error, then there might be a new dependeny to install.
+This command will install all the dependencies in the `pyproject.toml` file, just like how npm install works. This has to be run the first time you want to run the backend (or everytime you reinstall poetry or create a new venv manually). You will also need to run this file if someone else in the project has installed a dependency on a branch, that you don't have. For example, if you are going into main after you are done with working in your own branch, and someone has installed a new dependency on main, you will then need to run poetry install. If you are unsure, just try to run the backend. If you get an error, then there might be a new dependency to install.
 
 To actually run the server, we use this command
 
