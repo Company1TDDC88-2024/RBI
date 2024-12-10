@@ -58,7 +58,7 @@ npm  install
 
 ```
 
-Start the whole project (both Frontend and Backend) by running this single command in root.
+You can also start both the Frontend and Backend by running this single command in root.
 
 ```bash
 
