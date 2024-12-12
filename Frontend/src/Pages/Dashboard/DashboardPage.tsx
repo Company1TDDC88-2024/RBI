@@ -3,7 +3,7 @@ import { Card, Row, Col, Spin, Alert, notification } from "antd"; // Removed Mod
 import {
   BarChart,
   ComposedChart,
-  Line, 
+  Line,
   Bar,
   XAxis,
   YAxis,
@@ -37,6 +37,9 @@ const DashboardPage = () => {
   const [showError, setShowError] = useState<boolean>(false); // Added state for error handling
   const { influxTimeframe, influxThreshold } = useSettings();
   const { enteringCustomerDuringTimeframe: enteringCustomerData, error, refetchEnteringCustomers } = useGetEnteringCustomersWithinTimeframe(influxTimeframe);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [notificationClosed, setNotificationClosed] = useState(false);
+
 
   const [today] = useState(new Date());
   const [todayDate] = useState(new Date().toISOString().split("T")[0]);
@@ -94,7 +97,7 @@ const DashboardPage = () => {
       : {};
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval1 = setInterval(() => {
       refetchCustomerCount(monday.toISOString().split('T')[0], sunday.toISOString().split('T')[0]);
       refetchToday(todayDate);
       refetchQueue();
@@ -102,8 +105,9 @@ const DashboardPage = () => {
       setLastUpdated(moment().format("HH:mm:ss"));
       
     }, 10000);
+    //Change to 1000 for 1 second interval
 
-    return () => clearInterval(interval);
+    return () => clearInterval(interval1);
   }, [refetchCustomerCount, refetchQueue, monday, sunday, todayDate, refetchToday, refetchEnteringCustomers]);
 
   const fetchAndSetEnteringCustomers = async () => {
@@ -212,22 +216,6 @@ const DashboardPage = () => {
   }, [influxTimeframe]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (enteringCustomers >= influxThreshold) {
-        notification.warning({
-          message: "Threshold Exceeded",
-          description: `The number of entering customers (${enteringCustomers}) has exceeded the defined threshold of ${influxThreshold}.`,
-          icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
-          placement: "topRight",
-          duration: 30, // Duration in seconds
-        });
-      }
-    }, 30000); // 30 seconds
-  
-    return () => clearInterval(interval); // Clear interval on component unmount
-  }, [enteringCustomers]);
-
-  useEffect(() => {
     if (customerCountData || todayData || queueData) {
       setLastUpdated(moment().format('HH:mm:ss'));
     }
@@ -297,6 +285,45 @@ const DashboardPage = () => {
       })));
     }
   }, [customerCountData, monday, sunday, today]);
+
+  useEffect(() => {
+    const interval2 = setInterval(() => {
+      if (customerCountData) {
+        const now = new Date();
+        const timeframeStart = new Date(now.getTime() - influxThreshold * 60000); // Convert minutes to milliseconds
+  
+        const totalEnteringCustomers = customerCountData
+          .filter(item => new Date(item.Timestamp) >= timeframeStart)
+          .reduce((sum, item) => sum + item.EnteringCustomers, 0);
+  
+        console.log("Total Entering Customers: ", totalEnteringCustomers);
+  
+        if (totalEnteringCustomers >= influxThreshold && !notificationVisible && !notificationClosed) {
+          const timestamp = now.toLocaleString();
+          setNotificationVisible(true);
+          notification.warning({
+            key: "influxWarning", // Unique key to prevent duplicate notifications
+            message: "Many customers entering",
+            description: `Notification Time: ${timestamp}`,
+            icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
+            placement: "topRight",
+            duration: 55, // Duration in seconds
+            onClose: () => {
+              setNotificationClosed(true);
+              // Set a timeout to reset the flag after the notification duration has passed
+              setTimeout(() => {
+                setNotificationVisible(false);
+                setNotificationClosed(false);
+              }, 55000); // 20000 milliseconds = 20 seconds
+            },
+          });
+        }
+      }
+    }, 10000);
+    //Change to 1000 for 1 second interval
+  
+    return () => clearInterval(interval2); // Clear interval on component unmount
+  }, [customerCountData, influxThreshold, notificationVisible, notificationClosed]);
 
   // Combined error state
   const combinedError = customerCountError || errorToday || errorQueue || historicalDataError;
@@ -436,9 +463,7 @@ const DashboardPage = () => {
       {showError && (
         <Alert
           message="Error"
-          description={
-            customerCountError?.message || errorToday?.message || errorQueue?.message || historicalDataError?.message || "An error occurred while fetching data. Displaying last available data"
-          }
+          description="An error occurred while fetching data. Displaying last available data"
           type="error"
           showIcon
           style={{ marginBottom: "16px" }}
